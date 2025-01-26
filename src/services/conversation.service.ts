@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Conversation, Message } from '../models/api/conversationApiModels';
+import { Conversation, CreateConversation, CreateMessage, Message } from '../models/api/conversationApiModels';
 import { ConversationsRepository } from '../repositories/conversations.repository';
 import { MessagesService } from './messages.service';
 
@@ -18,20 +18,20 @@ export class ConversationService {
     return conversation;
   }
 
-  async createConversation(memberId: string, conversation: Conversation): Promise<void> {
-    await this.conversationsRepository.createConversation(memberId, conversation);
+  async createConversation(memberId: string, conversation: CreateConversation){
+    return await this.conversationsRepository.createConversation(memberId, conversation);
   }
 
-  async updateConversation(memberId: string, conversationId: string, conversation: Conversation): Promise<void> {
-    await this.conversationsRepository.updateConversation(memberId, conversationId, conversation);
+  async updateConversation(memberId: string, conversationId: string, conversation: Conversation){
+    return await this.conversationsRepository.updateConversation(memberId, conversationId, conversation);
   }
 
   async deleteConversation(memberId: string, conversationId: string): Promise<void> {
     await this.conversationsRepository.deleteConversation(memberId, conversationId);
   }
 
-  async addMessageToConversation(memberId: string, conversationId: string, message: Message){
-    await this.messagesService.createMessageForConversation(conversationId, message);
+  async addMessageToConversation(memberId: string, conversationId: string, message: CreateMessage){
+    return await this.messagesService.createMessageForConversation(conversationId, memberId, message);
   }
 
 }

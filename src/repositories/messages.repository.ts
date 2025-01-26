@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as postgres from 'postgres';
 import config from '../config/config';
-import { Conversation, Message } from '../models/api/conversationApiModels';
+import { Conversation, CreateMessage, Message } from '../models/api/conversationApiModels';
+const { v4: uuidv4 } = require('uuid');
 
 @Injectable()
 export class MessagesRepository {
@@ -26,13 +27,14 @@ export class MessagesRepository {
   /**
    * Creates a new message.
    * @param conversationId - unique id of the conversation
+   * @param memberId - member id who sent the message
    * @param message - the message object to create.
    */
-  async createMessageForConversation(conversationId: string, message: Message): Promise<Message> {
+  async createMessageForConversation(conversationId: string, memberId: string, message: CreateMessage): Promise<Message> {
     return this.sql.begin(async (trx) => {
       const [createdMessage] = await trx<Message[]>`
-          insert into message (message_id, sent_by_member_id, message_text, created_date)
-          values (${message.messageId}, ${message.sentByUserId}, ${message.messageText}, ${message.createdDate})
+          insert into message (message_id, sent_by_member_id, message_text)
+          values (${uuidv4()}, ${memberId}, ${message.messageText})
           returning *
       `;
       await trx`
@@ -52,7 +54,7 @@ export class MessagesRepository {
   async updateMessage(messageId: string, message: Message): Promise<Message> {
     const [updatedMessage] = await this.sql<Message[]>`
       update message
-      set sent_by_member_id = ${message.sentByUserId},
+      set sent_by_member_id = ${message.sentByMemberId},
           message_text = ${message.messageText},
           created_date = ${message.createdDate}
       where message_id = ${messageId}

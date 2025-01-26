@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MessagesRepository } from '../repositories/messages.repository';
-import { Message } from '../models/api/conversationApiModels';
+import { CreateMessage, Message } from '../models/api/conversationApiModels';
 
 @Injectable()
 export class MessagesService {
@@ -25,10 +25,11 @@ export class MessagesService {
   /**
    * Creates a new message.
    * @param conversationId - unique id of the conversation
+   * @param memberId - member who created the message
    * @param message - The message object to create.
    */
-  async createMessageForConversation(conversationId: string, message: Message): Promise<Message> {
-    return this.messagesRepository.createMessageForConversation(conversationId, message);
+  async createMessageForConversation(conversationId: string, memberId: string, message: CreateMessage): Promise<Message> {
+    return this.messagesRepository.createMessageForConversation(conversationId, memberId, message);
   }
 
   /**

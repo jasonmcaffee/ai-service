@@ -13,11 +13,16 @@ export class Message {
   @ApiProperty()
   messageId: string;
   @ApiProperty()
-  sentByUserId: string;
+  sentByMemberId: string;
   @ApiProperty()
   messageText: string;
   @ApiProperty()
   createdDate: string; // ISO format date string
+}
+
+export class CreateMessage {
+  @ApiProperty()
+  messageText: string;
 }
 
 // models/Conversation.ts
@@ -30,6 +35,11 @@ export class Conversation {
   createdDate: string;// ISO format date string
   @ApiProperty({ type: [Message], nullable: true })
   messages?: Message[];
+}
+
+export class CreateConversation {
+  @ApiProperty()
+  conversationName: string;
 }
 
 // models/StartConversationResponse.ts
@@ -58,7 +68,7 @@ export class GetConversationResponse {
   messages: Message[];
 }
 
-export class GetConversationsForUserResponse {
+export class GetConversationsForMemberResponse {
   @ApiProperty()
   conversations: Conversation[];
 }

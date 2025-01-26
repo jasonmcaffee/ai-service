@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as postgres from 'postgres';
 import config from '../config/config';
-import { Conversation } from '../models/api/conversationApiModels';
+import { Conversation, CreateConversation } from '../models/api/conversationApiModels';
+const { v4: uuidv4 } = require('uuid');
 
 @Injectable()
 export class ConversationsRepository {
@@ -37,19 +38,18 @@ export class ConversationsRepository {
    * @param memberId - unique identifier for the member.
    * @param conversation - the conversation object to create.
    */
-  async createConversation(memberId: string, conversation: Conversation) {
+  async createConversation(memberId: string, conversation: CreateConversation) {
     return this.sql.begin(async (trx) => {
       const [createdConversation] = await trx<Conversation[]>`
-        insert into conversation (conversation_id, conversation_name, created_date)
-        values (${conversation.conversationId}, ${conversation.conversationName}, ${conversation.createdDate})
+        insert into conversation (conversation_id, conversation_name)
+        values (${uuidv4()}, ${conversation.conversationName})
         returning *
       `;
 
       await trx`
         insert into member_conversation (member_id, conversation_id)
-        values (${memberId}, ${conversation.conversationId})
+        values (${memberId}, ${createdConversation.conversationId})
       `;
-
       return createdConversation;
     });
   }

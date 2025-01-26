@@ -100,7 +100,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Conversation"
+                "$ref": "#/components/schemas/CreateConversation"
               }
             }
           }
@@ -134,7 +134,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Message"
+                "$ref": "#/components/schemas/CreateMessage"
               }
             }
           }
@@ -145,7 +145,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Message"
+                  "$ref": "#/components/schemas/CreateMessage"
                 }
               }
             }
@@ -188,7 +188,7 @@
           "messageId": {
             "type": "string"
           },
-          "sentByUserId": {
+          "sentByMemberId": {
             "type": "string"
           },
           "messageText": {
@@ -200,7 +200,7 @@
         },
         "required": [
           "messageId",
-          "sentByUserId",
+          "sentByMemberId",
           "messageText",
           "createdDate"
         ]
@@ -230,6 +230,28 @@
           "conversationName",
           "createdDate",
           "messages"
+        ]
+      },
+      "CreateConversation": {
+        "type": "object",
+        "properties": {
+          "conversationName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversationName"
+        ]
+      },
+      "CreateMessage": {
+        "type": "object",
+        "properties": {
+          "messageText": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "messageText"
         ]
       }
     }
