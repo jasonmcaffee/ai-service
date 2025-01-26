@@ -15,7 +15,10 @@ function loadModules(directory: string, suffix: string) {
 
 // Dynamically load controllers and services
 const controllers = loadModules(join(__dirname, 'controllers'), '.controller.js');
-const providers = loadModules(join(__dirname, 'services'), '.service.js');
+const services = loadModules(join(__dirname, 'services'), '.service.js');
+const repositories = loadModules(join(__dirname, 'repositories'), '.repository.js');
+// const repositories = [];
+const providers = [...services, ...repositories];
 
 @Module({
   imports: [],
