@@ -1,0 +1,111 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/conversations/{conversationId}": {
+      "get": {
+        "operationId": "ConversationController_getConversation",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The conversation details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
+              }
+            }
+          }
+        },
+        "summary": "conversation",
+        "tags": [
+          "Conversation"
+        ]
+      }
+    },
+    "/openapi": {
+      "get": {
+        "operationId": "OpenApiController_getOpenApiSpec",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "OpenApi"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "AI API",
+    "description": "API to manage to interact with AI",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "Message": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string"
+          },
+          "sentByUserId": {
+            "type": "string"
+          },
+          "messageText": {
+            "type": "string"
+          },
+          "createdDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "messageId",
+          "sentByUserId",
+          "messageText",
+          "createdDate"
+        ]
+      },
+      "Conversation": {
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": "string"
+          },
+          "conversationName": {
+            "type": "string"
+          },
+          "createdDate": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
+          }
+        },
+        "required": [
+          "conversationId",
+          "conversationName",
+          "createdDate",
+          "messages"
+        ]
+      }
+    }
+  }
+}

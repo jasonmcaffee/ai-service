@@ -28,7 +28,7 @@ export class Conversation {
   conversationName: string;
   @ApiProperty()
   createdDate: string;// ISO format date string
-  @ApiProperty()
+  @ApiProperty({ type: [Message] })
   messages: Message[];
 }
 
