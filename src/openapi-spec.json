@@ -157,6 +157,240 @@
         ]
       }
     },
+    "/datasources": {
+      "post": {
+        "operationId": "DatasourcesController_createDatasource",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDatasource"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The datasource has been created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Datasource"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new datasource",
+        "tags": [
+          "Datasources"
+        ]
+      }
+    },
+    "/datasources/documents": {
+      "post": {
+        "operationId": "DatasourcesController_createDocument",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDocument"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The document has been created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Document"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new document",
+        "tags": [
+          "Datasources"
+        ]
+      }
+    },
+    "/datasources/documents/{documentId}": {
+      "get": {
+        "operationId": "DatasourcesController_getDocumentById",
+        "parameters": [
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The document details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Document"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document not found"
+          }
+        },
+        "summary": "Get document by ID",
+        "tags": [
+          "Datasources"
+        ]
+      }
+    },
+    "/datasources/{datasourceId}": {
+      "get": {
+        "operationId": "DatasourcesController_getDatasourceById",
+        "parameters": [
+          {
+            "name": "datasourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The datasource details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Datasource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Datasource not found"
+          }
+        },
+        "summary": "Get datasource by ID",
+        "tags": [
+          "Datasources"
+        ]
+      }
+    },
+    "/datasources/{datasourceId}/documents": {
+      "get": {
+        "operationId": "DatasourcesController_getDocumentsForDatasource",
+        "parameters": [
+          {
+            "name": "datasourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of documents for the datasource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Document"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all documents for a datasource",
+        "tags": [
+          "Datasources"
+        ]
+      }
+    },
+    "/datasources/conversation/{conversationId}": {
+      "get": {
+        "operationId": "DatasourcesController_getDatasourcesForConversation",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of datasources for the conversation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Datasource"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all datasources for a conversation",
+        "tags": [
+          "Datasources"
+        ]
+      }
+    },
+    "/datasources/conversation/{conversationId}/documents": {
+      "get": {
+        "operationId": "DatasourcesController_getDocumentsForConversation",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of documents for the conversation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Document"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all documents for a conversation",
+        "tags": [
+          "Datasources"
+        ]
+      }
+    },
     "/openapi": {
       "get": {
         "operationId": "OpenApiController_getOpenApiSpec",
@@ -252,6 +486,98 @@
         },
         "required": [
           "messageText"
+        ]
+      },
+      "CreateDatasource": {
+        "type": "object",
+        "properties": {
+          "datasourceTypeId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "datasourceTypeId",
+          "name",
+          "conversationId"
+        ]
+      },
+      "Datasource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "pathToChromaFile": {
+            "type": "string"
+          },
+          "createdDate": {
+            "type": "string"
+          },
+          "datasourceTypeId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "pathToChromaFile",
+          "createdDate",
+          "datasourceTypeId",
+          "name"
+        ]
+      },
+      "CreateDocument": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "datasourceId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "text",
+          "datasourceId"
+        ]
+      },
+      "Document": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createDate": {
+            "type": "string"
+          },
+          "updatedDate": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "filePath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createDate",
+          "updatedDate",
+          "text",
+          "metadata",
+          "filePath"
         ]
       }
     }

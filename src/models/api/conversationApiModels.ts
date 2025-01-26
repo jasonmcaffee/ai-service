@@ -91,3 +91,86 @@ export class GetAtAutoCompleteSuggestionsResponse {
   @ApiProperty()
   suggestions: Suggestion[];
 }
+
+export class DatasourceType {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  datasourceType: string;
+}
+
+export class Datasource {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  pathToChromaFile: string;
+
+  @ApiProperty()
+  createdDate: string; // ISO format date string
+
+  @ApiProperty()
+  datasourceTypeId: number;
+
+  @ApiProperty()
+  name: string;
+}
+
+export class CreateDatasource {
+  @ApiProperty()
+  datasourceTypeId: number;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  conversationId: string;
+}
+
+export class Document {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  createDate: string; // ISO format date string
+
+  @ApiProperty()
+  updatedDate: string; // ISO format date string
+
+  @ApiProperty()
+  text: string;
+
+  @ApiProperty()
+  metadata: object; // JSONB
+
+  @ApiProperty()
+  filePath: string;
+}
+
+export class CreateDocument {
+  @ApiProperty()
+  text: string;
+
+  @ApiProperty()
+  datasourceId: number;
+}
+
+export class DatasourceDocument {
+  @ApiProperty()
+  datasourceId: number;
+
+  @ApiProperty()
+  documentId: number;
+
+  @ApiProperty()
+  lastVectorBuildDate: string; // ISO format date string
+}
+
+export class ConversationDatasource {
+  @ApiProperty()
+  conversationId: string;
+
+  @ApiProperty()
+  datasourceId: number;
+}

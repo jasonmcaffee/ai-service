@@ -102,12 +102,25 @@ export async function ensureTablesExist() {
 
   await createDefaultMembers();
   await createDefaultModels();
+  await createDefaultDatasourceTypes();
 }
 
 const personMemberId = '1';
 const personMemberName = 'Jason';
 const llmMemberId = '2';
 const llmMemberName = 'Llama';
+const datasourceDocumentTypeName = 'document';
+const datasourceDocumentTypeId = 1;
+
+async function createDefaultDatasourceTypes(){
+  const documentTypeIdExists = async (datasourceTypeId: number) => {
+    const [{ count }] = await sql`SELECT COUNT(*)::int FROM datasource_type WHERE id = ${datasourceTypeId}`;
+    return count > 0;
+  }
+  if (!await documentTypeIdExists(datasourceDocumentTypeId)){
+    await sql`INSERT INTO datasource_type (id, datasource_type) VALUES (${datasourceDocumentTypeId}, ${datasourceDocumentTypeName})`;
+  }
+}
 
 async function createDefaultMembers() {
   const memberExists = async (memberId: string) => {

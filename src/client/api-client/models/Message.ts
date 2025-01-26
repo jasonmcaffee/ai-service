@@ -30,7 +30,7 @@ export interface Message {
      * @type {string}
      * @memberof Message
      */
-    sentByUserId: string;
+    sentByMemberId: string;
     /**
      * 
      * @type {string}
@@ -50,7 +50,7 @@ export interface Message {
  */
 export function instanceOfMessage(value: object): value is Message {
     if (!('messageId' in value) || value['messageId'] === undefined) return false;
-    if (!('sentByUserId' in value) || value['sentByUserId'] === undefined) return false;
+    if (!('sentByMemberId' in value) || value['sentByMemberId'] === undefined) return false;
     if (!('messageText' in value) || value['messageText'] === undefined) return false;
     if (!('createdDate' in value) || value['createdDate'] === undefined) return false;
     return true;
@@ -67,7 +67,7 @@ export function MessageFromJSONTyped(json: any, ignoreDiscriminator: boolean): M
     return {
         
         'messageId': json['messageId'],
-        'sentByUserId': json['sentByUserId'],
+        'sentByMemberId': json['sentByMemberId'],
         'messageText': json['messageText'],
         'createdDate': json['createdDate'],
     };
@@ -85,7 +85,7 @@ export function MessageToJSONTyped(value?: Message | null, ignoreDiscriminator: 
     return {
         
         'messageId': value['messageId'],
-        'sentByUserId': value['sentByUserId'],
+        'sentByMemberId': value['sentByMemberId'],
         'messageText': value['messageText'],
         'createdDate': value['createdDate'],
     };

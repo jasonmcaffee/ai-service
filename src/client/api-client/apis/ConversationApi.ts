@@ -16,14 +16,25 @@
 import * as runtime from '../runtime';
 import type {
   Conversation,
+  CreateConversation,
+  CreateMessage,
 } from '../models/index';
 import {
     ConversationFromJSON,
     ConversationToJSON,
+    CreateConversationFromJSON,
+    CreateConversationToJSON,
+    CreateMessageFromJSON,
+    CreateMessageToJSON,
 } from '../models/index';
 
+export interface ConversationControllerAddMessageRequest {
+    conversationId: string;
+    createMessage: CreateMessage;
+}
+
 export interface ConversationControllerCreateConversationRequest {
-    conversation: Conversation;
+    createConversation: CreateConversation;
 }
 
 export interface ConversationControllerDeleteConversationRequest {
@@ -45,13 +56,56 @@ export interface ConversationControllerUpdateConversationRequest {
 export class ConversationApi extends runtime.BaseAPI {
 
     /**
+     * Add a message to a conversation
+     */
+    async conversationControllerAddMessageRaw(requestParameters: ConversationControllerAddMessageRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CreateMessage>> {
+        if (requestParameters['conversationId'] == null) {
+            throw new runtime.RequiredError(
+                'conversationId',
+                'Required parameter "conversationId" was null or undefined when calling conversationControllerAddMessage().'
+            );
+        }
+
+        if (requestParameters['createMessage'] == null) {
+            throw new runtime.RequiredError(
+                'createMessage',
+                'Required parameter "createMessage" was null or undefined when calling conversationControllerAddMessage().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        const response = await this.request({
+            path: `/conversations/{conversationId}/messages`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: CreateMessageToJSON(requestParameters['createMessage']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => CreateMessageFromJSON(jsonValue));
+    }
+
+    /**
+     * Add a message to a conversation
+     */
+    async conversationControllerAddMessage(requestParameters: ConversationControllerAddMessageRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CreateMessage> {
+        const response = await this.conversationControllerAddMessageRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Create a new conversation
      */
     async conversationControllerCreateConversationRaw(requestParameters: ConversationControllerCreateConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['conversation'] == null) {
+        if (requestParameters['createConversation'] == null) {
             throw new runtime.RequiredError(
-                'conversation',
-                'Required parameter "conversation" was null or undefined when calling conversationControllerCreateConversation().'
+                'createConversation',
+                'Required parameter "createConversation" was null or undefined when calling conversationControllerCreateConversation().'
             );
         }
 
@@ -66,7 +120,7 @@ export class ConversationApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: ConversationToJSON(requestParameters['conversation']),
+            body: CreateConversationToJSON(requestParameters['createConversation']),
         }, initOverrides);
 
         return new runtime.VoidApiResponse(response);
