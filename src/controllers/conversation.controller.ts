@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
 import { ConversationService } from '../services/conversation.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { Conversation } from '../models/api/conversationApiModels';
+import { Conversation, Message } from '../models/api/conversationApiModels';
 
 @ApiTags('Conversation')
 @Controller('conversations')
@@ -46,5 +46,25 @@ export class ConversationController {
   deleteConversation(@Param('conversationId') conversationId: string) {
     const memberId = "1";
     return this.conversationService.deleteConversation(memberId, conversationId);
+  }
+
+  @ApiOperation({ summary: 'Add a message to a conversation' })
+  @ApiParam({
+    name: 'conversationId',
+    type: 'string',
+    required: true,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'The message was successfully added',
+    type: Message, // Ensure this is pointing to the Message class
+  })
+  @Post(':conversationId/messages')
+  addMessage(
+    @Param('conversationId') conversationId: string,
+    @Body() message: Message,
+  ) {
+    const memberId = "1";
+    return this.conversationService.addMessageToConversation(memberId, conversationId, message);
   }
 }

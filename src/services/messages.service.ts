@@ -24,9 +24,10 @@ export class MessagesService {
 
   /**
    * Creates a new message.
+   * @param conversationId - unique id of the conversation
    * @param message - The message object to create.
    */
-  async createMessage(conversationId: string, message: Message): Promise<Message> {
+  async createMessageForConversation(conversationId: string, message: Message): Promise<Message> {
     return this.messagesRepository.createMessageForConversation(conversationId, message);
   }
 

@@ -116,6 +116,47 @@
         ]
       }
     },
+    "/conversations/{conversationId}/messages": {
+      "post": {
+        "operationId": "ConversationController_addMessage",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Message"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The message was successfully added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add a message to a conversation",
+        "tags": [
+          "Conversation"
+        ]
+      }
+    },
     "/openapi": {
       "get": {
         "operationId": "OpenApiController_getOpenApiSpec",

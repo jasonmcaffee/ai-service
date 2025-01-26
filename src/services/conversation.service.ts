@@ -11,7 +11,11 @@ export class ConversationService {
   ) {}
 
   async getConversation(memberId: string, conversationId: string, ): Promise<Conversation | undefined> {
-    return this.conversationsRepository.getConversation(memberId, conversationId);
+    const conversation = await this.conversationsRepository.getConversation(memberId, conversationId);
+    if(!conversation){ return undefined; }
+    const messages = await this.messagesService.getMessagesForConversation(conversation.conversationId);
+    conversation.messages = messages;
+    return conversation;
   }
 
   async createConversation(memberId: string, conversation: Conversation): Promise<void> {
@@ -27,7 +31,7 @@ export class ConversationService {
   }
 
   async addMessageToConversation(memberId: string, conversationId: string, message: Message){
-    await this.messagesService.createMessage(conversationId, message);
+    await this.messagesService.createMessageForConversation(conversationId, message);
   }
 
 }
