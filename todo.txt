@@ -1,0 +1,3 @@
+when an item is not found, return 404 instead of 200.
+
+create a chat api.

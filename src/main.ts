@@ -33,12 +33,19 @@ async function bootstrap() {
 }
 import { ConversationApi } from './client/api-client/apis/ConversationApi';
 import { Configuration } from './client/api-client/runtime';
+import { ChatApi } from './client/api-client';
 
 async function testClient(){
-  const api = new ConversationApi(new Configuration({basePath: 'http://localhost:3000'}));
+  const apiConfig = new Configuration({basePath: 'http://localhost:3000'});
+  // const api = new ConversationApi(new Configuration({basePath: 'http://localhost:3000'}));
+  //
+  // const response = await api.conversationControllerGetConversation( {conversationId: '2'});
+  // console.log('response using client: ', response);
+  const chatApi = new ChatApi(apiConfig);
 
-  const response = await api.conversationControllerGetConversation( {conversationId: '2'});
-  console.log('response using client: ', response);
+  const chatResult = await chatApi.chatControllerStreamInference({chatInference: {prompt: 'What is 2 + 2?'}});
+  console.log(`chat result is: `, chatResult);
+
 }
 
 bootstrap();

@@ -174,3 +174,8 @@ export class ConversationDatasource {
   @ApiProperty()
   datasourceId: number;
 }
+
+export class ChatInference {
+  @ApiProperty()
+  prompt: string;
+}

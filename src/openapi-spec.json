@@ -1,6 +1,65 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/chat/streamInference": {
+      "post": {
+        "operationId": "ChatController_streamInference",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Prompt to initiate the message stream",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatInference"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatInference"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stream a message based on a prompt",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/chat/inference": {
+      "post": {
+        "operationId": "ChatController_inference",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Prompt",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatInference"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Inference based on a prompt",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
     "/conversations/{conversationId}": {
       "get": {
         "operationId": "ConversationController_getConversation",
@@ -416,6 +475,17 @@
   "servers": [],
   "components": {
     "schemas": {
+      "ChatInference": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      },
       "Message": {
         "type": "object",
         "properties": {

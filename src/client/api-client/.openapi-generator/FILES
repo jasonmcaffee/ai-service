@@ -1,8 +1,10 @@
+apis/ChatApi.ts
 apis/ConversationApi.ts
 apis/DatasourcesApi.ts
 apis/OpenApiApi.ts
 apis/index.ts
 index.ts
+models/ChatInference.ts
 models/Conversation.ts
 models/CreateConversation.ts
 models/CreateDatasource.ts
