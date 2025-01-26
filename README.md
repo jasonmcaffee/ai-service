@@ -9,6 +9,10 @@ Node version 22.5.1
 $ npm install
 ```
 
+## Create .env file in root dir
+```shell
+DB_PASSWORD=1234
+```
 ## Compile and run the project
 
 ```bash
