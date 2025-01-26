@@ -24,9 +24,93 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": ""
           }
         },
-        "summary": "conversation",
+        "summary": "Get conversation by ID",
+        "tags": [
+          "Conversation"
+        ]
+      },
+      "put": {
+        "operationId": "ConversationController_updateConversation",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The updated conversation object",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Conversation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The conversation has been successfully updated."
+          }
+        },
+        "summary": "Update an existing conversation",
+        "tags": [
+          "Conversation"
+        ]
+      },
+      "delete": {
+        "operationId": "ConversationController_deleteConversation",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The conversation has been successfully deleted."
+          }
+        },
+        "summary": "Delete a conversation",
+        "tags": [
+          "Conversation"
+        ]
+      }
+    },
+    "/conversations": {
+      "post": {
+        "operationId": "ConversationController_createConversation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The conversation to create",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Conversation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The conversation has been successfully created."
+          }
+        },
+        "summary": "Create a new conversation",
         "tags": [
           "Conversation"
         ]

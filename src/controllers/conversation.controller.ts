@@ -1,7 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
 import { ConversationService } from '../services/conversation.service';
-
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { Conversation } from '../models/api/conversationApiModels';
 
 @ApiTags('Conversation')
@@ -9,19 +8,41 @@ import { Conversation } from '../models/api/conversationApiModels';
 export class ConversationController {
   constructor(private readonly conversationService: ConversationService) {}
 
-  @ApiOperation({ summary: 'conversation' })
-  @ApiParam({
-    name: 'conversationId',
-    type: 'string',
-    required: true,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'The conversation details',
-    type: Conversation, // Ensure this is pointing to the Conversation class
-  })
+  @ApiOperation({ summary: 'Get conversation by ID' })
+  @ApiParam({ name: 'conversationId', type: 'string', required: true, })
+  @ApiResponse({ status: 200, description: 'The conversation details', type: Conversation, })
+  @ApiResponse({ status: 404, type: undefined })
   @Get(':conversationId')
   getConversation(@Param('conversationId') conversationId: string) {
-    return this.conversationService.getConversation(conversationId);
+    const memberId = "1";
+    return this.conversationService.getConversation(memberId, conversationId);
+  }
+
+  @ApiOperation({ summary: 'Create a new conversation' })
+  @ApiBody({ description: 'The conversation to create', type: Conversation, })
+  @ApiResponse({ status: 200, description: 'The conversation has been successfully created.', })
+  @Post()
+  createConversation(@Body() conversation: Conversation) {
+    const memberId = "1";
+    return this.conversationService.createConversation(memberId, conversation);
+  }
+
+  @ApiOperation({ summary: 'Update an existing conversation' })
+  @ApiParam({ name: 'conversationId', type: 'string', required: true, })
+  @ApiBody({ description: 'The updated conversation object', type: Conversation, })
+  @ApiResponse({ status: 200, description: 'The conversation has been successfully updated.', })
+  @Put(':conversationId')
+  updateConversation(@Param('conversationId') conversationId: string, @Body() conversation: Conversation) {
+    const memberId = "1";
+    return this.conversationService.updateConversation(memberId, conversationId, conversation);
+  }
+
+  @ApiOperation({ summary: 'Delete a conversation' })
+  @ApiParam({ name: 'conversationId', type: 'string', required: true, })
+  @ApiResponse({ status: 200, description: 'The conversation has been successfully deleted.', })
+  @Delete(':conversationId')
+  deleteConversation(@Param('conversationId') conversationId: string) {
+    const memberId = "1";
+    return this.conversationService.deleteConversation(memberId, conversationId);
   }
 }
