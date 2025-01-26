@@ -50,7 +50,7 @@ export interface Conversation {
      * @type {Array<Message>}
      * @memberof Conversation
      */
-    messages: Array<Message>;
+    messages: Array<Message> | null;
 }
 
 /**
@@ -77,7 +77,7 @@ export function ConversationFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'conversationId': json['conversationId'],
         'conversationName': json['conversationName'],
         'createdDate': json['createdDate'],
-        'messages': ((json['messages'] as Array<any>).map(MessageFromJSON)),
+        'messages': (json['messages'] == null ? null : (json['messages'] as Array<any>).map(MessageFromJSON)),
     };
 }
 
@@ -95,7 +95,7 @@ export function ConversationToJSONTyped(value?: Conversation | null, ignoreDiscr
         'conversationId': value['conversationId'],
         'conversationName': value['conversationName'],
         'createdDate': value['createdDate'],
-        'messages': ((value['messages'] as Array<any>).map(MessageToJSON)),
+        'messages': (value['messages'] == null ? null : (value['messages'] as Array<any>).map(MessageToJSON)),
     };
 }
 

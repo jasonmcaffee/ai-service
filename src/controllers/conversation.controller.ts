@@ -13,9 +13,11 @@ export class ConversationController {
   @ApiResponse({ status: 200, description: 'The conversation details', type: Conversation, })
   @ApiResponse({ status: 404, type: undefined })
   @Get(':conversationId')
-  getConversation(@Param('conversationId') conversationId: string) {
+  async getConversation(@Param('conversationId') conversationId: string) {
     const memberId = "1";
-    return this.conversationService.getConversation(memberId, conversationId);
+    const result = await this.conversationService.getConversation(memberId, conversationId);
+    console.log('result is: ', result);
+    return result;
   }
 
   @ApiOperation({ summary: 'Create a new conversation' })

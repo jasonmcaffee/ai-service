@@ -28,8 +28,8 @@ export class Conversation {
   conversationName: string;
   @ApiProperty()
   createdDate: string;// ISO format date string
-  @ApiProperty({ type: [Message] })
-  messages: Message[];
+  @ApiProperty({ type: [Message], nullable: true })
+  messages?: Message[];
 }
 
 // models/StartConversationResponse.ts

@@ -37,7 +37,7 @@ import { Configuration } from './client/api-client/runtime';
 async function testClient(){
   const api = new ConversationApi(new Configuration({basePath: 'http://localhost:3000'}));
 
-  const response = await api.conversationControllerGetConversation( {conversationId: '123'});
+  const response = await api.conversationControllerGetConversation( {conversationId: '2'});
   console.log('response using client: ', response);
 }
 

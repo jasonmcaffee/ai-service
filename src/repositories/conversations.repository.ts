@@ -8,7 +8,7 @@ export class ConversationsRepository {
   private sql: postgres.Sql;
 
   constructor() {
-    this.sql = postgres(config.getDbConnectionString());
+    this.sql = postgres(config.getDbConnectionString(), config.getDbTransform());
   }
 
   /**

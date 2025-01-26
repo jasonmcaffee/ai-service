@@ -177,6 +177,7 @@
             "type": "string"
           },
           "messages": {
+            "nullable": true,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Message"
