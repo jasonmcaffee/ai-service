@@ -39,6 +39,9 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## OpenAPI docs
+The src/openapi-spec.json file is created each time the server is started.
+
 ## Generate client
 ```shell
 npx openapi-generator-cli generate -i src/openapi-spec.json -g typescript-fetch -o ./src/client/api-client
