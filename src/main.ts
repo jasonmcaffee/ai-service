@@ -44,16 +44,16 @@ async function testClient(){
   // console.log('response using client: ', response);
   const chatApi = new ChatApiCustomStreaming(apiConfig);
 
-  let completed = ''
-  const chatResult = await chatApi.customChatControllerStreamInferenceV2(
-    {prompt: 'What is 2 + 2? Dont gabber.  Just provide the exact answer without thinking.  Response should be in markdown format.'},
-    (text: string) => {
-      console.log('got text: ', text);
-    },
-    (completeResponse: string) => {
-      console.log('complete result: ', completeResponse);
-    }
-    );
+  // let completed = ''
+  // const chatResult = await chatApi.customChatControllerStreamInferenceV2(
+  //   {prompt: 'What is 2 + 2? Dont gabber.  Just provide the exact answer without thinking.  Response should be in markdown format.'},
+  //   (text: string) => {
+  //     console.log('got text: ', text);
+  //   },
+  //   (completeResponse: string) => {
+  //     console.log('complete result: ', completeResponse);
+  //   }
+  //   );
 
 }
 

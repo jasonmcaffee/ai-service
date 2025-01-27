@@ -10,6 +10,7 @@ if (typeof window !== 'undefined' && window.EventSource) {
   try {
     SSEClient = require('react-native-sse');
   } catch (e) {
+    console.log('error loading react-native-sse', e);
     SSEClient = require('eventsource');
   }
 }
