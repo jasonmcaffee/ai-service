@@ -28,6 +28,7 @@
     "@nestjs/swagger": "^11.0.3",
     "dotenv": "^16.4.7",
     "node-fetch": "^3.3.2",
+    "openai": "^4.80.1",
     "postgres": "^3.4.5",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

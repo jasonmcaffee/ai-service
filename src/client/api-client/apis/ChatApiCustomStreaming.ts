@@ -1,6 +1,5 @@
 import { ChatApi, ChatControllerStreamInferenceRequest } from './ChatApi';
 
-//Manually created class for streaming responses from chat.
 export class ChatApiCustomStreaming extends ChatApi {
   /**
    * Stream a message based on a prompt with callbacks for each text chunk and the complete response.
@@ -16,44 +15,39 @@ export class ChatApiCustomStreaming extends ChatApi {
   ): Promise<void> {
     const response = await this.chatControllerStreamInferenceRaw(requestParameters);
 
-    if (response.raw.body) {
-      const reader = response.raw.body.getReader();
-      const decoder = new TextDecoder();
-      let completeResponse = '';
-      let done = false;
+    if (!response.raw.body) {
+      throw new Error('Failed to stream response: Response body is null.');
+    }
 
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
+    const reader = response.raw.body.getReader();
+    const decoder = new TextDecoder();
+    let completeResponse = '';
 
-        if (value) {
-          const rawChunk = decoder.decode(value, { stream: true });
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-          // Split by newlines to handle potential multi-line chunks
-          const lines = rawChunk.split('\n');
+        const chunk = decoder.decode(value);
+        const dataIndex = chunk.indexOf('data: ');
 
-          for (const line of lines) {
-            const trimmedLine = line.trim();
-
-            // Ignore empty lines or control lines
-            if (!trimmedLine || !trimmedLine.startsWith('data:')) {
-              continue;
+        if (dataIndex !== -1) {
+          const jsonStr = chunk.slice(dataIndex + 6);
+          try {
+            const data = JSON.parse(jsonStr);
+            if (data.text) {
+              onTextReceivedCallback(data.text);
+              completeResponse += data.text;
             }
-
-            // Extract the actual data payload
-            const data = trimmedLine.replace(/^data:\s*/, '');
-            completeResponse += data;
-
-            // Invoke the chunk callback
-            onTextReceivedCallback(data);
+          } catch (e) {
+            console.warn('Failed to parse JSON:', jsonStr);
           }
         }
       }
 
-      // Invoke the complete response callback
       onResponseCompleteCallback(completeResponse);
-    } else {
-      throw new Error('Failed to stream response: Response body is null.');
+    } finally {
+      reader.releaseLock();
     }
   }
 }

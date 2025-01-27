@@ -44,10 +44,13 @@ async function testClient(){
   // console.log('response using client: ', response);
   const chatApi = new ChatApiCustomStreaming(apiConfig);
 
+  let completed = ''
   const chatResult = await chatApi.customChatControllerStreamInference(
-    {chatInference: {prompt: 'What is 2 + 2?'}},
+    {chatInference: {prompt: 'Write a 3 sentence story about a dog.  Each sentence should have two new lines between them.'}},
     (text: string) => {
       console.log('got text: ', text);
+      completed += text;
+      console.log('temp: ', completed);
     },
     (completeResponse: string) => {
       console.log('complete result: ', completeResponse);
