@@ -2,19 +2,20 @@
   "openapi": "3.0.0",
   "paths": {
     "/chat/streamInference": {
-      "get": {
+      "post": {
         "operationId": "ChatController_streamInference",
-        "parameters": [
-          {
-            "name": "prompt",
-            "required": true,
-            "in": "query",
-            "description": "The prompt to initiate the message stream",
-            "schema": {
-              "type": "string"
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Prompt",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatInference"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "Successful response",
@@ -29,6 +30,32 @@
           }
         },
         "summary": "Stream a message based on a prompt",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/chat/inference": {
+      "post": {
+        "operationId": "ChatController_inference",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Prompt",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatInference"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Inference based on a prompt",
         "tags": [
           "Chat"
         ]
@@ -449,6 +476,17 @@
   "servers": [],
   "components": {
     "schemas": {
+      "ChatInference": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      },
       "Message": {
         "type": "object",
         "properties": {

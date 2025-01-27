@@ -27,7 +27,7 @@ export interface ChatControllerInferenceRequest {
 }
 
 export interface ChatControllerStreamInferenceRequest {
-    prompt: string;
+    chatInference: ChatInference;
 }
 
 /**
@@ -74,26 +74,25 @@ export class ChatApi extends runtime.BaseAPI {
      * Stream a message based on a prompt
      */
     async chatControllerStreamInferenceRaw(requestParameters: ChatControllerStreamInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
-        if (requestParameters['prompt'] == null) {
+        if (requestParameters['chatInference'] == null) {
             throw new runtime.RequiredError(
-                'prompt',
-                'Required parameter "prompt" was null or undefined when calling chatControllerStreamInference().'
+                'chatInference',
+                'Required parameter "chatInference" was null or undefined when calling chatControllerStreamInference().'
             );
         }
 
         const queryParameters: any = {};
 
-        if (requestParameters['prompt'] != null) {
-            queryParameters['prompt'] = requestParameters['prompt'];
-        }
-
         const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
 
         const response = await this.request({
             path: `/chat/streamInference`,
-            method: 'GET',
+            method: 'POST',
             headers: headerParameters,
             query: queryParameters,
+            body: ChatInferenceToJSON(requestParameters['chatInference']),
         }, initOverrides);
 
         if (this.isJsonMime(response.headers.get('content-type'))) {

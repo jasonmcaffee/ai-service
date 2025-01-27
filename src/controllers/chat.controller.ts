@@ -9,9 +9,9 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @ApiOperation({ summary: 'Stream a message based on a prompt' })
-  @ApiQuery({ name: 'prompt', type: String, description: 'The prompt to initiate the message stream' })
-  @Get('streamInference') // Must be GET for EventSource to work
+  @Post('streamInference') // Must be GET for EventSource to work
   @Sse() // Server-Sent Events
+  @ApiBody({ description: 'Prompt', type: ChatInference })
   @ApiResponse({
     status: 200,
     description: 'Successful response',
@@ -24,14 +24,15 @@ export class ChatController {
       },
     },
   })
-  async streamInference(@Query('prompt') prompt: string) {
-    return this.chatService.streamInference(prompt);
+  async streamInference(@Body() chatInference: ChatInference) {
+    return this.chatService.streamInference(chatInference.prompt);
   }
 
-  // @ApiOperation({ summary: 'Inference based on a prompt' })
-  // @ApiBody({ description: 'Prompt', type: ChatInference })
-  // @Post('inference')
-  // async inference(@Body() chatInference: ChatInference) {
-  //   return this.chatService.streamInference(chatInference.prompt);
-  // }
+  @ApiOperation({ summary: 'Inference based on a prompt' })
+  @ApiBody({ description: 'Prompt', type: ChatInference })
+  @Post('inference')
+  @Sse()
+  async inference(@Body() chatInference: ChatInference) {
+    return this.chatService.streamInference(chatInference.prompt);
+  }
 }
