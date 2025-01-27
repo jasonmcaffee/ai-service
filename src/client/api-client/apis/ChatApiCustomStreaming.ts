@@ -6,7 +6,7 @@ export class ChatApiCustomStreaming extends ChatApi {
     onTextReceivedCallback: (chunk: string) => void,
     onResponseCompleteCallback: (response: string) => void
   ): Promise<void> {
-    const prompt = requestParameters.chatInference.prompt;
+    const prompt = requestParameters.prompt;
     const encodedPrompt = encodeURIComponent(prompt);
     const url = `${this.configuration.basePath}/chat/streamInference?prompt=${encodedPrompt}`;
 

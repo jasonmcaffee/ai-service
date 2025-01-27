@@ -46,7 +46,7 @@ async function testClient(){
   //
   // let completed = ''
   // const chatResult = await chatApi.customChatControllerStreamInferenceV2(
-  //   {chatInference: {prompt: 'What is 2 + 2? Dont gabber.  Just provide the exact answer without thinking.  Response should be in markdown format.'}},
+  //   {prompt: 'What is 2 + 2? Dont gabber.  Just provide the exact answer without thinking.  Response should be in markdown format.'},
   //   (text: string) => {
   //     console.log('got text: ', text);
   //   },

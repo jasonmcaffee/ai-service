@@ -27,7 +27,7 @@ export interface ChatControllerInferenceRequest {
 }
 
 export interface ChatControllerStreamInferenceRequest {
-    chatInference: ChatInference;
+    prompt: string;
 }
 
 /**
@@ -73,35 +73,40 @@ export class ChatApi extends runtime.BaseAPI {
     /**
      * Stream a message based on a prompt
      */
-    async chatControllerStreamInferenceRaw(requestParameters: ChatControllerStreamInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ChatInference>> {
-        if (requestParameters['chatInference'] == null) {
+    async chatControllerStreamInferenceRaw(requestParameters: ChatControllerStreamInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+        if (requestParameters['prompt'] == null) {
             throw new runtime.RequiredError(
-                'chatInference',
-                'Required parameter "chatInference" was null or undefined when calling chatControllerStreamInference().'
+                'prompt',
+                'Required parameter "prompt" was null or undefined when calling chatControllerStreamInference().'
             );
         }
 
         const queryParameters: any = {};
 
-        const headerParameters: runtime.HTTPHeaders = {};
+        if (requestParameters['prompt'] != null) {
+            queryParameters['prompt'] = requestParameters['prompt'];
+        }
 
-        headerParameters['Content-Type'] = 'application/json';
+        const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
             path: `/chat/streamInference`,
-            method: 'POST',
+            method: 'GET',
             headers: headerParameters,
             query: queryParameters,
-            body: ChatInferenceToJSON(requestParameters['chatInference']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => ChatInferenceFromJSON(jsonValue));
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
     /**
      * Stream a message based on a prompt
      */
-    async chatControllerStreamInference(requestParameters: ChatControllerStreamInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ChatInference> {
+    async chatControllerStreamInference(requestParameters: ChatControllerStreamInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
         const response = await this.chatControllerStreamInferenceRaw(requestParameters, initOverrides);
         return await response.value();
     }
