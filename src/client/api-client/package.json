@@ -1,0 +1,13 @@
+{
+  "name": "ai-service-client",
+  "version": "0.1.0",
+  "description": "AI service client",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "private": false,
+  "files": [
+    "*.ts",
+    "apis/**/*",
+    "models/**/*"
+  ]
+}
