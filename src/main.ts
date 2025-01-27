@@ -46,11 +46,11 @@ async function testClient(){
 
   let completed = ''
   const chatResult = await chatApi.customChatControllerStreamInference(
-    {chatInference: {prompt: 'Write a 3 sentence story about a dog.  Each sentence should have two new lines between them.'}},
+    {chatInference: {prompt: 'What is 2 + 2? Dont gabber.  Just provide the exact answer without thinking.  Response should be in markdown format.'}},
     (text: string) => {
       console.log('got text: ', text);
-      completed += text;
-      console.log('temp: ', completed);
+      // completed += text;
+      // console.log('temp: ', completed);
     },
     (completeResponse: string) => {
       console.log('complete result: ', completeResponse);
