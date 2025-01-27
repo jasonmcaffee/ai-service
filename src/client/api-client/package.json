@@ -9,5 +9,9 @@
     "*.ts",
     "apis/**/*",
     "models/**/*"
-  ]
+  ],
+  "dependencies": {
+    "eventsource": "^3.0.2",
+    "node-fetch": "^3.3.2"
+  }
 }
