@@ -25,6 +25,7 @@ export class ChatService {
             observer.next(text);
           }
         }
+        observer.next(JSON.stringify({end: 'true'}));//needed for react-native's poor sse handling.
         observer.complete();
       }).catch((error) => {
         observer.error(error);
