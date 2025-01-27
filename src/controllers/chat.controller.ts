@@ -1,6 +1,6 @@
-import { Controller, Post, Body, Sse } from '@nestjs/common';
+import { Controller, Post, Body, Sse, Get, Query } from '@nestjs/common';
 import { ChatService } from '../services/chat.service';
-import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { ChatInference } from '../models/api/conversationApiModels';
 
 @ApiTags('Chat')
@@ -9,22 +9,23 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @ApiOperation({ summary: 'Stream a message based on a prompt' })
-  @ApiBody({ description: 'Prompt to initiate the message stream', type: ChatInference })
-  @Post('streamInference')
-  @Sse()  // Server-Sent Events
+  @ApiQuery({ name: 'prompt', type: String, description: 'The prompt to initiate the message stream' })
+  @Get('streamInference') // Must be GET for EventSource to work
+  @Sse() // Server-Sent Events
   @ApiResponse({
     status: 200,
     description: 'Successful response',
     content: {
       'text/event-stream': {
         schema: {
-          "$ref": "#/components/schemas/ChatInference"
-        }
-      }
-    }
+          type: 'string',
+          example: 'data: { "message": "response" }\n\n',
+        },
+      },
+    },
   })
-  async streamInference(@Body() chatInference: ChatInference) {
-    return this.chatService.streamInference(chatInference.prompt);
+  async streamInference(@Query('prompt') prompt: string) {
+    return this.chatService.streamInference(prompt);
   }
 
   @ApiOperation({ summary: 'Inference based on a prompt' })

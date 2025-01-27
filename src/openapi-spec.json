@@ -2,27 +2,27 @@
   "openapi": "3.0.0",
   "paths": {
     "/chat/streamInference": {
-      "post": {
+      "get": {
         "operationId": "ChatController_streamInference",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Prompt to initiate the message stream",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChatInference"
-              }
+        "parameters": [
+          {
+            "name": "prompt",
+            "required": true,
+            "in": "query",
+            "description": "The prompt to initiate the message stream",
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
             "content": {
               "text/event-stream": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChatInference"
+                  "type": "string",
+                  "example": "data: { \"message\": \"response\" }\n\n"
                 }
               }
             }
