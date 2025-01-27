@@ -4,7 +4,9 @@ import { ChatApi, ChatControllerStreamInferenceRequest } from './ChatApi';
 let SSEClient;
 if (typeof window !== 'undefined' && window.EventSource) {
   // Web browser
-  SSEClient = window.EventSource;
+  SSEClient = window;
+} else if (typeof global !== 'undefined' && global.EventSource){
+  SSEClient = global;
 } else if (typeof require !== 'undefined') {
   // Node.js or React Native
   try {
