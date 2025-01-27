@@ -34,6 +34,7 @@ async function bootstrap() {
 import { ConversationApi } from './client/api-client/apis/ConversationApi';
 import { Configuration } from './client/api-client/runtime';
 import { ChatApi } from './client/api-client';
+import { ChatApiCustomStreaming } from './client/api-client/apis/ChatApiCustomStreaming';
 
 async function testClient(){
   const apiConfig = new Configuration({basePath: 'http://localhost:3000'});
@@ -41,10 +42,17 @@ async function testClient(){
   //
   // const response = await api.conversationControllerGetConversation( {conversationId: '2'});
   // console.log('response using client: ', response);
-  const chatApi = new ChatApi(apiConfig);
+  const chatApi = new ChatApiCustomStreaming(apiConfig);
 
-  const chatResult = await chatApi.chatControllerStreamInference({chatInference: {prompt: 'What is 2 + 2?'}});
-  console.log(`chat result is: `, chatResult);
+  const chatResult = await chatApi.customChatControllerStreamInference(
+    {chatInference: {prompt: 'What is 2 + 2?'}},
+    (text: string) => {
+      console.log('got text: ', text);
+    },
+    (completeResponse: string) => {
+      console.log('complete result: ', completeResponse);
+    }
+    );
 
 }
 

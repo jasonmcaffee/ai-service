@@ -22,6 +22,10 @@ import {
     ChatInferenceToJSON,
 } from '../models/index';
 
+export interface ChatControllerInferenceRequest {
+    chatInference: ChatInference;
+}
+
 export interface ChatControllerStreamInferenceRequest {
     chatInference: ChatInference;
 }
@@ -30,6 +34,41 @@ export interface ChatControllerStreamInferenceRequest {
  * 
  */
 export class ChatApi extends runtime.BaseAPI {
+
+    /**
+     * Inference based on a prompt
+     */
+    async chatControllerInferenceRaw(requestParameters: ChatControllerInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['chatInference'] == null) {
+            throw new runtime.RequiredError(
+                'chatInference',
+                'Required parameter "chatInference" was null or undefined when calling chatControllerInference().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        const response = await this.request({
+            path: `/chat/inference`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: ChatInferenceToJSON(requestParameters['chatInference']),
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Inference based on a prompt
+     */
+    async chatControllerInference(requestParameters: ChatControllerInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.chatControllerInferenceRaw(requestParameters, initOverrides);
+    }
 
     /**
      * Stream a message based on a prompt
@@ -49,7 +88,7 @@ export class ChatApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
         const response = await this.request({
-            path: `/chat/inference`,
+            path: `/chat/streamInference`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
