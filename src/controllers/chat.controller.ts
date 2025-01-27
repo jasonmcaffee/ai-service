@@ -28,10 +28,10 @@ export class ChatController {
     return this.chatService.streamInference(prompt);
   }
 
-  @ApiOperation({ summary: 'Inference based on a prompt' })
-  @ApiBody({ description: 'Prompt', type: ChatInference })
-  @Post('inference')
-  async inference(@Body() chatInference: ChatInference) {
-    // return this.chatService.streamInference(chatInference.prompt);
-  }
+  // @ApiOperation({ summary: 'Inference based on a prompt' })
+  // @ApiBody({ description: 'Prompt', type: ChatInference })
+  // @Post('inference')
+  // async inference(@Body() chatInference: ChatInference) {
+  //   return this.chatService.streamInference(chatInference.prompt);
+  // }
 }

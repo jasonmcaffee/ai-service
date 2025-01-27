@@ -34,32 +34,6 @@
         ]
       }
     },
-    "/chat/inference": {
-      "post": {
-        "operationId": "ChatController_inference",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Prompt",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChatInference"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "Inference based on a prompt",
-        "tags": [
-          "Chat"
-        ]
-      }
-    },
     "/conversations/{conversationId}": {
       "get": {
         "operationId": "ConversationController_getConversation",
@@ -475,17 +449,6 @@
   "servers": [],
   "components": {
     "schemas": {
-      "ChatInference": {
-        "type": "object",
-        "properties": {
-          "prompt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "prompt"
-        ]
-      },
       "Message": {
         "type": "object",
         "properties": {
