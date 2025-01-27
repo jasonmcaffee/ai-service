@@ -12,6 +12,7 @@
   ],
   "dependencies": {
     "eventsource": "^3.0.2",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "react-native-sse": "^1.2.1"
   }
 }

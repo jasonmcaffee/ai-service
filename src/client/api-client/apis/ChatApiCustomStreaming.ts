@@ -1,5 +1,21 @@
 import { ChatApi, ChatControllerStreamInferenceRequest } from './ChatApi';
-const EventSource = require('eventsource').EventSource;
+// const EventSource = require('eventsource').EventSource;
+
+let SSEClient;
+if (typeof window !== 'undefined' && window.EventSource) {
+  // Web browser
+  SSEClient = window.EventSource;
+} else if (typeof require !== 'undefined') {
+  // Node.js or React Native
+  try {
+    SSEClient = require('react-native-sse');
+  } catch (e) {
+    SSEClient = require('eventsource');
+  }
+}
+
+const EventSource = SSEClient.EventSource;
+
 export class ChatApiCustomStreaming extends ChatApi {
   async customChatControllerStreamInferenceV2(
     requestParameters: ChatControllerStreamInferenceRequest,
@@ -40,6 +56,8 @@ export class ChatApiCustomStreaming extends ChatApi {
 
   }
 }
+
+
 //   /**  THIS WORKS BUT YOU HAVE TO HAVE THE SERVER STRINGIFY the response {text: "blah"} which is weird.
 //    * Stream a message based on a prompt with callbacks for each text chunk and the complete response.
 //    *
