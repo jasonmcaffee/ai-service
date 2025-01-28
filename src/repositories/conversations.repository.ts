@@ -114,9 +114,10 @@ export class ConversationsRepository {
 
   /**
    * Gets all conversations associated with a member.
+   * Messages are not included intentionally. (Call get conversation to get messages)
    * @param memberId - unique identifier for the member.
    */
-  async getAllConversations(memberId: string) {
+  async getConversationsForMember(memberId: string) {
     return this.sql<Conversation[]>`
       select c.* from conversation c
       join member_conversation mc on mc.conversation_id = c.conversation_id

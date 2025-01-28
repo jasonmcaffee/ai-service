@@ -34,4 +34,8 @@ export class ConversationService {
     return await this.messagesService.createMessageForConversation(conversationId, memberId, message);
   }
 
+  async getConversationsForMember(memberId: string){
+    return await this.conversationsRepository.getConversationsForMember(memberId);
+  }
+
 }

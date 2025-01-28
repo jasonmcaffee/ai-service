@@ -83,7 +83,7 @@ export class ConversationApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
         const response = await this.request({
-            path: `/conversations/{conversationId}/messages`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
+            path: `/conversations/{conversationId}/messages/message`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -119,7 +119,7 @@ export class ConversationApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
         const response = await this.request({
-            path: `/conversations`,
+            path: `/conversations/conversation`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -153,7 +153,7 @@ export class ConversationApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/conversations/{conversationId}`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
+            path: `/conversations/conversation/{conversationId}`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -185,7 +185,7 @@ export class ConversationApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/conversations/{conversationId}`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
+            path: `/conversations/conversation/{conversationId}`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -199,6 +199,32 @@ export class ConversationApi extends runtime.BaseAPI {
      */
     async getConversation(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
         const response = await this.getConversationRaw({ conversationId: conversationId }, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * get all conversations for a member
+     */
+    async getConversationsForMemberRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Conversation>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/conversations/conversations/member`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ConversationFromJSON));
+    }
+
+    /**
+     * get all conversations for a member
+     */
+    async getConversationsForMember(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Conversation>> {
+        const response = await this.getConversationsForMemberRaw(initOverrides);
         return await response.value();
     }
 
@@ -227,7 +253,7 @@ export class ConversationApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
         const response = await this.request({
-            path: `/conversations/{conversationId}`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
+            path: `/conversations/conversation/{conversationId}`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,

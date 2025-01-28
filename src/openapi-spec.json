@@ -60,7 +60,7 @@
         ]
       }
     },
-    "/conversations/{conversationId}": {
+    "/conversations/conversation/{conversationId}": {
       "get": {
         "operationId": "getConversation",
         "parameters": [
@@ -149,7 +149,7 @@
         ]
       }
     },
-    "/conversations": {
+    "/conversations/conversation": {
       "post": {
         "operationId": "createConversation",
         "parameters": [],
@@ -182,7 +182,7 @@
         ]
       }
     },
-    "/conversations/{conversationId}/messages": {
+    "/conversations/{conversationId}/messages/message": {
       "post": {
         "operationId": "addMessage",
         "parameters": [
@@ -206,7 +206,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "The message was successfully added",
             "content": {
               "application/json": {
@@ -218,6 +218,31 @@
           }
         },
         "summary": "Add a message to a conversation",
+        "tags": [
+          "Conversation"
+        ]
+      }
+    },
+    "/conversations/conversations/member": {
+      "get": {
+        "operationId": "getConversationsForMember",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The conversation has been successfully deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Conversation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "get all conversations for a member",
         "tags": [
           "Conversation"
         ]

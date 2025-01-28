@@ -44,9 +44,18 @@ import { ChatApiCustomStreaming } from './client/api-client/apis/ChatApiCustomSt
 async function testClient(){
   const apiConfig = new Configuration({basePath: 'http://localhost:3000'});
   const api = new ConversationApi(new Configuration({basePath: 'http://localhost:3000'}));
-  //
-  // const response = await api.createConversation( {conversationName: 'test 2'});
-  // console.log('response using client: ', response);
+
+  // works
+  // const conversation = await api.createConversation( {conversationName: 'test 2'});
+  // const addedMessage = await api.addMessage(conversation.conversationId, {messageText: 'hi message'});
+  // console.log('added message', addedMessage);
+
+  // const retrievedConversation = await api.getConversation("ff37fb6b-2211-4188-a266-b202ab791430");
+  // console.log('retrieved conversation: ', retrievedConversation);
+
+  const retrievedConversations = await api.getConversationsForMember();
+  console.log('retrieved conversations: ', retrievedConversations);
+  //works
   // const chatApi = new ChatApiCustomStreaming(apiConfig);
 
   // let completed = ''
