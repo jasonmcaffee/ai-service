@@ -22,11 +22,11 @@ import {
     ChatInferenceToJSON,
 } from '../models/index';
 
-export interface ChatControllerInferenceRequest {
+export interface InferenceRequest {
     chatInference: ChatInference;
 }
 
-export interface ChatControllerStreamInferenceRequest {
+export interface StreamInferenceRequest {
     prompt: string;
 }
 
@@ -38,11 +38,11 @@ export class ChatApi extends runtime.BaseAPI {
     /**
      * Inference based on a prompt
      */
-    async chatControllerInferenceRaw(requestParameters: ChatControllerInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async inferenceRaw(requestParameters: InferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['chatInference'] == null) {
             throw new runtime.RequiredError(
                 'chatInference',
-                'Required parameter "chatInference" was null or undefined when calling chatControllerInference().'
+                'Required parameter "chatInference" was null or undefined when calling inference().'
             );
         }
 
@@ -66,18 +66,18 @@ export class ChatApi extends runtime.BaseAPI {
     /**
      * Inference based on a prompt
      */
-    async chatControllerInference(requestParameters: ChatControllerInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.chatControllerInferenceRaw(requestParameters, initOverrides);
+    async inference(chatInference: ChatInference, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.inferenceRaw({ chatInference: chatInference }, initOverrides);
     }
 
     /**
      * Stream a message based on a prompt
      */
-    async chatControllerStreamInferenceRaw(requestParameters: ChatControllerStreamInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+    async streamInferenceRaw(requestParameters: StreamInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
         if (requestParameters['prompt'] == null) {
             throw new runtime.RequiredError(
                 'prompt',
-                'Required parameter "prompt" was null or undefined when calling chatControllerStreamInference().'
+                'Required parameter "prompt" was null or undefined when calling streamInference().'
             );
         }
 
@@ -106,8 +106,8 @@ export class ChatApi extends runtime.BaseAPI {
     /**
      * Stream a message based on a prompt
      */
-    async chatControllerStreamInference(requestParameters: ChatControllerStreamInferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
-        const response = await this.chatControllerStreamInferenceRaw(requestParameters, initOverrides);
+    async streamInference(prompt: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.streamInferenceRaw({ prompt: prompt }, initOverrides);
         return await response.value();
     }
 

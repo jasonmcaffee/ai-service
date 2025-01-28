@@ -2,10 +2,18 @@ import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody } from
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { ChatInference } from '../models/api/conversationApiModels';
-import { Controller } from '@nestjs/common';
 
-//doesn't work
-@WebSocketGateway({ namespace: 'chat2' })
+/**
+ * This works with postman, but not with react native client for some reason.
+ */
+@WebSocketGateway({
+  cors: {
+    origin: '*', // Adjust this to restrict origins if necessary
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type'],
+    credentials: true,
+  },
+})
 export class ChatGateway {
   constructor(private readonly chatService: ChatService) {}
 

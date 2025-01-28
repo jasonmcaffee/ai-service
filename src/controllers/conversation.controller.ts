@@ -22,11 +22,13 @@ export class ConversationController {
 
   @ApiOperation({ summary: 'Create a new conversation' })
   @ApiBody({ description: 'The conversation to create', type: CreateConversation, })
-  @ApiResponse({ status: 200, description: 'The conversation has been successfully created.', })
+  @ApiResponse({ status: 200, description: 'The conversation has been successfully created.', type: Conversation})
   @Post()
-  createConversation(@Body() conversation: CreateConversation) {
+  async createConversation(@Body() conversation: CreateConversation) {
     const memberId = "1";
-    return this.conversationService.createConversation(memberId, conversation);
+    const result = await this.conversationService.createConversation(memberId, conversation);
+    console.log('server side response object: ', result);
+    return result;
   }
 
   @ApiOperation({ summary: 'Update an existing conversation' })
@@ -57,7 +59,7 @@ export class ConversationController {
   @ApiResponse({
     status: 201,
     description: 'The message was successfully added',
-    type: CreateMessage, // Ensure this is pointing to the Message class
+    type: Message, // Ensure this is pointing to the Message class
   })
   @Post(':conversationId/messages')
   addMessage(

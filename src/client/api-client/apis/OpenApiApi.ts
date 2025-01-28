@@ -22,7 +22,7 @@ export class OpenApiApi extends runtime.BaseAPI {
 
     /**
      */
-    async openApiControllerGetOpenApiSpecRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async getOpenApiSpecRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -39,8 +39,8 @@ export class OpenApiApi extends runtime.BaseAPI {
 
     /**
      */
-    async openApiControllerGetOpenApiSpec(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.openApiControllerGetOpenApiSpecRaw(initOverrides);
+    async getOpenApiSpec(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.getOpenApiSpecRaw(initOverrides);
     }
 
 }

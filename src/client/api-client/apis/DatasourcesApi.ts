@@ -31,31 +31,31 @@ import {
     DocumentToJSON,
 } from '../models/index';
 
-export interface DatasourcesControllerCreateDatasourceRequest {
+export interface CreateDatasourceRequest {
     createDatasource: CreateDatasource;
 }
 
-export interface DatasourcesControllerCreateDocumentRequest {
+export interface CreateDocumentRequest {
     createDocument: CreateDocument;
 }
 
-export interface DatasourcesControllerGetDatasourceByIdRequest {
+export interface GetDatasourceByIdRequest {
     datasourceId: number;
 }
 
-export interface DatasourcesControllerGetDatasourcesForConversationRequest {
+export interface GetDatasourcesForConversationRequest {
     conversationId: string;
 }
 
-export interface DatasourcesControllerGetDocumentByIdRequest {
+export interface GetDocumentByIdRequest {
     documentId: number;
 }
 
-export interface DatasourcesControllerGetDocumentsForConversationRequest {
+export interface GetDocumentsForConversationRequest {
     conversationId: string;
 }
 
-export interface DatasourcesControllerGetDocumentsForDatasourceRequest {
+export interface GetDocumentsForDatasourceRequest {
     datasourceId: number;
 }
 
@@ -67,11 +67,11 @@ export class DatasourcesApi extends runtime.BaseAPI {
     /**
      * Create a new datasource
      */
-    async datasourcesControllerCreateDatasourceRaw(requestParameters: DatasourcesControllerCreateDatasourceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Datasource>> {
+    async createDatasourceRaw(requestParameters: CreateDatasourceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Datasource>> {
         if (requestParameters['createDatasource'] == null) {
             throw new runtime.RequiredError(
                 'createDatasource',
-                'Required parameter "createDatasource" was null or undefined when calling datasourcesControllerCreateDatasource().'
+                'Required parameter "createDatasource" was null or undefined when calling createDatasource().'
             );
         }
 
@@ -95,19 +95,19 @@ export class DatasourcesApi extends runtime.BaseAPI {
     /**
      * Create a new datasource
      */
-    async datasourcesControllerCreateDatasource(requestParameters: DatasourcesControllerCreateDatasourceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Datasource> {
-        const response = await this.datasourcesControllerCreateDatasourceRaw(requestParameters, initOverrides);
+    async createDatasource(createDatasource: CreateDatasource, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Datasource> {
+        const response = await this.createDatasourceRaw({ createDatasource: createDatasource }, initOverrides);
         return await response.value();
     }
 
     /**
      * Create a new document
      */
-    async datasourcesControllerCreateDocumentRaw(requestParameters: DatasourcesControllerCreateDocumentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Document>> {
+    async createDocumentRaw(requestParameters: CreateDocumentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Document>> {
         if (requestParameters['createDocument'] == null) {
             throw new runtime.RequiredError(
                 'createDocument',
-                'Required parameter "createDocument" was null or undefined when calling datasourcesControllerCreateDocument().'
+                'Required parameter "createDocument" was null or undefined when calling createDocument().'
             );
         }
 
@@ -131,19 +131,19 @@ export class DatasourcesApi extends runtime.BaseAPI {
     /**
      * Create a new document
      */
-    async datasourcesControllerCreateDocument(requestParameters: DatasourcesControllerCreateDocumentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Document> {
-        const response = await this.datasourcesControllerCreateDocumentRaw(requestParameters, initOverrides);
+    async createDocument(createDocument: CreateDocument, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Document> {
+        const response = await this.createDocumentRaw({ createDocument: createDocument }, initOverrides);
         return await response.value();
     }
 
     /**
      * Get datasource by ID
      */
-    async datasourcesControllerGetDatasourceByIdRaw(requestParameters: DatasourcesControllerGetDatasourceByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Datasource>> {
+    async getDatasourceByIdRaw(requestParameters: GetDatasourceByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Datasource>> {
         if (requestParameters['datasourceId'] == null) {
             throw new runtime.RequiredError(
                 'datasourceId',
-                'Required parameter "datasourceId" was null or undefined when calling datasourcesControllerGetDatasourceById().'
+                'Required parameter "datasourceId" was null or undefined when calling getDatasourceById().'
             );
         }
 
@@ -164,19 +164,19 @@ export class DatasourcesApi extends runtime.BaseAPI {
     /**
      * Get datasource by ID
      */
-    async datasourcesControllerGetDatasourceById(requestParameters: DatasourcesControllerGetDatasourceByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Datasource> {
-        const response = await this.datasourcesControllerGetDatasourceByIdRaw(requestParameters, initOverrides);
+    async getDatasourceById(datasourceId: number, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Datasource> {
+        const response = await this.getDatasourceByIdRaw({ datasourceId: datasourceId }, initOverrides);
         return await response.value();
     }
 
     /**
      * Get all datasources for a conversation
      */
-    async datasourcesControllerGetDatasourcesForConversationRaw(requestParameters: DatasourcesControllerGetDatasourcesForConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Datasource>>> {
+    async getDatasourcesForConversationRaw(requestParameters: GetDatasourcesForConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Datasource>>> {
         if (requestParameters['conversationId'] == null) {
             throw new runtime.RequiredError(
                 'conversationId',
-                'Required parameter "conversationId" was null or undefined when calling datasourcesControllerGetDatasourcesForConversation().'
+                'Required parameter "conversationId" was null or undefined when calling getDatasourcesForConversation().'
             );
         }
 
@@ -197,19 +197,19 @@ export class DatasourcesApi extends runtime.BaseAPI {
     /**
      * Get all datasources for a conversation
      */
-    async datasourcesControllerGetDatasourcesForConversation(requestParameters: DatasourcesControllerGetDatasourcesForConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Datasource>> {
-        const response = await this.datasourcesControllerGetDatasourcesForConversationRaw(requestParameters, initOverrides);
+    async getDatasourcesForConversation(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Datasource>> {
+        const response = await this.getDatasourcesForConversationRaw({ conversationId: conversationId }, initOverrides);
         return await response.value();
     }
 
     /**
      * Get document by ID
      */
-    async datasourcesControllerGetDocumentByIdRaw(requestParameters: DatasourcesControllerGetDocumentByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Document>> {
+    async getDocumentByIdRaw(requestParameters: GetDocumentByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Document>> {
         if (requestParameters['documentId'] == null) {
             throw new runtime.RequiredError(
                 'documentId',
-                'Required parameter "documentId" was null or undefined when calling datasourcesControllerGetDocumentById().'
+                'Required parameter "documentId" was null or undefined when calling getDocumentById().'
             );
         }
 
@@ -230,19 +230,19 @@ export class DatasourcesApi extends runtime.BaseAPI {
     /**
      * Get document by ID
      */
-    async datasourcesControllerGetDocumentById(requestParameters: DatasourcesControllerGetDocumentByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Document> {
-        const response = await this.datasourcesControllerGetDocumentByIdRaw(requestParameters, initOverrides);
+    async getDocumentById(documentId: number, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Document> {
+        const response = await this.getDocumentByIdRaw({ documentId: documentId }, initOverrides);
         return await response.value();
     }
 
     /**
      * Get all documents for a conversation
      */
-    async datasourcesControllerGetDocumentsForConversationRaw(requestParameters: DatasourcesControllerGetDocumentsForConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Document>>> {
+    async getDocumentsForConversationRaw(requestParameters: GetDocumentsForConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Document>>> {
         if (requestParameters['conversationId'] == null) {
             throw new runtime.RequiredError(
                 'conversationId',
-                'Required parameter "conversationId" was null or undefined when calling datasourcesControllerGetDocumentsForConversation().'
+                'Required parameter "conversationId" was null or undefined when calling getDocumentsForConversation().'
             );
         }
 
@@ -263,19 +263,19 @@ export class DatasourcesApi extends runtime.BaseAPI {
     /**
      * Get all documents for a conversation
      */
-    async datasourcesControllerGetDocumentsForConversation(requestParameters: DatasourcesControllerGetDocumentsForConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Document>> {
-        const response = await this.datasourcesControllerGetDocumentsForConversationRaw(requestParameters, initOverrides);
+    async getDocumentsForConversation(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Document>> {
+        const response = await this.getDocumentsForConversationRaw({ conversationId: conversationId }, initOverrides);
         return await response.value();
     }
 
     /**
      * Get all documents for a datasource
      */
-    async datasourcesControllerGetDocumentsForDatasourceRaw(requestParameters: DatasourcesControllerGetDocumentsForDatasourceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Document>>> {
+    async getDocumentsForDatasourceRaw(requestParameters: GetDocumentsForDatasourceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Document>>> {
         if (requestParameters['datasourceId'] == null) {
             throw new runtime.RequiredError(
                 'datasourceId',
-                'Required parameter "datasourceId" was null or undefined when calling datasourcesControllerGetDocumentsForDatasource().'
+                'Required parameter "datasourceId" was null or undefined when calling getDocumentsForDatasource().'
             );
         }
 
@@ -296,8 +296,8 @@ export class DatasourcesApi extends runtime.BaseAPI {
     /**
      * Get all documents for a datasource
      */
-    async datasourcesControllerGetDocumentsForDatasource(requestParameters: DatasourcesControllerGetDocumentsForDatasourceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Document>> {
-        const response = await this.datasourcesControllerGetDocumentsForDatasourceRaw(requestParameters, initOverrides);
+    async getDocumentsForDatasource(datasourceId: number, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Document>> {
+        const response = await this.getDocumentsForDatasourceRaw({ datasourceId: datasourceId }, initOverrides);
         return await response.value();
     }
 

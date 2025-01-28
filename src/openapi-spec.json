@@ -3,7 +3,7 @@
   "paths": {
     "/chat/streamInference": {
       "get": {
-        "operationId": "ChatController_streamInference",
+        "operationId": "streamInference",
         "parameters": [
           {
             "name": "prompt",
@@ -36,7 +36,7 @@
     },
     "/chat/inference": {
       "post": {
-        "operationId": "ChatController_inference",
+        "operationId": "inference",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -62,7 +62,7 @@
     },
     "/conversations/{conversationId}": {
       "get": {
-        "operationId": "ConversationController_getConversation",
+        "operationId": "getConversation",
         "parameters": [
           {
             "name": "conversationId",
@@ -94,7 +94,7 @@
         ]
       },
       "put": {
-        "operationId": "ConversationController_updateConversation",
+        "operationId": "updateConversation",
         "parameters": [
           {
             "name": "conversationId",
@@ -127,7 +127,7 @@
         ]
       },
       "delete": {
-        "operationId": "ConversationController_deleteConversation",
+        "operationId": "deleteConversation",
         "parameters": [
           {
             "name": "conversationId",
@@ -151,7 +151,7 @@
     },
     "/conversations": {
       "post": {
-        "operationId": "ConversationController_createConversation",
+        "operationId": "createConversation",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -166,7 +166,14 @@
         },
         "responses": {
           "200": {
-            "description": "The conversation has been successfully created."
+            "description": "The conversation has been successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
+              }
+            }
           }
         },
         "summary": "Create a new conversation",
@@ -177,7 +184,7 @@
     },
     "/conversations/{conversationId}/messages": {
       "post": {
-        "operationId": "ConversationController_addMessage",
+        "operationId": "addMessage",
         "parameters": [
           {
             "name": "conversationId",
@@ -204,7 +211,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateMessage"
+                  "$ref": "#/components/schemas/Message"
                 }
               }
             }
@@ -218,7 +225,7 @@
     },
     "/datasources": {
       "post": {
-        "operationId": "DatasourcesController_createDatasource",
+        "operationId": "createDatasource",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -250,7 +257,7 @@
     },
     "/datasources/documents": {
       "post": {
-        "operationId": "DatasourcesController_createDocument",
+        "operationId": "createDocument",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -282,7 +289,7 @@
     },
     "/datasources/documents/{documentId}": {
       "get": {
-        "operationId": "DatasourcesController_getDocumentById",
+        "operationId": "getDocumentById",
         "parameters": [
           {
             "name": "documentId",
@@ -316,7 +323,7 @@
     },
     "/datasources/{datasourceId}": {
       "get": {
-        "operationId": "DatasourcesController_getDatasourceById",
+        "operationId": "getDatasourceById",
         "parameters": [
           {
             "name": "datasourceId",
@@ -350,7 +357,7 @@
     },
     "/datasources/{datasourceId}/documents": {
       "get": {
-        "operationId": "DatasourcesController_getDocumentsForDatasource",
+        "operationId": "getDocumentsForDatasource",
         "parameters": [
           {
             "name": "datasourceId",
@@ -384,7 +391,7 @@
     },
     "/datasources/conversation/{conversationId}": {
       "get": {
-        "operationId": "DatasourcesController_getDatasourcesForConversation",
+        "operationId": "getDatasourcesForConversation",
         "parameters": [
           {
             "name": "conversationId",
@@ -418,7 +425,7 @@
     },
     "/datasources/conversation/{conversationId}/documents": {
       "get": {
-        "operationId": "DatasourcesController_getDocumentsForConversation",
+        "operationId": "getDocumentsForConversation",
         "parameters": [
           {
             "name": "conversationId",
@@ -452,7 +459,7 @@
     },
     "/openapi": {
       "get": {
-        "operationId": "OpenApiController_getOpenApiSpec",
+        "operationId": "getOpenApiSpec",
         "parameters": [],
         "responses": {
           "200": {

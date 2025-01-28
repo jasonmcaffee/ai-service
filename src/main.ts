@@ -4,6 +4,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ensureTablesExist } from './db/ensureTablesExist';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import { WsAdapter } from '@nestjs/platform-ws';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -14,7 +16,10 @@ async function bootstrap() {
     .setVersion('1.0')
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  // const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, config, {
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey, // Prevent naming ConversationControllerCreateConversation etc.  Just be createConversation
+  });
   SwaggerModule.setup('api', app, document);
 
   // Save the Swagger JSON specification to a file
@@ -22,7 +27,7 @@ async function bootstrap() {
   writeFileSync(swaggerPath, JSON.stringify(document, null, 2));
 
   await ensureTablesExist();
-
+  app.useWebSocketAdapter(new WsAdapter(app));
   await app.listen(process.env.PORT ?? 3000);
   try{
     await testClient();
@@ -38,23 +43,23 @@ import { ChatApiCustomStreaming } from './client/api-client/apis/ChatApiCustomSt
 
 async function testClient(){
   const apiConfig = new Configuration({basePath: 'http://localhost:3000'});
-  // const api = new ConversationApi(new Configuration({basePath: 'http://localhost:3000'}));
+  const api = new ConversationApi(new Configuration({basePath: 'http://localhost:3000'}));
   //
-  // const response = await api.conversationControllerGetConversation( {conversationId: '2'});
+  // const response = await api.createConversation( {conversationName: 'test 2'});
   // console.log('response using client: ', response);
-  const chatApi = new ChatApiCustomStreaming(apiConfig);
+  // const chatApi = new ChatApiCustomStreaming(apiConfig);
 
-  let completed = ''
-  const chatResult = await chatApi.customChatControllerStreamInferenceV2({
-        prompt: 'What is 2 + 2?'
-    },
-    (text: string) => {
-      console.log('got text: ', text);
-    },
-    (completeResponse: string) => {
-      console.log('complete result: ', completeResponse);
-    }
-    );
+  // let completed = ''
+  // const chatResult = await chatApi.customChatControllerStreamInferenceV2({
+  //       prompt: 'What is 2 + 2?'
+  //   },
+  //   (text: string) => {
+  //     console.log('got text: ', text);
+  //   },
+  //   (completeResponse: string) => {
+  //     console.log('complete result: ', completeResponse);
+  //   }
+  //   );
 
 }
 

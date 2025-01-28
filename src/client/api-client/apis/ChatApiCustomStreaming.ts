@@ -1,4 +1,4 @@
-import { ChatApi, ChatControllerStreamInferenceRequest } from './ChatApi';
+import { ChatApi, StreamInferenceRequest } from './ChatApi';
 import js from '@eslint/js';
 const EventSource = require('eventsource').EventSource;
 
@@ -16,7 +16,7 @@ const EventSource = require('eventsource').EventSource;
 
 export class ChatApiCustomStreaming extends ChatApi {
   async customChatControllerStreamInferenceV2(
-    requestParameters: ChatControllerStreamInferenceRequest,
+    requestParameters: StreamInferenceRequest,
     onTextReceivedCallback: (chunk: string) => void,
     onResponseCompleteCallback: (response: string) => void
   ): Promise<void> {

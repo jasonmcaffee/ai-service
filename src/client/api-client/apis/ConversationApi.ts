@@ -18,6 +18,7 @@ import type {
   Conversation,
   CreateConversation,
   CreateMessage,
+  Message,
 } from '../models/index';
 import {
     ConversationFromJSON,
@@ -26,26 +27,28 @@ import {
     CreateConversationToJSON,
     CreateMessageFromJSON,
     CreateMessageToJSON,
+    MessageFromJSON,
+    MessageToJSON,
 } from '../models/index';
 
-export interface ConversationControllerAddMessageRequest {
+export interface AddMessageRequest {
     conversationId: string;
     createMessage: CreateMessage;
 }
 
-export interface ConversationControllerCreateConversationRequest {
+export interface CreateConversationRequest {
     createConversation: CreateConversation;
 }
 
-export interface ConversationControllerDeleteConversationRequest {
+export interface DeleteConversationRequest {
     conversationId: string;
 }
 
-export interface ConversationControllerGetConversationRequest {
+export interface GetConversationRequest {
     conversationId: string;
 }
 
-export interface ConversationControllerUpdateConversationRequest {
+export interface UpdateConversationRequest {
     conversationId: string;
     conversation: Conversation;
 }
@@ -58,18 +61,18 @@ export class ConversationApi extends runtime.BaseAPI {
     /**
      * Add a message to a conversation
      */
-    async conversationControllerAddMessageRaw(requestParameters: ConversationControllerAddMessageRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CreateMessage>> {
+    async addMessageRaw(requestParameters: AddMessageRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Message>> {
         if (requestParameters['conversationId'] == null) {
             throw new runtime.RequiredError(
                 'conversationId',
-                'Required parameter "conversationId" was null or undefined when calling conversationControllerAddMessage().'
+                'Required parameter "conversationId" was null or undefined when calling addMessage().'
             );
         }
 
         if (requestParameters['createMessage'] == null) {
             throw new runtime.RequiredError(
                 'createMessage',
-                'Required parameter "createMessage" was null or undefined when calling conversationControllerAddMessage().'
+                'Required parameter "createMessage" was null or undefined when calling addMessage().'
             );
         }
 
@@ -87,25 +90,25 @@ export class ConversationApi extends runtime.BaseAPI {
             body: CreateMessageToJSON(requestParameters['createMessage']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => CreateMessageFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => MessageFromJSON(jsonValue));
     }
 
     /**
      * Add a message to a conversation
      */
-    async conversationControllerAddMessage(requestParameters: ConversationControllerAddMessageRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CreateMessage> {
-        const response = await this.conversationControllerAddMessageRaw(requestParameters, initOverrides);
+    async addMessage(conversationId: string, createMessage: CreateMessage, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Message> {
+        const response = await this.addMessageRaw({ conversationId: conversationId, createMessage: createMessage }, initOverrides);
         return await response.value();
     }
 
     /**
      * Create a new conversation
      */
-    async conversationControllerCreateConversationRaw(requestParameters: ConversationControllerCreateConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async createConversationRaw(requestParameters: CreateConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Conversation>> {
         if (requestParameters['createConversation'] == null) {
             throw new runtime.RequiredError(
                 'createConversation',
-                'Required parameter "createConversation" was null or undefined when calling conversationControllerCreateConversation().'
+                'Required parameter "createConversation" was null or undefined when calling createConversation().'
             );
         }
 
@@ -123,24 +126,25 @@ export class ConversationApi extends runtime.BaseAPI {
             body: CreateConversationToJSON(requestParameters['createConversation']),
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => ConversationFromJSON(jsonValue));
     }
 
     /**
      * Create a new conversation
      */
-    async conversationControllerCreateConversation(requestParameters: ConversationControllerCreateConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.conversationControllerCreateConversationRaw(requestParameters, initOverrides);
+    async createConversation(createConversation: CreateConversation, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
+        const response = await this.createConversationRaw({ createConversation: createConversation }, initOverrides);
+        return await response.value();
     }
 
     /**
      * Delete a conversation
      */
-    async conversationControllerDeleteConversationRaw(requestParameters: ConversationControllerDeleteConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async deleteConversationRaw(requestParameters: DeleteConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['conversationId'] == null) {
             throw new runtime.RequiredError(
                 'conversationId',
-                'Required parameter "conversationId" was null or undefined when calling conversationControllerDeleteConversation().'
+                'Required parameter "conversationId" was null or undefined when calling deleteConversation().'
             );
         }
 
@@ -161,18 +165,18 @@ export class ConversationApi extends runtime.BaseAPI {
     /**
      * Delete a conversation
      */
-    async conversationControllerDeleteConversation(requestParameters: ConversationControllerDeleteConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.conversationControllerDeleteConversationRaw(requestParameters, initOverrides);
+    async deleteConversation(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteConversationRaw({ conversationId: conversationId }, initOverrides);
     }
 
     /**
      * Get conversation by ID
      */
-    async conversationControllerGetConversationRaw(requestParameters: ConversationControllerGetConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Conversation>> {
+    async getConversationRaw(requestParameters: GetConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Conversation>> {
         if (requestParameters['conversationId'] == null) {
             throw new runtime.RequiredError(
                 'conversationId',
-                'Required parameter "conversationId" was null or undefined when calling conversationControllerGetConversation().'
+                'Required parameter "conversationId" was null or undefined when calling getConversation().'
             );
         }
 
@@ -193,26 +197,26 @@ export class ConversationApi extends runtime.BaseAPI {
     /**
      * Get conversation by ID
      */
-    async conversationControllerGetConversation(requestParameters: ConversationControllerGetConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
-        const response = await this.conversationControllerGetConversationRaw(requestParameters, initOverrides);
+    async getConversation(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
+        const response = await this.getConversationRaw({ conversationId: conversationId }, initOverrides);
         return await response.value();
     }
 
     /**
      * Update an existing conversation
      */
-    async conversationControllerUpdateConversationRaw(requestParameters: ConversationControllerUpdateConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async updateConversationRaw(requestParameters: UpdateConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['conversationId'] == null) {
             throw new runtime.RequiredError(
                 'conversationId',
-                'Required parameter "conversationId" was null or undefined when calling conversationControllerUpdateConversation().'
+                'Required parameter "conversationId" was null or undefined when calling updateConversation().'
             );
         }
 
         if (requestParameters['conversation'] == null) {
             throw new runtime.RequiredError(
                 'conversation',
-                'Required parameter "conversation" was null or undefined when calling conversationControllerUpdateConversation().'
+                'Required parameter "conversation" was null or undefined when calling updateConversation().'
             );
         }
 
@@ -236,8 +240,8 @@ export class ConversationApi extends runtime.BaseAPI {
     /**
      * Update an existing conversation
      */
-    async conversationControllerUpdateConversation(requestParameters: ConversationControllerUpdateConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.conversationControllerUpdateConversationRaw(requestParameters, initOverrides);
+    async updateConversation(conversationId: string, conversation: Conversation, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.updateConversationRaw({ conversationId: conversationId, conversation: conversation }, initOverrides);
     }
 
 }

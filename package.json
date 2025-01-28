@@ -18,7 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "generate-client": "npx openapi-generator-cli generate -i src/openapi-spec.json -g typescript-fetch -o ./src/client/api-client"
+    "generate-client": "npx openapi-generator-cli generate -i src/openapi-spec.json -g typescript-fetch -o ./src/client/api-client --additional-properties=useSingleRequestParameter=false"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -26,6 +26,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.0.6",
+    "@nestjs/platform-ws": "^11.0.6",
     "@nestjs/swagger": "^11.0.3",
     "@nestjs/websockets": "^11.0.6",
     "dotenv": "^16.4.7",
