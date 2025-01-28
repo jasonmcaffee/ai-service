@@ -53,8 +53,8 @@ async function testClient(){
   // const retrievedConversation = await api.getConversation("ff37fb6b-2211-4188-a266-b202ab791430");
   // console.log('retrieved conversation: ', retrievedConversation);
 
-  const retrievedConversations = await api.getConversationsForMember();
-  console.log('retrieved conversations: ', retrievedConversations);
+  // const retrievedConversations = await api.getConversationsForMember();
+  // console.log('retrieved conversations: ', retrievedConversations);
   //works
   // const chatApi = new ChatApiCustomStreaming(apiConfig);
 

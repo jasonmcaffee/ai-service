@@ -28,6 +28,7 @@ export interface InferenceRequest {
 
 export interface StreamInferenceRequest {
     prompt: string;
+    conversationId: string;
 }
 
 /**
@@ -81,10 +82,21 @@ export class ChatApi extends runtime.BaseAPI {
             );
         }
 
+        if (requestParameters['conversationId'] == null) {
+            throw new runtime.RequiredError(
+                'conversationId',
+                'Required parameter "conversationId" was null or undefined when calling streamInference().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['prompt'] != null) {
             queryParameters['prompt'] = requestParameters['prompt'];
+        }
+
+        if (requestParameters['conversationId'] != null) {
+            queryParameters['conversationId'] = requestParameters['conversationId'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -106,8 +118,8 @@ export class ChatApi extends runtime.BaseAPI {
     /**
      * Stream a message based on a prompt
      */
-    async streamInference(prompt: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
-        const response = await this.streamInferenceRaw({ prompt: prompt }, initOverrides);
+    async streamInference(prompt: string, conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.streamInferenceRaw({ prompt: prompt, conversationId: conversationId }, initOverrides);
         return await response.value();
     }
 

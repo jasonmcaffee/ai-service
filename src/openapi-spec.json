@@ -13,6 +13,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "query",
+            "description": "The conversation to add the passed in prompt and llm response to",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {

@@ -10,6 +10,7 @@ export class ChatController {
 
   @ApiOperation({ summary: 'Stream a message based on a prompt' })
   @ApiQuery({ name: 'prompt', type: String, description: 'The prompt to initiate the message stream' })
+  @ApiQuery({ name: 'conversationId', type: String, description: 'The conversation to add the passed in prompt and llm response to' })
   @Get('streamInference') // Must be GET for EventSource to work
   @Sse() // Server-Sent Events
   @ApiResponse({
@@ -24,9 +25,10 @@ export class ChatController {
       },
     },
   })
-  async streamInference(@Query('prompt') prompt: string) {
-    console.log('got stream inference request: ', prompt);
-    return this.chatService.streamInference(prompt);
+  async streamInference(@Query('prompt') prompt: string, @Query('conversationId') conversationId: string) {
+    console.log('got stream inference request: ', prompt, conversationId);
+    const memberId = "1";
+    return this.chatService.streamInference(prompt, memberId, conversationId);
   }
 
   @ApiOperation({ summary: 'Inference based on a prompt' })
@@ -34,6 +36,7 @@ export class ChatController {
   @Post('inference')
   @Sse()
   async inference(@Body() chatInference: ChatInference) {
-    return this.chatService.streamInference(chatInference.prompt);
+    const memberId = "1";
+    return this.chatService.streamInference(chatInference.prompt, memberId);
   }
 }

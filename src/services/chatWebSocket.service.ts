@@ -22,23 +22,23 @@ export class ChatGateway {
 
   @SubscribeMessage('inference')
   async handleInference(@MessageBody() chatInference: ChatInference, client: Socket): Promise<void> {
-    console.log('handleInference websocket called: ', chatInference);
-    try {
-      const observable = await this.chatService.streamInference(chatInference.prompt);
-
-      observable.subscribe({
-        next: (chunk) => {
-          client.emit('response', { text: chunk });
-        },
-        error: (err) => {
-          client.emit('error', { error: err.message });
-        },
-        complete: () => {
-          client.emit('disconnect');
-        },
-      });
-    } catch (error) {
-      client.emit('error', { error: error.message });
-    }
+    console.log('DISABLED handleInference websocket called: ', chatInference);
+    // try {
+    //   const observable = await this.chatService.streamInference(chatInference.prompt);
+    //
+    //   observable.subscribe({
+    //     next: (chunk) => {
+    //       client.emit('response', { text: chunk });
+    //     },
+    //     error: (err) => {
+    //       client.emit('error', { error: err.message });
+    //     },
+    //     complete: () => {
+    //       client.emit('disconnect');
+    //     },
+    //   });
+    // } catch (error) {
+    //   client.emit('error', { error: error.message });
+    // }
   }
 }

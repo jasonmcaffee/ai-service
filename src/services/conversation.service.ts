@@ -14,7 +14,7 @@ export class ConversationService {
     const conversation = await this.conversationsRepository.getConversation(memberId, conversationId);
     if(!conversation){ return undefined; }
     const messages = await this.messagesService.getMessagesForConversation(conversation.conversationId);
-    conversation.messages = messages;
+    conversation.messages = messages || [];
     return conversation;
   }
 

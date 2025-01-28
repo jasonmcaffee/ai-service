@@ -16,6 +16,10 @@ const config = {
     const dbConnectionString = `postgres://postgres:${dbPassword}@192.168.0.209:5432/ai`;
     return dbConnectionString;
   },
+  //the member table has this hardcoded and we need it when adding messages.
+  getAiMemberId(){
+    return "2";
+  },
 
   getDbTransform(){
     return {
