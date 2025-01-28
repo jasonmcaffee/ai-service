@@ -18,7 +18,7 @@
             "name": "conversationId",
             "required": true,
             "in": "query",
-            "description": "The conversation to add the passed in prompt and llm response to",
+            "description": "Optional. The conversation to add the passed in prompt and llm response to.",
             "schema": {
               "type": "string"
             }
@@ -31,39 +31,13 @@
               "text/event-stream": {
                 "schema": {
                   "type": "string",
-                  "example": "data: { \"message\": \"response\" }\n\n"
+                  "example": "data: { \"text\": \"response\", \"end\": \"true\" }"
                 }
               }
             }
           }
         },
         "summary": "Stream a message based on a prompt",
-        "tags": [
-          "Chat"
-        ]
-      }
-    },
-    "/chat/inference": {
-      "post": {
-        "operationId": "inference",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Prompt",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChatInference"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "Inference based on a prompt",
         "tags": [
           "Chat"
         ]
@@ -257,7 +231,7 @@
         ]
       }
     },
-    "/datasources": {
+    "/datasources/datasource": {
       "post": {
         "operationId": "createDatasource",
         "parameters": [],
@@ -289,10 +263,19 @@
         ]
       }
     },
-    "/datasources/documents": {
+    "/datasources/datasource/{datasourceId}/document": {
       "post": {
         "operationId": "createDocument",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "datasourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -321,7 +304,7 @@
         ]
       }
     },
-    "/datasources/documents/{documentId}": {
+    "/datasources/datasource/documents/{documentId}": {
       "get": {
         "operationId": "getDocumentById",
         "parameters": [
@@ -355,7 +338,7 @@
         ]
       }
     },
-    "/datasources/{datasourceId}": {
+    "/datasources/datasource/{datasourceId}": {
       "get": {
         "operationId": "getDatasourceById",
         "parameters": [
@@ -389,7 +372,7 @@
         ]
       }
     },
-    "/datasources/{datasourceId}/documents": {
+    "/datasources/datasource/{datasourceId}/documents": {
       "get": {
         "operationId": "getDocumentsForDatasource",
         "parameters": [
@@ -516,17 +499,6 @@
   "servers": [],
   "components": {
     "schemas": {
-      "ChatInference": {
-        "type": "object",
-        "properties": {
-          "prompt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "prompt"
-        ]
-      },
       "Message": {
         "type": "object",
         "properties": {
@@ -650,14 +622,10 @@
         "properties": {
           "text": {
             "type": "string"
-          },
-          "datasourceId": {
-            "type": "number"
           }
         },
         "required": [
-          "text",
-          "datasourceId"
+          "text"
         ]
       },
       "Document": {

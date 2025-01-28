@@ -23,10 +23,12 @@ export class DatasourcesService {
   }
 
   async getDatasourceById(datasourceId: number): Promise<Datasource | undefined> {
+    console.log(`getting datasource id: ${datasourceId}`);
     return this.datasourcesRepository.getDatasourceById(datasourceId);
   }
 
   async getDocumentsForDatasource(datasourceId: number): Promise<Document[]> {
+    console.log(`getting documents for datasource id: ${datasourceId}`);
     return this.datasourcesRepository.getDocumentsForDatasource(datasourceId);
   }
 

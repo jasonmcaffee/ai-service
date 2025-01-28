@@ -14,17 +14,6 @@
 
 
 import * as runtime from '../runtime';
-import type {
-  ChatInference,
-} from '../models/index';
-import {
-    ChatInferenceFromJSON,
-    ChatInferenceToJSON,
-} from '../models/index';
-
-export interface InferenceRequest {
-    chatInference: ChatInference;
-}
 
 export interface StreamInferenceRequest {
     prompt: string;
@@ -35,41 +24,6 @@ export interface StreamInferenceRequest {
  * 
  */
 export class ChatApi extends runtime.BaseAPI {
-
-    /**
-     * Inference based on a prompt
-     */
-    async inferenceRaw(requestParameters: InferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['chatInference'] == null) {
-            throw new runtime.RequiredError(
-                'chatInference',
-                'Required parameter "chatInference" was null or undefined when calling inference().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        const response = await this.request({
-            path: `/chat/inference`,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: ChatInferenceToJSON(requestParameters['chatInference']),
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     * Inference based on a prompt
-     */
-    async inference(chatInference: ChatInference, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.inferenceRaw({ chatInference: chatInference }, initOverrides);
-    }
 
     /**
      * Stream a message based on a prompt

@@ -1,7 +1,15 @@
 update the chat api to add messages to existing conversation
-- pass optional conversation id, which if is present, add prompt to messages, then add response to messages.
 - when conversation id is passed, you must fetch all messages from the db, and document, then pass as messages array to llm.
 - use model ip address/type, etc when communicating in conversation.service.ts
+
+datasource wireup.
+
+@mention auto complete.
+models controller
+
+google sign in
+member creation.
+session cookie or token.
 
 TESTS
 

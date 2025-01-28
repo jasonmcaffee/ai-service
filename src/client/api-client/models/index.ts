@@ -1,6 +1,5 @@
 /* tslint:disable */
 /* eslint-disable */
-export * from './ChatInference';
 export * from './Conversation';
 export * from './CreateConversation';
 export * from './CreateDatasource';

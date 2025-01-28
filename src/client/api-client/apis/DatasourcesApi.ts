@@ -36,6 +36,7 @@ export interface CreateDatasourceRequest {
 }
 
 export interface CreateDocumentRequest {
+    datasourceId: number;
     createDocument: CreateDocument;
 }
 
@@ -82,7 +83,7 @@ export class DatasourcesApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
         const response = await this.request({
-            path: `/datasources`,
+            path: `/datasources/datasource`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -104,6 +105,13 @@ export class DatasourcesApi extends runtime.BaseAPI {
      * Create a new document
      */
     async createDocumentRaw(requestParameters: CreateDocumentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Document>> {
+        if (requestParameters['datasourceId'] == null) {
+            throw new runtime.RequiredError(
+                'datasourceId',
+                'Required parameter "datasourceId" was null or undefined when calling createDocument().'
+            );
+        }
+
         if (requestParameters['createDocument'] == null) {
             throw new runtime.RequiredError(
                 'createDocument',
@@ -118,7 +126,7 @@ export class DatasourcesApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
         const response = await this.request({
-            path: `/datasources/documents`,
+            path: `/datasources/datasource/{datasourceId}/document`.replace(`{${"datasourceId"}}`, encodeURIComponent(String(requestParameters['datasourceId']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -131,8 +139,8 @@ export class DatasourcesApi extends runtime.BaseAPI {
     /**
      * Create a new document
      */
-    async createDocument(createDocument: CreateDocument, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Document> {
-        const response = await this.createDocumentRaw({ createDocument: createDocument }, initOverrides);
+    async createDocument(datasourceId: number, createDocument: CreateDocument, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Document> {
+        const response = await this.createDocumentRaw({ datasourceId: datasourceId, createDocument: createDocument }, initOverrides);
         return await response.value();
     }
 
@@ -152,7 +160,7 @@ export class DatasourcesApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/datasources/{datasourceId}`.replace(`{${"datasourceId"}}`, encodeURIComponent(String(requestParameters['datasourceId']))),
+            path: `/datasources/datasource/{datasourceId}`.replace(`{${"datasourceId"}}`, encodeURIComponent(String(requestParameters['datasourceId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -218,7 +226,7 @@ export class DatasourcesApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/datasources/documents/{documentId}`.replace(`{${"documentId"}}`, encodeURIComponent(String(requestParameters['documentId']))),
+            path: `/datasources/datasource/documents/{documentId}`.replace(`{${"documentId"}}`, encodeURIComponent(String(requestParameters['documentId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -284,7 +292,7 @@ export class DatasourcesApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/datasources/{datasourceId}/documents`.replace(`{${"datasourceId"}}`, encodeURIComponent(String(requestParameters['datasourceId']))),
+            path: `/datasources/datasource/{datasourceId}/documents`.replace(`{${"datasourceId"}}`, encodeURIComponent(String(requestParameters['datasourceId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

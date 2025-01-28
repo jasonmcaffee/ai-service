@@ -11,7 +11,7 @@ export class DatasourcesController {
   @ApiOperation({ summary: 'Create a new datasource' })
   @ApiBody({ type: CreateDatasource })
   @ApiResponse({ status: 201, description: 'The datasource has been created', type: Datasource })
-  @Post()
+  @Post('datasource')
   async createDatasource(@Body() createDatasource: CreateDatasource): Promise<Datasource> {
     const { name, datasourceTypeId, conversationId } = createDatasource;
     return await this.datasourcesService.createDatasource(name, datasourceTypeId, conversationId);
@@ -19,18 +19,20 @@ export class DatasourcesController {
 
   @ApiOperation({ summary: 'Create a new document' })
   @ApiBody({ type: CreateDocument })
+  @ApiParam({ name: 'datasourceId', type: 'number' })
   @ApiResponse({ status: 201, description: 'The document has been created', type: Document })
-  @Post('documents')
-  async createDocument(@Body() createDocument: CreateDocument): Promise<Document> {
-    const { text, datasourceId} = createDocument;
+  @Post('datasource/:datasourceId/document')
+  async createDocument(@Body() createDocument: CreateDocument, @Param() datasourceId: number): Promise<Document> {
+    const { text} = createDocument;
     return await this.datasourcesService.createDocument(text, datasourceId);
   }
 
   @ApiOperation({ summary: 'Get document by ID' })
   @ApiParam({ name: 'documentId', type: 'number' })
+  // @ApiParam({ name: 'datasourceId', type: 'number' })  not really needed.  might be good for verification
   @ApiResponse({ status: 200, description: 'The document details', type: Document })
   @ApiResponse({ status: 404, description: 'Document not found' })
-  @Get('documents/:documentId')
+  @Get('datasource/documents/:documentId')
   async getDocumentById(@Param('documentId') documentId: number): Promise<Document | undefined> {
     return await this.datasourcesService.getDocumentById(documentId);
   }
@@ -39,7 +41,7 @@ export class DatasourcesController {
   @ApiParam({ name: 'datasourceId', type: 'number' })
   @ApiResponse({ status: 200, description: 'The datasource details', type: Datasource })
   @ApiResponse({ status: 404, description: 'Datasource not found' })
-  @Get(':datasourceId')
+  @Get('datasource/:datasourceId')
   async getDatasourceById(@Param('datasourceId') datasourceId: number): Promise<Datasource | undefined> {
     return await this.datasourcesService.getDatasourceById(datasourceId);
   }
@@ -47,7 +49,7 @@ export class DatasourcesController {
   @ApiOperation({ summary: 'Get all documents for a datasource' })
   @ApiParam({ name: 'datasourceId', type: 'number' })
   @ApiResponse({ status: 200, description: 'List of documents for the datasource', type: [Document] })
-  @Get(':datasourceId/documents')
+  @Get('datasource/:datasourceId/documents')
   async getDocumentsForDatasource(@Param('datasourceId') datasourceId: number): Promise<Document[]> {
     return await this.datasourcesService.getDocumentsForDatasource(datasourceId);
   }

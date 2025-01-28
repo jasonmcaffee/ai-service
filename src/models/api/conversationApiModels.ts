@@ -152,8 +152,8 @@ export class CreateDocument {
   @ApiProperty()
   text: string;
 
-  @ApiProperty()
-  datasourceId: number;
+  // @ApiProperty()
+  // datasourceId: number;
 }
 
 export class DatasourceDocument {

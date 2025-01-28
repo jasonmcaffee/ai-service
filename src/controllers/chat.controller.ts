@@ -10,9 +10,9 @@ export class ChatController {
 
   @ApiOperation({ summary: 'Stream a message based on a prompt' })
   @ApiQuery({ name: 'prompt', type: String, description: 'The prompt to initiate the message stream' })
-  @ApiQuery({ name: 'conversationId', type: String, description: 'The conversation to add the passed in prompt and llm response to' })
+  @ApiQuery({ name: 'conversationId', type: String, description: 'Optional. The conversation to add the passed in prompt and llm response to.' })
   @Get('streamInference') // Must be GET for EventSource to work
-  @Sse() // Server-Sent Events
+  @Sse() // Server-Sent Events so we can stream LLM response back the client.
   @ApiResponse({
     status: 200,
     description: 'Successful response',
@@ -20,7 +20,7 @@ export class ChatController {
       'text/event-stream': {
         schema: {
           type: 'string',
-          example: 'data: { "message": "response" }\n\n',
+          example: 'data: { "text": "response", "end": "true" }', //end is true when response is complete.
         },
       },
     },
@@ -31,12 +31,12 @@ export class ChatController {
     return this.chatService.streamInference(prompt, memberId, conversationId);
   }
 
-  @ApiOperation({ summary: 'Inference based on a prompt' })
-  @ApiBody({ description: 'Prompt', type: ChatInference })
-  @Post('inference')
-  @Sse()
-  async inference(@Body() chatInference: ChatInference) {
-    const memberId = "1";
-    return this.chatService.streamInference(chatInference.prompt, memberId);
-  }
+  // @ApiOperation({ summary: 'Inference based on a prompt' })
+  // @ApiBody({ description: 'Prompt', type: ChatInference })
+  // @Post('inference')
+  // @Sse()
+  // async inference(@Body() chatInference: ChatInference) {
+  //   const memberId = "1";
+  //   return this.chatService.streamInference(chatInference.prompt, memberId);
+  // }
 }

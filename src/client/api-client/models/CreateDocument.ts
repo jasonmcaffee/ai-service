@@ -25,12 +25,6 @@ export interface CreateDocument {
      * @memberof CreateDocument
      */
     text: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateDocument
-     */
-    datasourceId: number;
 }
 
 /**
@@ -38,7 +32,6 @@ export interface CreateDocument {
  */
 export function instanceOfCreateDocument(value: object): value is CreateDocument {
     if (!('text' in value) || value['text'] === undefined) return false;
-    if (!('datasourceId' in value) || value['datasourceId'] === undefined) return false;
     return true;
 }
 
@@ -53,7 +46,6 @@ export function CreateDocumentFromJSONTyped(json: any, ignoreDiscriminator: bool
     return {
         
         'text': json['text'],
-        'datasourceId': json['datasourceId'],
     };
 }
 
@@ -69,7 +61,6 @@ export function CreateDocumentToJSONTyped(value?: CreateDocument | null, ignoreD
     return {
         
         'text': value['text'],
-        'datasourceId': value['datasourceId'],
     };
 }
 
