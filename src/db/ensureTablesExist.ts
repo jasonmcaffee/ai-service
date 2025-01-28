@@ -100,6 +100,13 @@ export async function ensureTablesExist() {
         FOREIGN KEY (datasource_id) REFERENCES datasource(id)
     )`;
 
+  await sql`CREATE TABLE IF NOT EXISTS member_datasource (
+        member_id TEXT,
+        datasource_id INTEGER,
+        FOREIGN KEY (member_id) REFERENCES member(member_id),
+        FOREIGN KEY (datasource_id) REFERENCES datasource(id)
+  )`;
+
   await createDefaultMembers();
   await createDefaultModels();
   await createDefaultDatasourceTypes();

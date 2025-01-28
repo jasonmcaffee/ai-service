@@ -13,19 +13,13 @@ export class ConversationsRepository {
   }
 
   /**
-   * Gets a single conversation by id and verifies ownership by memberId.
-   * @param memberId - unique identifier for the member.
+   * Gets a single conversation by id
    * @param conversationId - unique identifier for the conversation.
    */
-  async getConversation(memberId: string, conversationId: string) {
+  async getConversation(conversationId: string) {
     const result = await this.sql<Conversation[]>`
         select * from conversation c
         where conversation_id = ${conversationId}
-          and exists (
-            select 1 from member_conversation mc
-            where mc.member_id = ${memberId}
-              and mc.conversation_id = c.conversation_id
-          )
     `;
     if (!result.length) {
       return undefined;
@@ -56,30 +50,38 @@ export class ConversationsRepository {
 
   /**
    * Updates an existing conversation and verifies ownership by memberId.
-   * @param memberId - unique identifier for the member.
    * @param conversationId - unique identifier for the conversation.
    * @param conversation - the updated conversation object.
    */
-  async updateConversation(memberId: string, conversationId: string, conversation: Conversation) {
-    const ownershipCheck = await this.sql`
-      select 1 from member_conversation mc
-      where mc.member_id = ${memberId}
-        and mc.conversation_id = ${conversationId}
-    `;
-
-    if (!ownershipCheck.length) {
-      throw new Error('Member does not own this conversation');
-    }
-
+  async updateConversation(conversationId: string, conversation: Conversation) {
     const [updatedConversation] = await this.sql<Conversation[]>`
       update conversation
-      set conversation_name = ${conversation.conversationName},
-          created_date = ${conversation.createdDate}
+      set conversation_name = ${conversation.conversationName}
       where conversation_id = ${conversationId}
       returning *
     `;
 
     return updatedConversation;
+  }
+
+  async addDatasourceToConversation(conversationId: string, datasourceId: number){
+
+    return this.sql`
+        INSERT INTO conversation_datasource(conversation_id, datasource_id) 
+        VALUES (${conversationId}, ${datasourceId});
+    `;
+  }
+
+  async ensureMemberOwnsConversation(memberId: string, conversationId: string){
+    const ownershipCheck = await this.sql`
+        select 1 from member_conversation mc
+        where mc.member_id = ${memberId}
+          and mc.conversation_id = ${conversationId}
+      `;
+
+    if (!ownershipCheck.length) {
+      throw new Error('Member does not own this conversation');
+    }
   }
 
   /**
@@ -88,16 +90,13 @@ export class ConversationsRepository {
    * @param conversationId - unique identifier for the conversation.
    */
   async deleteConversation(memberId: string, conversationId: string) {
-    return this.sql.begin(async (trx) => {
-      const ownershipCheck = await trx`
-        select 1 from member_conversation mc
-        where mc.member_id = ${memberId}
-          and mc.conversation_id = ${conversationId}
-      `;
+    await this.ensureMemberOwnsConversation(memberId, conversationId);
 
-      if (!ownershipCheck.length) {
-        throw new Error('Member does not own this conversation');
-      }
+    return this.sql.begin(async (trx) => {
+      await trx`
+        delete from conversation_datasource
+        where conversation_id = ${conversationId}
+      `;
 
       await trx`
         delete from member_conversation

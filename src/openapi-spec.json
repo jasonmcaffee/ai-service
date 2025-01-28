@@ -370,6 +370,28 @@
         "tags": [
           "Datasources"
         ]
+      },
+      "delete": {
+        "operationId": "deleteDatasource",
+        "parameters": [
+          {
+            "name": "datasourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "indication if deleted successfully"
+          }
+        },
+        "summary": "deletes a datasource",
+        "tags": [
+          "Datasources"
+        ]
       }
     },
     "/datasources/datasource/{datasourceId}/documents": {
@@ -469,6 +491,31 @@
           }
         },
         "summary": "Get all documents for a conversation",
+        "tags": [
+          "Datasources"
+        ]
+      }
+    },
+    "/datasources/member": {
+      "get": {
+        "operationId": "getAllDatasourcesForMember",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of datasources owned by the member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Datasource"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "get all datasources for a member",
         "tags": [
           "Datasources"
         ]
@@ -579,15 +626,11 @@
           },
           "name": {
             "type": "string"
-          },
-          "conversationId": {
-            "type": "string"
           }
         },
         "required": [
           "datasourceTypeId",
-          "name",
-          "conversationId"
+          "name"
         ]
       },
       "Datasource": {

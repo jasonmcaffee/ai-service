@@ -4,7 +4,13 @@ update the chat api to add messages to existing conversation
 
 datasource wireup.
 
-@mention auto complete.
+ConversationController:
+- HaveAINameTheConversationResponse,
+- GetAtAutoCompleteSuggestionsResponse
+
+Pass a system prompt, or perhaps have it be a conversation mode.
+- return all data in markdown.  no preamble.  example response.
+
 models controller
 
 google sign in

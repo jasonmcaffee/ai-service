@@ -31,12 +31,6 @@ export interface CreateDatasource {
      * @memberof CreateDatasource
      */
     name: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateDatasource
-     */
-    conversationId: string;
 }
 
 /**
@@ -45,7 +39,6 @@ export interface CreateDatasource {
 export function instanceOfCreateDatasource(value: object): value is CreateDatasource {
     if (!('datasourceTypeId' in value) || value['datasourceTypeId'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('conversationId' in value) || value['conversationId'] === undefined) return false;
     return true;
 }
 
@@ -61,7 +54,6 @@ export function CreateDatasourceFromJSONTyped(json: any, ignoreDiscriminator: bo
         
         'datasourceTypeId': json['datasourceTypeId'],
         'name': json['name'],
-        'conversationId': json['conversationId'],
     };
 }
 
@@ -78,7 +70,6 @@ export function CreateDatasourceToJSONTyped(value?: CreateDatasource | null, ign
         
         'datasourceTypeId': value['datasourceTypeId'],
         'name': value['name'],
-        'conversationId': value['conversationId'],
     };
 }
 

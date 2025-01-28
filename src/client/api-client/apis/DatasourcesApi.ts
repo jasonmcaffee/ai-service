@@ -40,6 +40,10 @@ export interface CreateDocumentRequest {
     createDocument: CreateDocument;
 }
 
+export interface DeleteDatasourceRequest {
+    datasourceId: number;
+}
+
 export interface GetDatasourceByIdRequest {
     datasourceId: number;
 }
@@ -141,6 +145,64 @@ export class DatasourcesApi extends runtime.BaseAPI {
      */
     async createDocument(datasourceId: number, createDocument: CreateDocument, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Document> {
         const response = await this.createDocumentRaw({ datasourceId: datasourceId, createDocument: createDocument }, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * deletes a datasource
+     */
+    async deleteDatasourceRaw(requestParameters: DeleteDatasourceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['datasourceId'] == null) {
+            throw new runtime.RequiredError(
+                'datasourceId',
+                'Required parameter "datasourceId" was null or undefined when calling deleteDatasource().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/datasources/datasource/{datasourceId}`.replace(`{${"datasourceId"}}`, encodeURIComponent(String(requestParameters['datasourceId']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * deletes a datasource
+     */
+    async deleteDatasource(datasourceId: number, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteDatasourceRaw({ datasourceId: datasourceId }, initOverrides);
+    }
+
+    /**
+     * get all datasources for a member
+     */
+    async getAllDatasourcesForMemberRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Datasource>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/datasources/member`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(DatasourceFromJSON));
+    }
+
+    /**
+     * get all datasources for a member
+     */
+    async getAllDatasourcesForMember(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Datasource>> {
+        const response = await this.getAllDatasourcesForMemberRaw(initOverrides);
         return await response.value();
     }
 

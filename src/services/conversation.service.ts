@@ -11,7 +11,8 @@ export class ConversationService {
   ) {}
 
   async getConversation(memberId: string, conversationId: string, ): Promise<Conversation | undefined> {
-    const conversation = await this.conversationsRepository.getConversation(memberId, conversationId);
+    await this.ensureMemberOwnsConversation(memberId, conversationId);
+    const conversation = await this.conversationsRepository.getConversation(conversationId);
     if(!conversation){ return undefined; }
     const messages = await this.messagesService.getMessagesForConversation(conversation.conversationId);
     conversation.messages = messages || [];
@@ -23,19 +24,31 @@ export class ConversationService {
   }
 
   async updateConversation(memberId: string, conversationId: string, conversation: Conversation){
-    return await this.conversationsRepository.updateConversation(memberId, conversationId, conversation);
+    await this.ensureMemberOwnsConversation(memberId, conversationId);
+    return await this.conversationsRepository.updateConversation(conversationId, conversation);
   }
 
   async deleteConversation(memberId: string, conversationId: string): Promise<void> {
+    await this.ensureMemberOwnsConversation(memberId, conversationId);
     await this.conversationsRepository.deleteConversation(memberId, conversationId);
   }
 
   async addMessageToConversation(memberId: string, conversationId: string, message: CreateMessage){
+    await this.ensureMemberOwnsConversation(memberId, conversationId);
     return await this.messagesService.createMessageForConversation(conversationId, memberId, message);
   }
 
   async getConversationsForMember(memberId: string){
     return await this.conversationsRepository.getConversationsForMember(memberId);
+  }
+
+  async addDatasourceToConversation(memberId: string, datasourceId: number, conversationId: string){
+    await this.ensureMemberOwnsConversation(memberId, conversationId);
+    return this.conversationsRepository.addDatasourceToConversation(conversationId, datasourceId);
+  }
+
+  async ensureMemberOwnsConversation(memberId: string, conversationId: string){
+    return this.conversationsRepository.ensureMemberOwnsConversation(memberId, conversationId);
   }
 
 }

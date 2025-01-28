@@ -123,9 +123,6 @@ export class CreateDatasource {
 
   @ApiProperty()
   name: string;
-
-  @ApiProperty()
-  conversationId: string;
 }
 
 export class Document {

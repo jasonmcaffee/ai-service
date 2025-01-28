@@ -15,9 +15,9 @@ export class DatasourcesRepository {
    * Creates a new datasource and associates it with a given datasource type.
    * @param name - The name of the datasource.
    * @param datasourceTypeId - The ID of the datasource type.
-   * @param conversationId
+   * @param memberId
    */
-  async createDatasource(name: string, datasourceTypeId: number, conversationId: string): Promise<Datasource> {
+  async createDatasource(memberId: string, name: string, datasourceTypeId: number): Promise<Datasource> {
     return this.sql.begin(async (trx) => {
       const result = await trx<Datasource[]>`
         INSERT INTO datasource (name, datasource_type_id)
@@ -26,12 +26,35 @@ export class DatasourcesRepository {
       `;
 
       await trx`
-        INSERT INTO conversation_datasource (conversation_id, datasource_id)
-        VALUES (${conversationId}, ${result[0].id});
+        INSERT INTO member_datasource (member_id, datasource_id)
+        VALUES (${memberId}, ${result[0].id});
       `;
       return result[0];
     });
+  }
 
+  async ensureMemberOwnsDatasource(memberId: string, datasourceId: number){
+    const ownershipCheck = await this.sql`
+        select 1 from member_datasource md
+        where md.member_id = ${memberId}
+          and md.datasource_id = ${datasourceId}
+      `;
+
+    if(!ownershipCheck.length){
+      throw new Error('Not found');
+    }
+  }
+
+  async ensureMemberOwnsDocument(memberId: string, documentId: number){
+    const ownershipCheck = await this.sql`
+        select 1 from member_datasource md 
+        join datasource_documents dd on dd.document_id = ${documentId}
+        where md.member_id = ${memberId}
+    `;
+
+    if(!ownershipCheck.length){
+      throw new Error('Not found');
+    }
   }
 
   /**
@@ -41,6 +64,7 @@ export class DatasourcesRepository {
    * @param filePath - The file path of the document.
    */
   async createDocument(text: string, datasourceId: number, metadata: object, filePath: string) {
+
     return this.sql.begin(async (trx) => {
       // todo: metadata as jsonb.
       const result = await trx<Document[]>`
@@ -62,7 +86,7 @@ export class DatasourcesRepository {
    * Retrieves a document by its ID.
    * @param documentId - The ID of the document.
    */
-  async getDocumentById(documentId: number): Promise<Document | undefined> {
+  async getDocumentById( documentId: number): Promise<Document | undefined> {
     const result = await this.sql<Document[]>`
       SELECT * FROM document
       WHERE id = ${documentId};
@@ -88,10 +112,10 @@ export class DatasourcesRepository {
    */
   async getDocumentsForDatasource(datasourceId: number): Promise<Document[]> {
     const result = await this.sql<Document[]>`
-    SELECT d.*
-    FROM document d
-    JOIN datasource_documents dd ON d.id = dd.document_id
-    WHERE dd.datasource_id = ${datasourceId};
+      SELECT d.*
+      FROM document d
+      JOIN datasource_documents dd ON d.id = dd.document_id
+      WHERE dd.datasource_id = ${datasourceId};
   `;
     return result;
   }
@@ -102,10 +126,10 @@ export class DatasourcesRepository {
    */
   async getDatasourcesForConversation(conversationId: string): Promise<Datasource[]> {
     const result = await this.sql<Datasource[]>`
-    SELECT ds.*
-    FROM datasource ds
-    JOIN conversation_datasource cd ON ds.id = cd.datasource_id
-    WHERE cd.conversation_id = ${conversationId};
+      SELECT ds.*
+      FROM datasource ds
+      JOIN conversation_datasource cd ON ds.id = cd.datasource_id
+      WHERE cd.conversation_id = ${conversationId};
   `;
     return result;
   }
@@ -123,6 +147,25 @@ export class DatasourcesRepository {
     WHERE cd.conversation_id = ${conversationId};
   `;
     return result;
+  }
+
+  async getAllDatasourcesForMember(memberId: string){
+    const result = await this.sql<Datasource[]>`
+        SELECT d.* 
+        FROM datasource d 
+        JOIN member_datasource md on md.datasource_id = d.id
+        where md.member_id = ${memberId}
+    `;
+    return result;
+  }
+
+  async deleteDatasource(datasourceId: number){
+    return this.sql.begin(async (trx) => {
+      await trx`delete from member_datasource where datasource_id = ${datasourceId}`;
+      await trx`delete from datasource_documents where datasource_id = ${datasourceId}`;
+      await trx`delete from conversation_datasource where datasource_id = ${datasourceId}`;
+      await trx`delete from datasource where id = ${datasourceId}`;
+    });
   }
 
 }

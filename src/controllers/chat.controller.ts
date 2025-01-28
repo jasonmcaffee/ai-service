@@ -2,11 +2,12 @@ import { Controller, Post, Body, Sse, Get, Query } from '@nestjs/common';
 import { ChatService } from '../services/chat.service';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { ChatInference } from '../models/api/conversationApiModels';
+import { AuthenticationService } from '../services/authentication.service';
 
 @ApiTags('Chat')
 @Controller('chat')
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(private readonly chatService: ChatService, private readonly authenticationService: AuthenticationService) {}
 
   @ApiOperation({ summary: 'Stream a message based on a prompt' })
   @ApiQuery({ name: 'prompt', type: String, description: 'The prompt to initiate the message stream' })
@@ -27,7 +28,7 @@ export class ChatController {
   })
   async streamInference(@Query('prompt') prompt: string, @Query('conversationId') conversationId: string) {
     console.log('got stream inference request: ', prompt, conversationId);
-    const memberId = "1";
+    const memberId = this.authenticationService.getMemberId();
     return this.chatService.streamInference(prompt, memberId, conversationId);
   }
 
