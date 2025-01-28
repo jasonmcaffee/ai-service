@@ -11,7 +11,7 @@ export class ChatController {
 
   @ApiOperation({ summary: 'Stream a message based on a prompt' })
   @ApiQuery({ name: 'prompt', type: String, description: 'The prompt to initiate the message stream' })
-  @ApiQuery({ name: 'conversationId', type: String, description: 'Optional. The conversation to add the passed in prompt and llm response to.' })
+  @ApiQuery({ name: 'conversationId', type: String, required: false, description: 'Optional. The conversation to add the passed in prompt and llm response to.' })
   @Get('streamInference') // Must be GET for EventSource to work
   @Sse() // Server-Sent Events so we can stream LLM response back the client.
   @ApiResponse({

@@ -16,7 +16,7 @@
           },
           {
             "name": "conversationId",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Optional. The conversation to add the passed in prompt and llm response to.",
             "schema": {

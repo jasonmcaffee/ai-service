@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Conversation, CreateConversation, CreateMessage, Message } from '../models/api/conversationApiModels';
 import { ConversationsRepository } from '../repositories/conversations.repository';
 import { MessagesService } from './messages.service';
-
+import config from '../config/config';
 @Injectable()
 export class ConversationService {
   constructor(
@@ -48,6 +48,7 @@ export class ConversationService {
   }
 
   async ensureMemberOwnsConversation(memberId: string, conversationId: string){
+    if(memberId == config.getAiMemberId()){ return; }
     return this.conversationsRepository.ensureMemberOwnsConversation(memberId, conversationId);
   }
 
