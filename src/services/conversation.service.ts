@@ -3,7 +3,6 @@ import {
   Conversation,
   CreateConversation,
   CreateMessage,
-  HaveAINameTheConversationRequest,
   Message,
 } from '../models/api/conversationApiModels';
 import { ConversationsRepository } from '../repositories/conversations.repository';

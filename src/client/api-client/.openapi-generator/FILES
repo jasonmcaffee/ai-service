@@ -11,7 +11,6 @@ models/CreateDocument.ts
 models/CreateMessage.ts
 models/Datasource.ts
 models/Document.ts
-models/HaveAINameTheConversationRequest.ts
 models/Message.ts
 models/index.ts
 runtime.ts

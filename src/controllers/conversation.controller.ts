@@ -5,7 +5,6 @@ import {
   Conversation,
   CreateConversation,
   CreateMessage,
-  HaveAINameTheConversationRequest,
   Message,
 } from '../models/api/conversationApiModels';
 import { AuthenticationService } from '../services/authentication.service';
