@@ -3,7 +3,7 @@ import {
   Conversation,
   CreateConversation,
   CreateMessage,
-  HaveAINameTheConversationRequest, HaveAINameTheConversationResponse,
+  HaveAINameTheConversationRequest,
   Message,
 } from '../models/api/conversationApiModels';
 import { ConversationsRepository } from '../repositories/conversations.repository';
@@ -63,7 +63,7 @@ export class ConversationService {
     return this.conversationsRepository.ensureMemberOwnsConversation(memberId, conversationId);
   }
 
-  async haveAiNameTheConversation(memberId: string, conversationId: string, haveAiNameTheConversationRequest: HaveAINameTheConversationRequest){
+  async haveAiNameTheConversation(memberId: string, conversationId: string){
     await this.ensureMemberOwnsConversation(memberId, conversationId);
     const prompt = `
       You are an expert at succinctly coming up with the title for a conversation, based on the messages in the conversation.
@@ -79,8 +79,12 @@ export class ConversationService {
     const result = await this.inferenceService.nonStreamingInference(openAiMessages);
     console.log('have ai name the conversation result: ', result)
     const resultWithoutThinkTag = formatDeepSeekResponse(result);
-    const response: HaveAINameTheConversationResponse = { conversationName: resultWithoutThinkTag};
-    return response;
+    const updatedConversation = await this.updateConversation(memberId, conversationId, {
+      conversationId: conversationId,
+      createdDate: conversation.createdDate,
+      conversationName: resultWithoutThinkTag
+    });
+    return updatedConversation;
   }
 
 }

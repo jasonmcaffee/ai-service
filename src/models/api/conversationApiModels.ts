@@ -78,10 +78,10 @@ export class HaveAINameTheConversationRequest{
   conversationName: string;
 }
 
-export class HaveAINameTheConversationResponse{
-  @ApiProperty()
-  conversationName: string;
-}
+// export class HaveAINameTheConversationResponse{
+//   @ApiProperty()
+//   conversationName: string;
+// }
 
 export class Suggestion {
   @ApiProperty()

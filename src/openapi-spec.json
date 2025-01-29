@@ -244,17 +244,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "description": "request to name the conversation",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HaveAINameTheConversationRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": ""
@@ -651,17 +640,6 @@
         },
         "required": [
           "messageText"
-        ]
-      },
-      "HaveAINameTheConversationRequest": {
-        "type": "object",
-        "properties": {
-          "conversationName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "conversationName"
         ]
       },
       "CreateDatasource": {
