@@ -7,4 +7,5 @@ export * from './CreateDocument';
 export * from './CreateMessage';
 export * from './Datasource';
 export * from './Document';
+export * from './HaveAINameTheConversationRequest';
 export * from './Message';

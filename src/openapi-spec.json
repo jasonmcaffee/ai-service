@@ -231,6 +231,41 @@
         ]
       }
     },
+    "/conversations/conversations/{conversationId}/haveainametheconversation": {
+      "post": {
+        "operationId": "haveAiNameTheConversation",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "request to name the conversation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HaveAINameTheConversationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Have ai name the conversation",
+        "tags": [
+          "Conversation"
+        ]
+      }
+    },
     "/datasources/datasource": {
       "post": {
         "operationId": "createDatasource",
@@ -616,6 +651,17 @@
         },
         "required": [
           "messageText"
+        ]
+      },
+      "HaveAINameTheConversationRequest": {
+        "type": "object",
+        "properties": {
+          "conversationName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversationName"
         ]
       },
       "CreateDatasource": {

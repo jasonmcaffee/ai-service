@@ -18,6 +18,7 @@ import type {
   Conversation,
   CreateConversation,
   CreateMessage,
+  HaveAINameTheConversationRequest,
   Message,
 } from '../models/index';
 import {
@@ -27,6 +28,8 @@ import {
     CreateConversationToJSON,
     CreateMessageFromJSON,
     CreateMessageToJSON,
+    HaveAINameTheConversationRequestFromJSON,
+    HaveAINameTheConversationRequestToJSON,
     MessageFromJSON,
     MessageToJSON,
 } from '../models/index';
@@ -46,6 +49,11 @@ export interface DeleteConversationRequest {
 
 export interface GetConversationRequest {
     conversationId: string;
+}
+
+export interface HaveAiNameTheConversationRequest {
+    conversationId: string;
+    haveAINameTheConversationRequest: HaveAINameTheConversationRequest;
 }
 
 export interface UpdateConversationRequest {
@@ -226,6 +234,48 @@ export class ConversationApi extends runtime.BaseAPI {
     async getConversationsForMember(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Conversation>> {
         const response = await this.getConversationsForMemberRaw(initOverrides);
         return await response.value();
+    }
+
+    /**
+     * Have ai name the conversation
+     */
+    async haveAiNameTheConversationRaw(requestParameters: HaveAiNameTheConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['conversationId'] == null) {
+            throw new runtime.RequiredError(
+                'conversationId',
+                'Required parameter "conversationId" was null or undefined when calling haveAiNameTheConversation().'
+            );
+        }
+
+        if (requestParameters['haveAINameTheConversationRequest'] == null) {
+            throw new runtime.RequiredError(
+                'haveAINameTheConversationRequest',
+                'Required parameter "haveAINameTheConversationRequest" was null or undefined when calling haveAiNameTheConversation().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        const response = await this.request({
+            path: `/conversations/conversations/{conversationId}/haveainametheconversation`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: HaveAINameTheConversationRequestToJSON(requestParameters['haveAINameTheConversationRequest']),
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Have ai name the conversation
+     */
+    async haveAiNameTheConversation(conversationId: string, haveAINameTheConversationRequest: HaveAINameTheConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.haveAiNameTheConversationRaw({ conversationId: conversationId, haveAINameTheConversationRequest: haveAINameTheConversationRequest }, initOverrides);
     }
 
     /**

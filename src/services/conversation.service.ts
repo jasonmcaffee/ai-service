@@ -1,13 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { Conversation, CreateConversation, CreateMessage, Message } from '../models/api/conversationApiModels';
+import {
+  Conversation,
+  CreateConversation,
+  CreateMessage,
+  HaveAINameTheConversationRequest, HaveAINameTheConversationResponse,
+  Message,
+} from '../models/api/conversationApiModels';
 import { ConversationsRepository } from '../repositories/conversations.repository';
 import { MessagesService } from './messages.service';
 import config from '../config/config';
+import { ChatService } from './chat.service';
+import { InferenceService } from './inference.service';
+import { createOpenAIMessagesFromMessages, formatDeepSeekResponse } from '../utils/utils';
+import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 @Injectable()
 export class ConversationService {
   constructor(
     private readonly conversationsRepository: ConversationsRepository,
     private readonly messagesService: MessagesService,
+    private readonly inferenceService: InferenceService,
   ) {}
 
   async getConversation(memberId: string, conversationId: string, ): Promise<Conversation | undefined> {
@@ -50,6 +61,26 @@ export class ConversationService {
   async ensureMemberOwnsConversation(memberId: string, conversationId: string){
     if(memberId == config.getAiMemberId()){ return; }
     return this.conversationsRepository.ensureMemberOwnsConversation(memberId, conversationId);
+  }
+
+  async haveAiNameTheConversation(memberId: string, conversationId: string, haveAiNameTheConversationRequest: HaveAINameTheConversationRequest){
+    await this.ensureMemberOwnsConversation(memberId, conversationId);
+    const prompt = `
+      You are an expert at succinctly coming up with the title for a conversation, based on the messages in the conversation.
+      Look at the previous messages that have been sent in this conversation, and come up with a title that is ten words or less.
+      Do not respond with preamble, such as "Ok, here is the title", etc.  Only respond with the title.
+    `;
+
+    const conversation = await this.getConversation(memberId, conversationId);
+    if(!conversation) { return new Error('Conversation not found'); }
+    let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages || []);
+    const lastMessage = {role: 'user', content: prompt} as ChatCompletionMessageParam;
+    openAiMessages = [...openAiMessages, lastMessage];
+    const result = await this.inferenceService.nonStreamingInference(openAiMessages);
+    console.log('have ai name the conversation result: ', result)
+    const resultWithoutThinkTag = formatDeepSeekResponse(result);
+    const response: HaveAINameTheConversationResponse = { conversationName: resultWithoutThinkTag};
+    return response;
   }
 
 }

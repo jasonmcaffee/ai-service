@@ -17,7 +17,7 @@ import * as runtime from '../runtime';
 
 export interface StreamInferenceRequest {
     prompt: string;
-    conversationId: string;
+    conversationId?: string;
 }
 
 /**
@@ -33,13 +33,6 @@ export class ChatApi extends runtime.BaseAPI {
             throw new runtime.RequiredError(
                 'prompt',
                 'Required parameter "prompt" was null or undefined when calling streamInference().'
-            );
-        }
-
-        if (requestParameters['conversationId'] == null) {
-            throw new runtime.RequiredError(
-                'conversationId',
-                'Required parameter "conversationId" was null or undefined when calling streamInference().'
             );
         }
 
@@ -72,7 +65,7 @@ export class ChatApi extends runtime.BaseAPI {
     /**
      * Stream a message based on a prompt
      */
-    async streamInference(prompt: string, conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+    async streamInference(prompt: string, conversationId?: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
         const response = await this.streamInferenceRaw({ prompt: prompt, conversationId: conversationId }, initOverrides);
         return await response.value();
     }

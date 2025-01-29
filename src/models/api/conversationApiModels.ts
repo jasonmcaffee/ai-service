@@ -73,6 +73,11 @@ export class GetConversationsForMemberResponse {
   conversations: Conversation[];
 }
 
+export class HaveAINameTheConversationRequest{
+  @ApiProperty()
+  conversationName: string;
+}
+
 export class HaveAINameTheConversationResponse{
   @ApiProperty()
   conversationName: string;

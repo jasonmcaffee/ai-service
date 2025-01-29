@@ -1,7 +1,13 @@
 import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
 import { ConversationService } from '../services/conversation.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { Conversation, CreateConversation, CreateMessage, Message } from '../models/api/conversationApiModels';
+import {
+  Conversation,
+  CreateConversation,
+  CreateMessage,
+  HaveAINameTheConversationRequest,
+  Message,
+} from '../models/api/conversationApiModels';
 import { AuthenticationService } from '../services/authentication.service';
 
 @ApiTags('Conversation')
@@ -66,6 +72,16 @@ export class ConversationController {
   async getConversationsForMember(){
     const memberId = this.authenticationService.getMemberId();
     const result = await this.conversationService.getConversationsForMember(memberId);
+    return result;
+  }
+
+  @ApiOperation({summary: 'Have ai name the conversation'})
+  @ApiBody({description: 'request to name the conversation', type: HaveAINameTheConversationRequest})
+  @Post('conversations/:conversationId/haveainametheconversation')
+  @ApiParam({name: 'conversationId', type: 'string'})
+  async haveAiNameTheConversation(@Param('conversationId') conversationId: string, @Body() haveAINameTheConversationRequest:HaveAINameTheConversationRequest){
+    const memberId = this.authenticationService.getMemberId();
+    const result = await this.conversationService.haveAiNameTheConversation(memberId, conversationId, haveAINameTheConversationRequest);
     return result;
   }
 
