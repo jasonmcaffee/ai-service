@@ -235,7 +235,7 @@ export class ConversationApi extends runtime.BaseAPI {
     /**
      * Have ai name the conversation
      */
-    async haveAiNameTheConversationRaw(requestParameters: HaveAiNameTheConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async haveAiNameTheConversationRaw(requestParameters: HaveAiNameTheConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Conversation>> {
         if (requestParameters['conversationId'] == null) {
             throw new runtime.RequiredError(
                 'conversationId',
@@ -254,14 +254,15 @@ export class ConversationApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => ConversationFromJSON(jsonValue));
     }
 
     /**
      * Have ai name the conversation
      */
-    async haveAiNameTheConversation(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.haveAiNameTheConversationRaw({ conversationId: conversationId }, initOverrides);
+    async haveAiNameTheConversation(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
+        const response = await this.haveAiNameTheConversationRaw({ conversationId: conversationId }, initOverrides);
+        return await response.value();
     }
 
     /**
