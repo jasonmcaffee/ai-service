@@ -29,7 +29,7 @@ export class ChatService {
     const openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
 
     const handleOnText = (text: string) => {
-      console.log('handle on text got: ', text);
+      // console.log('handle on text got: ', text);
     };
 
     const handleResponseCompleted = async (completeResponse: string) => {

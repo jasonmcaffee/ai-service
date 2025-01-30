@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Configuration, ConversationApi, DatasourcesApi, Datasource, Document } from '../client/api-client';
+import {Configuration, ConversationApi, DatasourcesApi, Datasource, Document, ModelsApi} from '../client/api-client';
 
 describe('Client Tests', () => {
   const apiConfig = new Configuration({basePath: 'http://localhost:3000'});
@@ -42,6 +42,50 @@ describe('Client Tests', () => {
       // await api.deleteDocument TODO
 
       await api.deleteDatasource(createdDatasource.id);
+    });
+  });
+
+  describe('Model', ()=>{
+    const api = new ModelsApi(apiConfig);
+    it('should get model types', async ()=> {
+      const modelTypesResult = await api.getModelTypes();
+      expect(modelTypesResult.length >= 1).toBe(true);
+    });
+
+    it('should CRUD models', async ()=> {
+      const apiKey = '1234';
+      const modelName = 'test 2 abc';
+      const modelTypeId = 1;
+      const url = 'http://localhost:8080';
+      const displayName = 'Jason Test';
+      const isDefault = true;
+
+      const createModelResponse = await api.createModel({
+        apiKey, modelName, modelTypeId, url, displayName, isDefault,
+      });
+
+      expect(createModelResponse !== undefined).toBe(true);
+      expect(createModelResponse.apiKey).toBe(apiKey);
+      expect(createModelResponse.modelName).toBe(modelName);
+      expect(createModelResponse.modelTypeId).toBe(modelTypeId);
+      expect(createModelResponse.url).toBe(url);
+      expect(createModelResponse.displayName).toBe(displayName);
+      expect(createModelResponse.isDefault).toBe(isDefault);
+
+      const allModelsForMember = await api.getAllModelsForMember();
+      expect(allModelsForMember.length >= 1).toBe(true);
+      const foundModel = allModelsForMember.find(m => m.id === createModelResponse.id);
+      expect(foundModel !== undefined).toBe(true);
+      expect(foundModel?.apiKey).toBe(apiKey);
+      expect(foundModel?.modelName).toBe(modelName);
+      expect(foundModel?.modelTypeId).toBe(modelTypeId);
+      console.log(`found model url: ${foundModel?.url}`);
+      expect(foundModel?.url).toBe(url);
+      expect(foundModel?.displayName).toBe(displayName);
+      expect(foundModel?.isDefault).toBe(isDefault);
+
+      await api.deleteModel(createModelResponse.id);
+
     });
   });
 });

@@ -53,9 +53,10 @@ export async function ensureTablesExist() {
         model_name TEXT,
         model_type_id INTEGER,
         is_default BOOLEAN,
-        FOREIGN KEY (model_type_id) REFERENCES model_type(id)
+        member_id TEXT,
+        FOREIGN KEY (model_type_id) REFERENCES model_type(id),
+        FOREIGN KEY (member_id) REFERENCES member(member_id)
     )`;
-
 
   // ------------------------------------------------------------------ Datasource
   await sql`CREATE TABLE IF NOT EXISTS datasource_type (
@@ -73,7 +74,7 @@ export async function ensureTablesExist() {
     )`;
 
   // Create the document table
-  await sql`CREATE TABLE IF NOT EXISTS document (
+  await sql`CREATE TABLE IF NOT EXISTS document ( 
         id SERIAL PRIMARY KEY,
         create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -170,6 +171,12 @@ async function createDefaultModels() {
     await sql`INSERT INTO model (id, display_name, url, api_key, model_name, model_type_id, is_default) 
                   VALUES (${openaiModelId}, 'ChatGPT4', 'https://api.openai.com/v1', '', 'gpt-4', ${openaiModelId}, false)`;
   }
+
+  // const memberModelExists = async (memberId: string, modelId: number) => {
+  //   const [{ count }] = await sql`SELECT COUNT(*)::int FROM member_model WHERE member_id = ${memberId} and model_id = ${modelId}`;
+  //   return count > 0;
+  // };
+
 }
 
 

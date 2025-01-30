@@ -52,6 +52,60 @@ export class StartConversationResponse {
   createdDate: string;
 }
 
+export class ModelType {
+  @ApiProperty()
+  id: number;
+  @ApiProperty()
+  modelType: string;
+}
+
+export class Model {
+  @ApiProperty()
+  id: number;
+  @ApiProperty()
+  displayName: string;
+  @ApiProperty()
+  url: string;
+  @ApiProperty()
+  apiKey: string;
+  @ApiProperty()
+  modelName: string;
+  @ApiProperty()
+  isDefault: boolean;
+  @ApiProperty()
+  modelTypeId: number;
+}
+
+export class CreateModel {
+  @ApiProperty()
+  displayName: string;
+  @ApiProperty()
+  url: string;
+  @ApiProperty()
+  apiKey: string;
+  @ApiProperty()
+  modelName: string;
+  @ApiProperty()
+  isDefault: boolean;
+  @ApiProperty()
+  modelTypeId: number;
+}
+
+export class UpdateModel {
+  @ApiProperty()
+  displayName: string;
+  @ApiProperty()
+  url: string;
+  @ApiProperty()
+  apiKey: string;
+  @ApiProperty()
+  modelName: string;
+  @ApiProperty()
+  isDefault: boolean;
+  @ApiProperty()
+  modelTypeId: number;
+}
+
 // models/AddMessageResponse.ts
 export class AddMessageResponse {
   @ApiProperty()

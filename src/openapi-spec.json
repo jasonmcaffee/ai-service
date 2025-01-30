@@ -552,6 +552,183 @@
         ]
       }
     },
+    "/models/model-types": {
+      "get": {
+        "operationId": "getModelTypes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of model types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModelType"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all model types",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
+    "/models/{modelId}": {
+      "get": {
+        "operationId": "getModelById",
+        "parameters": [
+          {
+            "name": "modelId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The model details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Model"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Get model by ID",
+        "tags": [
+          "Models"
+        ]
+      },
+      "put": {
+        "operationId": "updateModel",
+        "parameters": [
+          {
+            "name": "modelId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The updated model object",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The model has been successfully updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Model"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update an existing model",
+        "tags": [
+          "Models"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteModel",
+        "parameters": [
+          {
+            "name": "modelId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The model has been successfully deleted."
+          }
+        },
+        "summary": "Delete a model",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
+    "/models": {
+      "get": {
+        "operationId": "getAllModelsForMember",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Model"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all models for the authenticated member",
+        "tags": [
+          "Models"
+        ]
+      },
+      "post": {
+        "operationId": "createModel",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The model to create",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The model has been successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Model"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new model",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
     "/openapi": {
       "get": {
         "operationId": "getOpenApiSpec",
@@ -731,6 +908,118 @@
           "text",
           "metadata",
           "filePath"
+        ]
+      },
+      "ModelType": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "modelType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "modelType"
+        ]
+      },
+      "Model": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "apiKey": {
+            "type": "string"
+          },
+          "modelName": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "modelTypeId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "url",
+          "apiKey",
+          "modelName",
+          "isDefault",
+          "modelTypeId"
+        ]
+      },
+      "CreateModel": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "apiKey": {
+            "type": "string"
+          },
+          "modelName": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "modelTypeId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "displayName",
+          "url",
+          "apiKey",
+          "modelName",
+          "isDefault",
+          "modelTypeId"
+        ]
+      },
+      "UpdateModel": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "apiKey": {
+            "type": "string"
+          },
+          "modelName": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "modelTypeId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "displayName",
+          "url",
+          "apiKey",
+          "modelName",
+          "isDefault",
+          "modelTypeId"
         ]
       }
     }

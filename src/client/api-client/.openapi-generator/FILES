@@ -1,6 +1,7 @@
 apis/ChatApi.ts
 apis/ConversationApi.ts
 apis/DatasourcesApi.ts
+apis/ModelsApi.ts
 apis/OpenApiApi.ts
 apis/index.ts
 index.ts
@@ -9,8 +10,12 @@ models/CreateConversation.ts
 models/CreateDatasource.ts
 models/CreateDocument.ts
 models/CreateMessage.ts
+models/CreateModel.ts
 models/Datasource.ts
 models/Document.ts
 models/Message.ts
+models/Model.ts
+models/ModelType.ts
+models/UpdateModel.ts
 models/index.ts
 runtime.ts
