@@ -231,9 +231,9 @@
         ]
       }
     },
-    "/conversations/conversations/{conversationId}/haveainametheconversation": {
+    "/conversations/conversations/{conversationId}/haveAiNameTheConversation2": {
       "post": {
-        "operationId": "haveAiNameTheConversation",
+        "operationId": "haveAiNameTheConversation2",
         "parameters": [
           {
             "name": "conversationId",
@@ -256,7 +256,7 @@
             }
           }
         },
-        "summary": "Have ai name the conversation",
+        "summary": "Have ai name the conversation 2",
         "tags": [
           "Conversation"
         ]

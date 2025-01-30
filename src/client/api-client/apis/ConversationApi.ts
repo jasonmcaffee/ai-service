@@ -48,7 +48,7 @@ export interface GetConversationRequest {
     conversationId: string;
 }
 
-export interface HaveAiNameTheConversationRequest {
+export interface HaveAiNameTheConversation2Request {
     conversationId: string;
 }
 
@@ -233,13 +233,13 @@ export class ConversationApi extends runtime.BaseAPI {
     }
 
     /**
-     * Have ai name the conversation
+     * Have ai name the conversation 2
      */
-    async haveAiNameTheConversationRaw(requestParameters: HaveAiNameTheConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Conversation>> {
+    async haveAiNameTheConversation2Raw(requestParameters: HaveAiNameTheConversation2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Conversation>> {
         if (requestParameters['conversationId'] == null) {
             throw new runtime.RequiredError(
                 'conversationId',
-                'Required parameter "conversationId" was null or undefined when calling haveAiNameTheConversation().'
+                'Required parameter "conversationId" was null or undefined when calling haveAiNameTheConversation2().'
             );
         }
 
@@ -248,7 +248,7 @@ export class ConversationApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/conversations/conversations/{conversationId}/haveainametheconversation`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
+            path: `/conversations/conversations/{conversationId}/haveAiNameTheConversation2`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -258,10 +258,10 @@ export class ConversationApi extends runtime.BaseAPI {
     }
 
     /**
-     * Have ai name the conversation
+     * Have ai name the conversation 2
      */
-    async haveAiNameTheConversation(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
-        const response = await this.haveAiNameTheConversationRaw({ conversationId: conversationId }, initOverrides);
+    async haveAiNameTheConversation2(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
+        const response = await this.haveAiNameTheConversation2Raw({ conversationId: conversationId }, initOverrides);
         return await response.value();
     }
 

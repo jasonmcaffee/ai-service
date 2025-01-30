@@ -8,13 +8,14 @@ describe('Client Tests', () => {
     const api = new ConversationApi(apiConfig);
 
     it('should create conversations', async () => {
-      const conversationName = "Test Conversation";
+      const conversationName = "Test Conversation 2";
       const createdConversation = await api.createConversation({conversationName});
       expect(createdConversation.conversationName).toBe(conversationName);
 
       const retrievedConversation = await api.getConversation(createdConversation.conversationId);
       expect(retrievedConversation.conversationName).toBe(conversationName);
 
+      // await api.haveAiNameTheConversation(createdConversation.conversationId);
       await api.deleteConversation(createdConversation.conversationId);
     });
 
