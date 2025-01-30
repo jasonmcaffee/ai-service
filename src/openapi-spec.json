@@ -231,9 +231,9 @@
         ]
       }
     },
-    "/conversations/conversations/{conversationId}/haveAiNameTheConversation2": {
+    "/conversations/conversations/{conversationId}/nameConversation": {
       "post": {
-        "operationId": "haveAiNameTheConversation2",
+        "operationId": "nameConversation",
         "parameters": [
           {
             "name": "conversationId",
@@ -244,6 +244,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Updated conversation.",
@@ -256,7 +266,7 @@
             }
           }
         },
-        "summary": "Have ai name the conversation 2",
+        "summary": "Have ai name the conversation",
         "tags": [
           "Conversation"
         ]

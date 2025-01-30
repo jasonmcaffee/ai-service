@@ -48,8 +48,9 @@ export interface GetConversationRequest {
     conversationId: string;
 }
 
-export interface HaveAiNameTheConversation2Request {
+export interface NameConversationRequest {
     conversationId: string;
+    body: string;
 }
 
 export interface UpdateConversationRequest {
@@ -233,13 +234,20 @@ export class ConversationApi extends runtime.BaseAPI {
     }
 
     /**
-     * Have ai name the conversation 2
+     * Have ai name the conversation
      */
-    async haveAiNameTheConversation2Raw(requestParameters: HaveAiNameTheConversation2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Conversation>> {
+    async nameConversationRaw(requestParameters: NameConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Conversation>> {
         if (requestParameters['conversationId'] == null) {
             throw new runtime.RequiredError(
                 'conversationId',
-                'Required parameter "conversationId" was null or undefined when calling haveAiNameTheConversation2().'
+                'Required parameter "conversationId" was null or undefined when calling nameConversation().'
+            );
+        }
+
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError(
+                'body',
+                'Required parameter "body" was null or undefined when calling nameConversation().'
             );
         }
 
@@ -247,21 +255,24 @@ export class ConversationApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        headerParameters['Content-Type'] = 'application/json';
+
         const response = await this.request({
-            path: `/conversations/conversations/{conversationId}/haveAiNameTheConversation2`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
+            path: `/conversations/conversations/{conversationId}/nameConversation`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
+            body: requestParameters['body'] as any,
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ConversationFromJSON(jsonValue));
     }
 
     /**
-     * Have ai name the conversation 2
+     * Have ai name the conversation
      */
-    async haveAiNameTheConversation2(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
-        const response = await this.haveAiNameTheConversation2Raw({ conversationId: conversationId }, initOverrides);
+    async nameConversation(conversationId: string, body: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
+        const response = await this.nameConversationRaw({ conversationId: conversationId, body: body }, initOverrides);
         return await response.value();
     }
 
