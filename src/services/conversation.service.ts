@@ -3,12 +3,10 @@ import {
   Conversation,
   CreateConversation,
   CreateMessage,
-  Message,
 } from '../models/api/conversationApiModels';
 import { ConversationsRepository } from '../repositories/conversations.repository';
 import { MessagesService } from './messages.service';
 import config from '../config/config';
-import { ChatService } from './chat.service';
 import { InferenceService } from './inference.service';
 import { createOpenAIMessagesFromMessages, formatDeepSeekResponse } from '../utils/utils';
 import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';

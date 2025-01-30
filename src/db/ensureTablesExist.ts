@@ -1,6 +1,5 @@
 import * as postgres from 'postgres';
 console.log('postgres: ', postgres);
-import { v4 as uuidv4 } from 'uuid';
 import config from '../config/config';
 
 const sql = postgres(config.getDbConnectionString());
