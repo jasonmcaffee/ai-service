@@ -231,7 +231,7 @@
         ]
       }
     },
-    "/conversations/conversations/{conversationId}/nameConversation": {
+    "/conversations/conversation-name/{conversationId}/nameConversation": {
       "post": {
         "operationId": "nameConversation",
         "parameters": [
@@ -244,16 +244,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "string"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Updated conversation.",

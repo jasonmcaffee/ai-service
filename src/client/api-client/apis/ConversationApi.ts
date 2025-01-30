@@ -50,7 +50,6 @@ export interface GetConversationRequest {
 
 export interface NameConversationRequest {
     conversationId: string;
-    body: string;
 }
 
 export interface UpdateConversationRequest {
@@ -244,25 +243,15 @@ export class ConversationApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['body'] == null) {
-            throw new runtime.RequiredError(
-                'body',
-                'Required parameter "body" was null or undefined when calling nameConversation().'
-            );
-        }
-
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-        headerParameters['Content-Type'] = 'application/json';
-
         const response = await this.request({
-            path: `/conversations/conversations/{conversationId}/nameConversation`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
+            path: `/conversations/conversation-name/{conversationId}/nameConversation`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: requestParameters['body'] as any,
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ConversationFromJSON(jsonValue));
@@ -271,8 +260,8 @@ export class ConversationApi extends runtime.BaseAPI {
     /**
      * Have ai name the conversation
      */
-    async nameConversation(conversationId: string, body: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
-        const response = await this.nameConversationRaw({ conversationId: conversationId, body: body }, initOverrides);
+    async nameConversation(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Conversation> {
+        const response = await this.nameConversationRaw({ conversationId: conversationId }, initOverrides);
         return await response.value();
     }
 

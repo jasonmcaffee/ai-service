@@ -75,10 +75,10 @@ export class ConversationController {
   }
 
   @ApiOperation({summary: 'Have ai name the conversation'})
-  @Post('conversations/:conversationId/nameConversation')
+  @Post('conversation-name/:conversationId/nameConversation')
   @ApiParam({name: 'conversationId', type: 'string'})
   @ApiResponse({ status: 200, description: 'Updated conversation.', type: Conversation})
-  @ApiBody({})
+  // @ApiBody({ type: 'string', required: false })
   async nameConversation(@Param('conversationId') conversationId: string){
     console.log(`have ai name the conversation called.`);
     const memberId = this.authenticationService.getMemberId();
