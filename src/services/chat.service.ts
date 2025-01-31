@@ -6,11 +6,12 @@ import { Message } from '../models/api/conversationApiModels';
 import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 import config from '../config/config';
 import { createOpenAIMessagesFromMessages, formatDeepSeekResponse } from '../utils/utils';
+import {chatPageSystemPrompt} from "../utils/prompts";
+
 
 @Injectable()
 export class ChatService {
-  constructor(private readonly conversationService: ConversationService) {
-  }
+  constructor(private readonly conversationService: ConversationService) {}
   async streamInference(prompt: string, memberId: string, conversationId?: string): Promise<Observable<string>> {
     if(conversationId){
       return this.streamInferenceWithConversation(prompt, memberId, conversationId);
@@ -55,8 +56,7 @@ export class ChatService {
       openai.chat.completions
         .create({
           model: 'gpt-4',
-          // messages: [{ role: 'user', content: prompt }],
-          messages: openAiMessages,
+          messages: [{role: 'system', content: chatPageSystemPrompt}, ...openAiMessages],
           stream: true,
         })
         .then(async (stream) => {
