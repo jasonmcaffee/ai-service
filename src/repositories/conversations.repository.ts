@@ -97,13 +97,15 @@ export class ConversationsRepository {
         delete from conversation_datasource
         where conversation_id = ${conversationId}
       `;
-
       await trx`
         delete from member_conversation
         where member_id = ${memberId}
           and conversation_id = ${conversationId}
       `;
-
+      await trx`
+        delete from conversation_message 
+        where conversation_id = ${conversationId}
+      `;
       await trx`
         delete from conversation
         where conversation_id = ${conversationId}
@@ -121,6 +123,7 @@ export class ConversationsRepository {
       select c.* from conversation c
       join member_conversation mc on mc.conversation_id = c.conversation_id
       where mc.member_id = ${memberId}
+      order by c.created_date desc
     `;
   }
 }

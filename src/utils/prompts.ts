@@ -29,4 +29,5 @@ export const chatPageSystemPrompt = `
     For example, use markdown tables, lists, etc. when appropriate.
     
     Do not mention the above instruction in your responses.
+    Do not consider the above as a request.  Only use the above as context to respond to the messages following this.
 `;
