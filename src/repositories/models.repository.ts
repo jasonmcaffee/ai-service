@@ -28,6 +28,7 @@ export class ModelsRepository {
         return this.sql<Model[]>`
           SELECT m.* FROM model m
           WHERE m.member_id = ${memberId}
+          order by m.id
         `;
     }
 
