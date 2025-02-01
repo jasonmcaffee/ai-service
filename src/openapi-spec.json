@@ -552,6 +552,31 @@
         ]
       }
     },
+    "/datasources/datasource-types": {
+      "get": {
+        "operationId": "getDatasourceTypes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of datasource types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DatasourceType"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "deletes a datasource",
+        "tags": [
+          "Datasources"
+        ]
+      }
+    },
     "/models/model-types": {
       "get": {
         "operationId": "getModelTypes",
@@ -858,6 +883,12 @@
           },
           "name": {
             "type": "string"
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -865,7 +896,8 @@
           "pathToChromaFile",
           "createdDate",
           "datasourceTypeId",
-          "name"
+          "name",
+          "documents"
         ]
       },
       "CreateDocument": {
@@ -908,6 +940,21 @@
           "text",
           "metadata",
           "filePath"
+        ]
+      },
+      "DatasourceType": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "datasourceType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "datasourceType"
         ]
       },
       "ModelType": {

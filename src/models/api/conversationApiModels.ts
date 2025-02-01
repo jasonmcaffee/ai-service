@@ -174,6 +174,9 @@ export class Datasource {
 
   @ApiProperty()
   name: string;
+
+  @ApiProperty()
+  documents?: Document[]
 }
 
 export class CreateDatasource {

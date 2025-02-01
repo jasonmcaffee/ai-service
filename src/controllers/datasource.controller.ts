@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
 import { DatasourcesService } from '../services/datasource.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { Datasource, Document, CreateDatasource, CreateDocument } from '../models/api/conversationApiModels';
+import { Datasource, Document, CreateDatasource, CreateDocument, DatasourceType } from '../models/api/conversationApiModels';
 import { AuthenticationService } from '../services/authentication.service';
 
 @ApiTags('Datasources')
@@ -93,5 +93,17 @@ export class DatasourcesController {
   async deleteDatasource(@Param('datasourceId') datasourceId: number){
     const memberId = this.authenticationService.getMemberId();
     await this.datasourcesService.deleteDatasource(memberId, datasourceId);
+  }
+
+  @ApiOperation({summary: 'deletes a datasource'})
+  @Get('datasource-types')
+  @ApiResponse({status: 200, description: 'List of datasource types', type: [DatasourceType]})
+  async getDatasourceTypes(){
+    return [
+      {
+        id: 1,
+        datasourceType: "document"
+      },
+    ];
   }
 }
