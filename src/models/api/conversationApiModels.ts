@@ -146,10 +146,15 @@ export class Suggestion {
   type: string;
 }
 
-export class GetAtAutoCompleteSuggestionsResponse {
+export class GetAutoCompleteSuggestionsRequest {
   @ApiProperty()
-  suggestions: Suggestion[];
+  text: string;
 }
+
+// export class GetAtAutoCompleteSuggestionsResponse {
+//   @ApiProperty()
+//   suggestions: Suggestion[];
+// }
 
 export class DatasourceType {
   @ApiProperty()

@@ -4,8 +4,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import {
   Conversation,
   CreateConversation,
-  CreateMessage,
-  Message,
+  CreateMessage, GetAutoCompleteSuggestionsRequest,
+  Message, Suggestion,
 } from '../models/api/conversationApiModels';
 import { AuthenticationService } from '../services/authentication.service';
 
@@ -85,6 +85,17 @@ export class ConversationController {
     const result = await this.conversationService.haveAiNameTheConversation(memberId, conversationId);
     console.log(`have ai name the conversation result: `, result);
     return result;
+  }
+
+
+  @ApiOperation({summary: 'Get auto complete suggestions based on partial text match.'})
+  @Post('/getAutoCompleteSuggestions')
+  @ApiBody({type: GetAutoCompleteSuggestionsRequest})
+  @ApiResponse({status: 200, type: [Suggestion]})
+  async getAtAutoCompleteSuggestions(@Body() request: GetAutoCompleteSuggestionsRequest){
+    const memberId = this.authenticationService.getMemberId();
+    const text = request.text;
+    return await this.conversationService.getAtAutoCompleteSuggestions(memberId, text);
   }
 
 }

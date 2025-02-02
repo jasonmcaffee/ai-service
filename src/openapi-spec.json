@@ -262,6 +262,41 @@
         ]
       }
     },
+    "/conversations/getAutoCompleteSuggestions": {
+      "post": {
+        "operationId": "getAtAutoCompleteSuggestions",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetAutoCompleteSuggestionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Suggestion"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get auto complete suggestions based on partial text match.",
+        "tags": [
+          "Conversation"
+        ]
+      }
+    },
     "/datasources/datasource": {
       "post": {
         "operationId": "createDatasource",
@@ -849,6 +884,36 @@
         },
         "required": [
           "messageText"
+        ]
+      },
+      "GetAutoCompleteSuggestionsRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "Suggestion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type"
         ]
       },
       "CreateDatasource": {

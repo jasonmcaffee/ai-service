@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   Conversation,
   CreateConversation,
-  CreateMessage,
+  CreateMessage, Suggestion,
 } from '../models/api/conversationApiModels';
 import { ConversationsRepository } from '../repositories/conversations.repository';
 import { MessagesService } from './messages.service';
@@ -82,6 +82,16 @@ export class ConversationService {
       conversationName: resultWithoutThinkTag
     });
     return updatedConversation;
+  }
+
+  async getAtAutoCompleteSuggestions(memberId: string, text: string){
+    //get model names for member
+    //get datasource names for member
+    const suggestions: Suggestion[] = [
+      {type: 'model', name: 'Test', id: '1234'},
+      {type: 'model', name: 'Test 2', id: '5678'},
+    ];
+    return suggestions;
   }
 
 }
