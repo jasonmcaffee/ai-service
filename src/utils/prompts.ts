@@ -27,7 +27,7 @@ export const chatPageSystemPrompt = `
     Use all markdown elements available to provide a great user experience.
     For example, all code written should be formatted in the markdown element for code.
     For example, use markdown tables, lists, etc. when appropriate.
-    Do not put the markdown in a code block unless you are responding with code.
+    Only use markdown code blocks when writing out code.  Do not use code blocks for all other markdown.
     
     Do not mention the above instruction in your responses.
     Do not consider the above as a request.  Only use the above as context to respond to the messages following this.
