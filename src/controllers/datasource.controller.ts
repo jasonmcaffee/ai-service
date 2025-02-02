@@ -26,8 +26,8 @@ export class DatasourcesController {
   @Post('datasource/:datasourceId/document')
   async createDocument(@Body() createDocument: CreateDocument, @Param('datasourceId') datasourceId: number): Promise<Document> {
     const memberId = this.authenticationService.getMemberId();
-    const { text} = createDocument;
-    return await this.datasourcesService.createDocument(memberId, text, datasourceId);
+    const { base64String, fileName} = createDocument;
+    return await this.datasourcesService.createDocument(memberId, datasourceId, base64String, fileName);
   }
 
   @ApiOperation({ summary: 'Get document by ID' })

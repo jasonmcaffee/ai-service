@@ -12,11 +12,12 @@ export class DatasourcesService {
     return this.datasourcesRepository.createDatasource(memberId, name, datasourceTypeId);
   }
 
-  async createDocument(memberId: string, text: string, datasourceId: number): Promise<Document> {
+  async createDocument(memberId: string, datasourceId: number, base64String: string, fileName: string): Promise<Document> {
     await this.ensureMemberOwnsDatasource(memberId, datasourceId);
     const metadata = {};
-    const filePath = '';//TODO
-    return this.datasourcesRepository.createDocument(text, datasourceId, metadata, filePath);
+    console.log(`got base 64 string: `, base64String);
+    const text = Buffer.from(base64String, 'base64').toString('utf-8');
+    return this.datasourcesRepository.createDocument(text, datasourceId, metadata, fileName);
   }
 
   async getDocumentById(memberId: string, documentId: number): Promise<Document | undefined> {

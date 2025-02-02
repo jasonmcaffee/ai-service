@@ -866,51 +866,6 @@
           "name"
         ]
       },
-      "Datasource": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "pathToChromaFile": {
-            "type": "string"
-          },
-          "createdDate": {
-            "type": "string"
-          },
-          "datasourceTypeId": {
-            "type": "number"
-          },
-          "name": {
-            "type": "string"
-          },
-          "documents": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "pathToChromaFile",
-          "createdDate",
-          "datasourceTypeId",
-          "name",
-          "documents"
-        ]
-      },
-      "CreateDocument": {
-        "type": "object",
-        "properties": {
-          "text": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "text"
-        ]
-      },
       "Document": {
         "type": "object",
         "properties": {
@@ -940,6 +895,56 @@
           "text",
           "metadata",
           "filePath"
+        ]
+      },
+      "Datasource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "pathToChromaFile": {
+            "type": "string"
+          },
+          "createdDate": {
+            "type": "string"
+          },
+          "datasourceTypeId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "documents": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Document"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "pathToChromaFile",
+          "createdDate",
+          "datasourceTypeId",
+          "name",
+          "documents"
+        ]
+      },
+      "CreateDocument": {
+        "type": "object",
+        "properties": {
+          "base64String": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "base64String",
+          "fileName"
         ]
       },
       "DatasourceType": {

@@ -159,33 +159,6 @@ export class DatasourceType {
   datasourceType: string;
 }
 
-export class Datasource {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  pathToChromaFile: string;
-
-  @ApiProperty()
-  createdDate: string; // ISO format date string
-
-  @ApiProperty()
-  datasourceTypeId: number;
-
-  @ApiProperty()
-  name: string;
-
-  @ApiProperty()
-  documents?: Document[]
-}
-
-export class CreateDatasource {
-  @ApiProperty()
-  datasourceTypeId: number;
-
-  @ApiProperty()
-  name: string;
-}
 
 export class Document {
   @ApiProperty()
@@ -207,12 +180,41 @@ export class Document {
   filePath: string;
 }
 
+
+export class Datasource {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  pathToChromaFile: string;
+
+  @ApiProperty()
+  createdDate: string; // ISO format date string
+
+  @ApiProperty()
+  datasourceTypeId: number;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty({type: [Document], nullable: true})
+  documents?: Document[]
+}
+
+export class CreateDatasource {
+  @ApiProperty()
+  datasourceTypeId: number;
+
+  @ApiProperty()
+  name: string;
+}
+
 export class CreateDocument {
   @ApiProperty()
-  text: string;
+  base64String: string;
 
-  // @ApiProperty()
-  // datasourceId: number;
+  @ApiProperty()
+  fileName: string;
 }
 
 export class DatasourceDocument {

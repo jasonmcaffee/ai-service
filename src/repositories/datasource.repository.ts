@@ -60,11 +60,11 @@ export class DatasourcesRepository {
   /**
    * Creates a new document.
    * @param text - The text of the document.
+   * @param datasourceId
    * @param metadata - The metadata in JSONB format.
    * @param filePath - The file path of the document.
    */
   async createDocument(text: string, datasourceId: number, metadata: object, filePath: string) {
-
     return this.sql.begin(async (trx) => {
       // todo: metadata as jsonb.
       const result = await trx<Document[]>`
