@@ -87,7 +87,7 @@ export class ConversationService {
   async getAtAutoCompleteSuggestions(memberId: string, atMention: string){
     const text = atMention.replace("@", '');
     const suggestions = await this.conversationsRepository.getAutoCompleteSuggestions(memberId, text);
-    console.log(`suggestions for text: ${text}`, suggestions);
+    // console.log(`suggestions for text: ${text}`, suggestions);
     return suggestions;
     //
     // //get model names for member
