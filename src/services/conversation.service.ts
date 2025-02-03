@@ -84,22 +84,27 @@ export class ConversationService {
     return updatedConversation;
   }
 
-  async getAtAutoCompleteSuggestions(memberId: string, text: string){
-    //get model names for member
-    //get datasource names for member
-    const suggestions: Suggestion[] = [
-      {type: 'model', name: 'Test', id: '1234'},
-      {type: 'model', name: 'Test 2', id: '5678'},
-      {type: 'model', name: 'Test 3', id: 'a'},
-      {type: 'model', name: 'Test 4', id: 'b'},
-      {type: 'model', name: 'Test 5', id: 'c'},
-      {type: 'model', name: 'Test 2', id: 'd'},
-      {type: 'model', name: 'Test 2', id: 'e'},
-      {type: 'model', name: 'Test 2', id: 'f'},
-      {type: 'model', name: 'Test 2', id: 'g'},
-      {type: 'model', name: 'Test 10', id: 'h'},
-    ];
+  async getAtAutoCompleteSuggestions(memberId: string, atMention: string){
+    const text = atMention.replace("@", '');
+    const suggestions = await this.conversationsRepository.getAutoCompleteSuggestions(memberId, text);
+    console.log(`suggestions for text: ${text}`, suggestions);
     return suggestions;
+    //
+    // //get model names for member
+    // //get datasource names for member
+    // const suggestions: Suggestion[] = [
+    //   {type: 'model', name: 'Test', id: '1234'},
+    //   {type: 'model', name: 'Test 2', id: '5678'},
+    //   {type: 'model', name: 'Test 3', id: 'a'},
+    //   {type: 'model', name: 'Test 4', id: 'b'},
+    //   {type: 'model', name: 'Test 5', id: 'c'},
+    //   {type: 'model', name: 'Test 2', id: 'd'},
+    //   {type: 'model', name: 'Test 2', id: 'e'},
+    //   {type: 'model', name: 'Test 2', id: 'f'},
+    //   {type: 'model', name: 'Test 2', id: 'g'},
+    //   {type: 'model', name: 'Test 10', id: 'h'},
+    // ];
+    // return suggestions;
   }
 
 }

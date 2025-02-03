@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as postgres from 'postgres';
 import config from '../config/config';
-import { Conversation, CreateConversation } from '../models/api/conversationApiModels';
+import {Conversation, CreateConversation, Suggestion} from '../models/api/conversationApiModels';
 const { v4: uuidv4 } = require('uuid');
 
 @Injectable()
@@ -126,4 +126,22 @@ export class ConversationsRepository {
       order by c.created_date desc
     `;
   }
+
+  async getAutoCompleteSuggestions(memberId: string, searchText: string) {
+    return this.sql<Suggestion[]>`
+      SELECT m.id, m.display_name AS name, 'model' AS type
+      FROM model m
+      WHERE m.member_id = ${memberId}
+        AND m.display_name ILIKE ${'%' + searchText + '%'}
+      
+      UNION ALL
+      
+      SELECT d.id, d.name, 'datasource' AS type
+      FROM datasource d
+      JOIN member_datasource md ON md.datasource_id = d.id
+      WHERE md.member_id = ${memberId}
+        AND d.name ILIKE ${'%' + searchText + '%'}
+    `;
+  }
+
 }
