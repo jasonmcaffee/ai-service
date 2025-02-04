@@ -136,7 +136,7 @@ export class ConversationsRepository {
       
       UNION ALL
       
-      SELECT d.id, d.name, 'datasource' AS type
+      SELECT d.id::text, d.name, 'datasource' AS type
       FROM datasource d
       JOIN member_datasource md ON md.datasource_id = d.id
       WHERE md.member_id = ${memberId}
