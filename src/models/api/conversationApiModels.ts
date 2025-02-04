@@ -18,11 +18,15 @@ export class Message {
   messageText: string;
   @ApiProperty()
   createdDate: string; // ISO format date string
+  @ApiProperty()
+  role: string; //user, system
 }
 
 export class CreateMessage {
   @ApiProperty()
   messageText: string;
+  @ApiProperty()
+  role: string;
 }
 
 // models/Conversation.ts
@@ -61,7 +65,7 @@ export class ModelType {
 
 export class Model {
   @ApiProperty()
-  id: number;
+  id: string;
   @ApiProperty()
   displayName: string;
   @ApiProperty()
@@ -74,6 +78,8 @@ export class Model {
   isDefault: boolean;
   @ApiProperty()
   modelTypeId: number;
+  @ApiProperty()
+  initialMessage?: string; //initial message to send to the llm. aka persona
 }
 
 export class CreateModel {
@@ -89,6 +95,8 @@ export class CreateModel {
   isDefault: boolean;
   @ApiProperty()
   modelTypeId: number;
+  @ApiProperty()
+  initialMessage?: string; //initial message to send to the llm. aka persona
 }
 
 export class UpdateModel {
@@ -104,6 +112,8 @@ export class UpdateModel {
   isDefault: boolean;
   @ApiProperty()
   modelTypeId: number;
+  @ApiProperty()
+  initialMessage?: string; //initial message to send to the llm. aka persona
 }
 
 // models/AddMessageResponse.ts

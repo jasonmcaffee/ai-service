@@ -10,7 +10,7 @@ export class ModelsService {
         return this.modelsRepository.getModelTypes();
     }
 
-    async getModelById(memberId: string, modelId: number): Promise<Model> {
+    async getModelById(memberId: string, modelId: string): Promise<Model> {
         await this.ensureMemberOwnsModel(memberId, modelId);
         const model = await this.modelsRepository.getModelById(modelId);
         if(model === undefined){
@@ -19,7 +19,7 @@ export class ModelsService {
         return model;
     }
 
-    async getModelByIdOrGetDefault(memberId: string, modelId?: number): Promise<Model> {
+    async getModelByIdOrGetDefault(memberId: string, modelId?: string): Promise<Model> {
         if(modelId !== undefined){
             return this.getModelById(memberId, modelId);
         }
@@ -38,17 +38,17 @@ export class ModelsService {
         return this.modelsRepository.createModel(model, memberId);
     }
 
-    async updateModel(memberId: string, modelId: number, model: UpdateModel): Promise<Model> {
+    async updateModel(memberId: string, modelId: string, model: UpdateModel): Promise<Model> {
         await this.ensureMemberOwnsModel(memberId, modelId);
         return this.modelsRepository.updateModel(modelId, model);
     }
 
-    async deleteModel(memberId: string, modelId: number): Promise<void> {
+    async deleteModel(memberId: string, modelId: string): Promise<void> {
         await this.ensureMemberOwnsModel(memberId, modelId);
         await this.modelsRepository.deleteModel(modelId, memberId);
     }
 
-    async ensureMemberOwnsModel(memberId: string, modelId: number): Promise<void> {
+    async ensureMemberOwnsModel(memberId: string, modelId: string): Promise<void> {
         await this.modelsRepository.ensureMemberOwnsModel(memberId, modelId);
     }
 }

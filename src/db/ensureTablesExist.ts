@@ -28,6 +28,7 @@ export async function ensureTablesExist() {
         sent_by_member_id TEXT,
         message_text TEXT,
         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        role text default 'user',
         FOREIGN KEY (sent_by_member_id) REFERENCES member(member_id)
     )`;
 
@@ -45,7 +46,7 @@ export async function ensureTablesExist() {
         model_type TEXT
   )`;
   await sql`CREATE TABLE IF NOT EXISTS model (
-        id SERIAL PRIMARY KEY,
+        id TEXT PRIMARY KEY,
         display_name TEXT,
         url TEXT,
         api_key TEXT,
@@ -53,6 +54,7 @@ export async function ensureTablesExist() {
         model_type_id INTEGER,
         is_default BOOLEAN,
         member_id TEXT,
+        initial_message text,
         FOREIGN KEY (model_type_id) REFERENCES model_type(id),
         FOREIGN KEY (member_id) REFERENCES member(member_id)
     )`;

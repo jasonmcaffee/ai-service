@@ -18,7 +18,7 @@ export class ModelsRepository {
       `;
     }
 
-    async getModelById(modelId: number): Promise<Model | undefined> {
+    async getModelById(modelId: string): Promise<Model | undefined> {
         const result = await this.sql<Model[]>`
           SELECT * FROM model WHERE id = ${modelId}
         `;
@@ -49,8 +49,8 @@ export class ModelsRepository {
             }
 
             const [createdModel] = await trx<Model[]>`
-                INSERT INTO model (display_name, url, api_key, model_name, model_type_id, is_default, member_id)
-                VALUES (${model.displayName}, ${model.url}, ${model.apiKey}, ${model.modelName}, ${model.modelTypeId}, ${model.isDefault}, ${memberId})
+                INSERT INTO model (id, display_name, url, api_key, model_name, model_type_id, is_default, member_id, initial_message)
+                VALUES (${uuidv4()}, ${model.displayName}, ${model.url}, ${model.apiKey}, ${model.modelName}, ${model.modelTypeId}, ${model.isDefault}, ${memberId}, ${model.initialMessage || ''})
                 RETURNING *
             `;
 
@@ -62,7 +62,7 @@ export class ModelsRepository {
         });
     }
 
-    async updateModel(modelId: number, model: UpdateModel){
+    async updateModel(modelId: string, model: UpdateModel){
         return this.sql.begin(async (trx) => {
             if (model.isDefault) {
                 await trx`UPDATE model SET is_default = false WHERE is_default = true`;
@@ -75,7 +75,8 @@ export class ModelsRepository {
                   api_key = COALESCE(${model.apiKey}, api_key),
                   model_name = COALESCE(${model.modelName}, model_name),
                   model_type_id = COALESCE(${model.modelTypeId}, model_type_id),
-                  is_default = COALESCE(${model.isDefault}, is_default)
+                  is_default = COALESCE(${model.isDefault}, is_default),
+                  initial_message = COALESCE(${model.initialMessage || ''}, initial_message)
               WHERE id = ${modelId}
               RETURNING *
             `;
@@ -84,7 +85,7 @@ export class ModelsRepository {
         });
     }
 
-    async deleteModel(modelId: number, memberId: string): Promise<void> {
+    async deleteModel(modelId: string, memberId: string): Promise<void> {
         await this.sql.begin(async (trx) => {
             await trx`
                 DELETE FROM model WHERE id = ${modelId}
@@ -92,7 +93,7 @@ export class ModelsRepository {
         });
     }
 
-    async ensureMemberOwnsModel(memberId: string, modelId: number): Promise<void> {
+    async ensureMemberOwnsModel(memberId: string, modelId: string): Promise<void> {
         const result = await this.sql<{ exists: boolean }[]>`
           SELECT EXISTS (
             SELECT 1 FROM model WHERE member_id = ${memberId} AND id = ${modelId}

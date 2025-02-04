@@ -20,11 +20,11 @@ export class ModelsController {
     }
 
     @ApiOperation({ summary: 'Get model by ID' })
-    @ApiParam({ name: 'modelId', type: 'number', required: true })
+    @ApiParam({ name: 'modelId', type: 'string', required: true })
     @ApiResponse({ status: 200, description: 'The model details', type: Model })
     @ApiResponse({ status: 404, type: undefined })
     @Get(':modelId')
-    async getModelById(@Param('modelId') modelId: number) {
+    async getModelById(@Param('modelId') modelId: string) {
         const memberId = this.authenticationService.getMemberId();
         return this.modelsService.getModelById(memberId, modelId);
     }
@@ -47,20 +47,20 @@ export class ModelsController {
     }
 
     @ApiOperation({ summary: 'Update an existing model' })
-    @ApiParam({ name: 'modelId', type: 'number', required: true })
+    @ApiParam({ name: 'modelId', type: 'string', required: true })
     @ApiBody({ description: 'The updated model object', type: UpdateModel })
     @ApiResponse({ status: 200, description: 'The model has been successfully updated.', type: Model })
     @Put(':modelId')
-    async updateModel(@Param('modelId') modelId: number, @Body() model: Model) {
+    async updateModel(@Param('modelId') modelId: string, @Body() model: Model) {
         const memberId = this.authenticationService.getMemberId();
         return this.modelsService.updateModel(memberId, modelId, model);
     }
 
     @ApiOperation({ summary: 'Delete a model' })
-    @ApiParam({ name: 'modelId', type: 'number', required: true })
+    @ApiParam({ name: 'modelId', type: 'string', required: true })
     @ApiResponse({ status: 200, description: 'The model has been successfully deleted.' })
     @Delete(':modelId')
-    async deleteModel(@Param('modelId') modelId: number) {
+    async deleteModel(@Param('modelId') modelId: string) {
         const memberId = this.authenticationService.getMemberId();
         return this.modelsService.deleteModel(memberId, modelId);
     }

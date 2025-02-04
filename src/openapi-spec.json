@@ -29,7 +29,7 @@
             "in": "query",
             "description": "The id of the model to use.  If not passed, the default model will be used.",
             "schema": {
-              "type": "number"
+              "type": "string"
             }
           }
         ],
@@ -717,7 +717,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "type": "string"
             }
           }
         ],
@@ -749,7 +749,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "type": "string"
             }
           }
         ],
@@ -789,7 +789,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "type": "number"
+              "type": "string"
             }
           }
         ],
@@ -899,13 +899,17 @@
           },
           "createdDate": {
             "type": "string"
+          },
+          "role": {
+            "type": "string"
           }
         },
         "required": [
           "messageId",
           "sentByMemberId",
           "messageText",
-          "createdDate"
+          "createdDate",
+          "role"
         ]
       },
       "Conversation": {
@@ -951,10 +955,14 @@
         "properties": {
           "messageText": {
             "type": "string"
+          },
+          "role": {
+            "type": "string"
           }
         },
         "required": [
-          "messageText"
+          "messageText",
+          "role"
         ]
       },
       "GetAutoCompleteSuggestionsRequest": {
@@ -1117,7 +1125,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string"
           },
           "displayName": {
             "type": "string"
@@ -1136,6 +1144,9 @@
           },
           "modelTypeId": {
             "type": "number"
+          },
+          "initialMessage": {
+            "type": "string"
           }
         },
         "required": [
@@ -1145,7 +1156,8 @@
           "apiKey",
           "modelName",
           "isDefault",
-          "modelTypeId"
+          "modelTypeId",
+          "initialMessage"
         ]
       },
       "CreateModel": {
@@ -1168,6 +1180,9 @@
           },
           "modelTypeId": {
             "type": "number"
+          },
+          "initialMessage": {
+            "type": "string"
           }
         },
         "required": [
@@ -1176,7 +1191,8 @@
           "apiKey",
           "modelName",
           "isDefault",
-          "modelTypeId"
+          "modelTypeId",
+          "initialMessage"
         ]
       },
       "UpdateModel": {
@@ -1199,6 +1215,9 @@
           },
           "modelTypeId": {
             "type": "number"
+          },
+          "initialMessage": {
+            "type": "string"
           }
         },
         "required": [
@@ -1207,7 +1226,8 @@
           "apiKey",
           "modelName",
           "isDefault",
-          "modelTypeId"
+          "modelTypeId",
+          "initialMessage"
         ]
       }
     }

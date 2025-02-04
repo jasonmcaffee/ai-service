@@ -33,8 +33,8 @@ export class MessagesRepository {
   async createMessageForConversation(conversationId: string, memberId: string, message: CreateMessage): Promise<Message> {
     return this.sql.begin(async (trx) => {
       const [createdMessage] = await trx<Message[]>`
-          insert into message (message_id, sent_by_member_id, message_text)
-          values (${uuidv4()}, ${memberId}, ${message.messageText})
+          insert into message (message_id, sent_by_member_id, message_text, role)
+          values (${uuidv4()}, ${memberId}, ${message.messageText}, ${message.role})
           returning *
       `;
       await trx`
@@ -47,6 +47,7 @@ export class MessagesRepository {
   }
 
   /**
+   * THIS PROBABLY ISNT NEEDED
    * Updates an existing message.
    * @param messageId - unique identifier for the message.
    * @param message - the updated message object.
@@ -56,7 +57,8 @@ export class MessagesRepository {
       update message
       set sent_by_member_id = ${message.sentByMemberId},
           message_text = ${message.messageText},
-          created_date = ${message.createdDate}
+          created_date = ${message.createdDate},
+          role = ${message.role}
       where message_id = ${messageId}
       returning *
     `;

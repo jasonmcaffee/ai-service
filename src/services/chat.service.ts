@@ -15,7 +15,7 @@ export class ChatService {
   constructor(private readonly conversationService: ConversationService,
               private readonly modelsService: ModelsService) {}
 
-  async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: number): Promise<Observable<string>> {
+  async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string): Promise<Observable<string>> {
     const model = await this.modelsService.getModelByIdOrGetDefault(memberId, modelId);
     if(conversationId){
       return this.streamInferenceWithConversation(prompt, memberId, conversationId, model);
@@ -26,12 +26,18 @@ export class ChatService {
 
   async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string, model:Model){
     //add the prompt to the messages table
-    await this.conversationService.addMessageToConversation(memberId, conversationId, {messageText: prompt});
+    await this.conversationService.addMessageToConversation(memberId, conversationId, {messageText: prompt, role: 'user'});
     //get all the messages in the conversation
     const conversation = await this.conversationService.getConversation(memberId, conversationId);
     if(!conversation){ throw new Error('Conversation not found'); }
-    //convert messages into openai format.
-    const openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
+
+    let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
+    if(model.initialMessage){
+      const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
+      openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages]
+    }
+
+    console.log(`sending messages: `, openAiMessages);
 
     const handleOnText = (text: string) => {
       // console.log('handle on text got: ', text);
@@ -40,7 +46,7 @@ export class ChatService {
     const handleResponseCompleted = async (completeResponse: string) => {
       console.log('handle response completed got: ', completeResponse);
       const formattedResponse = formatDeepSeekResponse(completeResponse);
-      await this.conversationService.addMessageToConversation(config.getAiMemberId(), conversationId, {messageText: formattedResponse});
+      await this.conversationService.addMessageToConversation(config.getAiMemberId(), conversationId, {messageText: formattedResponse, role: 'system'});
     }
 
     const observable = this.createInferenceObservable(openAiMessages, handleOnText, handleResponseCompleted, model);
@@ -48,7 +54,12 @@ export class ChatService {
   }
 
   async streamInferenceWithoutConversation(prompt: string, memberId: string, model: Model){
-    const openAiMessages = createOpenAIMessagesFromMessages([{messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: ''}]);
+    const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
+    let openAiMessages = createOpenAIMessagesFromMessages([userMessage]);
+    if(model.initialMessage){
+      const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
+      openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
+    }
     const observable = this.createInferenceObservable(openAiMessages, ()=>{}, ()=>{}, model);
     return observable;
   }
