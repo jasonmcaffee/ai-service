@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as postgres from 'postgres';
 import config from '../config/config';
 import {Model, ModelType, UpdateModel} from '../models/api/conversationApiModels';
+const { v4: uuidv4 } = require('uuid');
 
 @Injectable()
 export class ModelsRepository {
@@ -46,7 +47,10 @@ export class ModelsRepository {
                 RETURNING *
             `;
 
-
+            //insert into the member table so we can associate messages with correct model that sent it.
+            await trx`
+                insert into member (member_id, member_name) values (${createdModel.id}, ${createdModel.displayName})
+            `
             return createdModel;
         });
     }

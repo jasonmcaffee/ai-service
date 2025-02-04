@@ -12,15 +12,16 @@ import {chatPageSystemPrompt} from "../utils/prompts";
 @Injectable()
 export class ChatService {
   constructor(private readonly conversationService: ConversationService) {}
-  async streamInference(prompt: string, memberId: string, conversationId?: string): Promise<Observable<string>> {
+
+  async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string): Promise<Observable<string>> {
     if(conversationId){
-      return this.streamInferenceWithConversation(prompt, memberId, conversationId);
+      return this.streamInferenceWithConversation(prompt, memberId, conversationId, modelId);
     }else {
-      return this.streamInferenceWithoutConversation(prompt, memberId);
+      return this.streamInferenceWithoutConversation(prompt, memberId, modelId);
     }
   }
 
-  async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string){
+  async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string, modelId?: string){
     //add the prompt to the messages table
     await this.conversationService.addMessageToConversation(memberId, conversationId, {messageText: prompt});
     //get all the messages in the conversation (TODO: order by date)
@@ -43,7 +44,7 @@ export class ChatService {
     return observable;
   }
 
-  async streamInferenceWithoutConversation(prompt: string, memberId: string){
+  async streamInferenceWithoutConversation(prompt: string, memberId: string, modelId?: string){
     const openAiMessages = createOpenAIMessagesFromMessages([{messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: ''}]);
     const observable = this.createInferenceObservable(openAiMessages, ()=>{}, ()=>{});
     return observable;

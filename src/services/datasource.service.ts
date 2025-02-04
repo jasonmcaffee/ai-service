@@ -61,4 +61,13 @@ export class DatasourcesService {
   async ensureMemberOwnsDocument(memberId: string, documentId: number){
     return this.datasourcesRepository.ensureMemberOwnsDocument(memberId, documentId);
   }
+
+  async addDatasourceToConversation(datasourceId: number, conversationId: string){
+    return this.datasourcesRepository.addDatasourceToConversation(datasourceId, conversationId);
+  }
+
+  async deleteDatasourceFromConversation(datasourceId: number, conversationId: string){
+    return this.datasourcesRepository.deleteDatasourceFromConversation(datasourceId, conversationId);
+  }
+
 }

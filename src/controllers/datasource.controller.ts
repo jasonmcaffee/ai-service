@@ -106,4 +106,23 @@ export class DatasourcesController {
       },
     ];
   }
+
+  @ApiOperation({summary: 'add a datasource to a conversation.  all documents will be passed to the LLM as part of messages list'})
+  @Post('conversation/:conversationId/datasource/:datasourceId')
+  @ApiParam({name: 'datasourceId', type: 'number'})
+  @ApiParam({name: 'conversationId', type: 'string'})
+  @ApiResponse({status: 201})
+  async addDatasourceToConversation(@Param('conversationId') conversationId: string, @Param('datasourceId') datasourceId: number){
+    return this.datasourcesService.addDatasourceToConversation(datasourceId, conversationId);
+  }
+
+  @ApiOperation({summary: 'remove a datasource from a conversation. no documents from the datasource will be passed to LLM as part of messages'})
+  @Delete('conversation/:conversationId/datasource/:datasourceId')
+  @ApiParam({name: 'datasourceId', type: 'number'})
+  @ApiParam({name: 'conversationId', type: 'string'})
+  @ApiResponse({status: 201})
+  async deleteDatasourceFromConversation(@Param('conversationId') conversationId: string, @Param('datasourceId') datasourceId: number){
+    return this.datasourcesService.addDatasourceToConversation(datasourceId, conversationId);
+  }
+
 }

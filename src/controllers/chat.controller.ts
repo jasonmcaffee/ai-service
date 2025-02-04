@@ -1,7 +1,6 @@
 import { Controller, Post, Body, Sse, Get, Query } from '@nestjs/common';
 import { ChatService } from '../services/chat.service';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { ChatInference } from '../models/api/conversationApiModels';
 import { AuthenticationService } from '../services/authentication.service';
 
 @ApiTags('Chat')
@@ -12,6 +11,7 @@ export class ChatController {
   @ApiOperation({ summary: 'Stream a message based on a prompt' })
   @ApiQuery({ name: 'prompt', type: String, description: 'The prompt to initiate the message stream' })
   @ApiQuery({ name: 'conversationId', type: String, required: false, description: 'Optional. The conversation to add the passed in prompt and llm response to.' })
+  @ApiQuery({name: 'modelId', type: String, required: false, description: 'The id of the model to use.  If not passed, the default model will be used.'})
   @Get('streamInference') // Must be GET for EventSource to work
   @Sse() // Server-Sent Events so we can stream LLM response back the client.
   @ApiResponse({
@@ -26,18 +26,10 @@ export class ChatController {
       },
     },
   })
-  async streamInference(@Query('prompt') prompt: string, @Query('conversationId') conversationId: string) {
+  async streamInference(@Query('prompt') prompt: string, @Query('conversationId') conversationId: string,
+                        @Query('modelId') modelId: string) {
     console.log('got stream inference request: ', prompt, conversationId);
     const memberId = this.authenticationService.getMemberId();
     return this.chatService.streamInference(prompt, memberId, conversationId);
   }
-
-  // @ApiOperation({ summary: 'Inference based on a prompt' })
-  // @ApiBody({ description: 'Prompt', type: ChatInference })
-  // @Post('inference')
-  // @Sse()
-  // async inference(@Body() chatInference: ChatInference) {
-  //   const memberId = "1";
-  //   return this.chatService.streamInference(chatInference.prompt, memberId);
-  // }
 }

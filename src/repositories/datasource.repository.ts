@@ -168,4 +168,16 @@ export class DatasourcesRepository {
     });
   }
 
+  async addDatasourceToConversation(datasourceId: number, conversationId: string){
+    return this.sql`
+        insert into conversation_datasource (conversation_id, datasource_id) VALUES (${conversationId}, ${datasourceId})
+    `;
+  }
+
+  async deleteDatasourceFromConversation(datasourceId: number, conversationId: string){
+    return this.sql`
+        delete from conversation_datasource where datasource_id=${datasourceId} and conversation_id=${conversationId}
+    `;
+  }
+
 }

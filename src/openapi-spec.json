@@ -22,6 +22,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "modelId",
+            "required": false,
+            "in": "query",
+            "description": "The id of the model to use.  If not passed, the default model will be used.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -607,6 +616,68 @@
           }
         },
         "summary": "deletes a datasource",
+        "tags": [
+          "Datasources"
+        ]
+      }
+    },
+    "/datasources/conversation/{conversationId}/datasource/{datasourceId}": {
+      "post": {
+        "operationId": "addDatasourceToConversation",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "datasourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "add a datasource to a conversation.  all documents will be passed to the LLM as part of messages list",
+        "tags": [
+          "Datasources"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteDatasourceFromConversation",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "datasourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "remove a datasource from a conversation. no documents from the datasource will be passed to LLM as part of messages",
         "tags": [
           "Datasources"
         ]
