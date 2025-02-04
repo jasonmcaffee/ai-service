@@ -33,6 +33,13 @@ export class ModelsRepository {
         `;
     }
 
+    async getDefaultModelForMember(memberId: string): Promise<Model | undefined> {
+        const result = await this.sql<Model[]>`
+            select * from model where member_id=${memberId} and is_default=true
+        `;
+        return result.length ? result[0] : undefined;
+    }
+
     async createModel(model: Omit<Model, 'id'>, memberId: string): Promise<Model> {
         return this.sql.begin(async (trx) => {
             if (model.isDefault) {

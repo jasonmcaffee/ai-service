@@ -29,7 +29,7 @@
             "in": "query",
             "description": "The id of the model to use.  If not passed, the default model will be used.",
             "schema": {
-              "type": "string"
+              "type": "number"
             }
           }
         ],

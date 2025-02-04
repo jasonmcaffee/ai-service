@@ -10,9 +10,24 @@ export class ModelsService {
         return this.modelsRepository.getModelTypes();
     }
 
-    async getModelById(memberId: string, modelId: number): Promise<Model | undefined> {
+    async getModelById(memberId: string, modelId: number): Promise<Model> {
         await this.ensureMemberOwnsModel(memberId, modelId);
-        return this.modelsRepository.getModelById(modelId);
+        const model = await this.modelsRepository.getModelById(modelId);
+        if(model === undefined){
+            throw new Error(`Model id ${modelId} not found`);
+        }
+        return model;
+    }
+
+    async getModelByIdOrGetDefault(memberId: string, modelId?: number): Promise<Model> {
+        if(modelId !== undefined){
+            return this.getModelById(memberId, modelId);
+        }
+        const defaultModel = await this.modelsRepository.getDefaultModelForMember(memberId);
+        if(defaultModel === undefined){
+            throw new Error('Default model not found for member');
+        }
+        return defaultModel;
     }
 
     async getAllModelsForMember(memberId: string): Promise<Model[]> {
