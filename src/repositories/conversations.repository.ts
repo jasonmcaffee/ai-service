@@ -72,6 +72,15 @@ export class ConversationsRepository {
     `;
   }
 
+  async doesDatasourceExistInConversation(conversationId: string, datasourceId: number){
+      const result = await this.sql<{ exists: boolean }[]>`
+          SELECT EXISTS (
+            SELECT 1 FROM conversation_datasource WHERE conversation_id = ${conversationId} AND datasource_id = ${datasourceId}
+          ) AS exists
+        `;
+      return result[0]?.exists;
+  }
+
   async ensureMemberOwnsConversation(memberId: string, conversationId: string){
     const ownershipCheck = await this.sql`
         select 1 from member_conversation mc

@@ -60,9 +60,9 @@ export class ConversationController {
   @ApiParam({ name: 'conversationId', type: 'string', required: true, })
   @ApiResponse({ status: 200, description: 'The message was successfully added', type: Message, })
   @Post(':conversationId/messages/message')
-  addMessage(@Param('conversationId') conversationId: string, @Body() message: CreateMessage,) {
+  async addMessage(@Param('conversationId') conversationId: string, @Body() message: CreateMessage,) {
     const memberId = this.authenticationService.getMemberId();
-    return this.conversationService.addMessageToConversation(memberId, conversationId, message);
+    return await this.conversationService.addMessageToConversation(memberId, conversationId, message);
   }
 
   @ApiOperation({summary: 'get all conversations for a member'})

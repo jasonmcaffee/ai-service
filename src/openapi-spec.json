@@ -948,7 +948,12 @@
             "type": "string"
           },
           "messageContext": {
-            "$ref": "#/components/schemas/MessageContext"
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageContext"
+              }
+            ]
           }
         },
         "required": [
@@ -958,6 +963,72 @@
           "createdDate",
           "role",
           "messageContext"
+        ]
+      },
+      "Document": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "createDate": {
+            "type": "string"
+          },
+          "updatedDate": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "filePath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createDate",
+          "updatedDate",
+          "text",
+          "metadata",
+          "filePath"
+        ]
+      },
+      "Datasource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "pathToChromaFile": {
+            "type": "string"
+          },
+          "createdDate": {
+            "type": "string"
+          },
+          "datasourceTypeId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "documents": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Document"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "pathToChromaFile",
+          "createdDate",
+          "datasourceTypeId",
+          "name",
+          "documents"
         ]
       },
       "Conversation": {
@@ -978,13 +1049,21 @@
             "items": {
               "$ref": "#/components/schemas/Message"
             }
+          },
+          "datasources": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Datasource"
+            }
           }
         },
         "required": [
           "conversationId",
           "conversationName",
           "createdDate",
-          "messages"
+          "messages",
+          "datasources"
         ]
       },
       "CreateConversation": {
@@ -1056,72 +1135,6 @@
         "required": [
           "datasourceTypeId",
           "name"
-        ]
-      },
-      "Document": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "createDate": {
-            "type": "string"
-          },
-          "updatedDate": {
-            "type": "string"
-          },
-          "text": {
-            "type": "string"
-          },
-          "metadata": {
-            "type": "object"
-          },
-          "filePath": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "createDate",
-          "updatedDate",
-          "text",
-          "metadata",
-          "filePath"
-        ]
-      },
-      "Datasource": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "pathToChromaFile": {
-            "type": "string"
-          },
-          "createdDate": {
-            "type": "string"
-          },
-          "datasourceTypeId": {
-            "type": "number"
-          },
-          "name": {
-            "type": "string"
-          },
-          "documents": {
-            "nullable": true,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Document"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "pathToChromaFile",
-          "createdDate",
-          "datasourceTypeId",
-          "name",
-          "documents"
         ]
       },
       "CreateDocument": {

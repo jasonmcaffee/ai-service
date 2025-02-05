@@ -36,7 +36,7 @@ export class Message {
   createdDate: string; // ISO format date string
   @ApiProperty()
   role: string; //user, system
-  @ApiProperty()
+  @ApiProperty({nullable: true})
   messageContext?: MessageContext; //not sent back yet, but want to force including the type in openapi-spec.
 }
 
@@ -45,6 +45,57 @@ export class CreateMessage {
   messageText: string;
   @ApiProperty()
   role: string;
+}
+
+
+export class DatasourceType {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  datasourceType: string;
+}
+
+
+export class Document {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  createDate: string; // ISO format date string
+
+  @ApiProperty()
+  updatedDate: string; // ISO format date string
+
+  @ApiProperty()
+  text: string;
+
+  @ApiProperty()
+  metadata: object; // JSONB
+
+  @ApiProperty()
+  filePath: string;
+}
+
+
+export class Datasource {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  pathToChromaFile: string;
+
+  @ApiProperty()
+  createdDate: string; // ISO format date string
+
+  @ApiProperty()
+  datasourceTypeId: number;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty({type: [Document], nullable: true})
+  documents?: Document[]
 }
 
 export class Conversation {
@@ -56,6 +107,8 @@ export class Conversation {
   createdDate: string;// ISO format date string
   @ApiProperty({ type: [Message], nullable: true })
   messages?: Message[];
+  @ApiProperty({ type: [Datasource], nullable: true })
+  datasources?: Datasource[]
 }
 
 export class CreateConversation {
@@ -137,55 +190,6 @@ export class GetAutoCompleteSuggestionsRequest {
   text: string;
 }
 
-export class DatasourceType {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  datasourceType: string;
-}
-
-
-export class Document {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  createDate: string; // ISO format date string
-
-  @ApiProperty()
-  updatedDate: string; // ISO format date string
-
-  @ApiProperty()
-  text: string;
-
-  @ApiProperty()
-  metadata: object; // JSONB
-
-  @ApiProperty()
-  filePath: string;
-}
-
-
-export class Datasource {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  pathToChromaFile: string;
-
-  @ApiProperty()
-  createdDate: string; // ISO format date string
-
-  @ApiProperty()
-  datasourceTypeId: number;
-
-  @ApiProperty()
-  name: string;
-
-  @ApiProperty({type: [Document], nullable: true})
-  documents?: Document[]
-}
 
 export class CreateDatasource {
   @ApiProperty()

@@ -29,7 +29,7 @@ export class MessagesService {
    * @param message - The message object to create.
    */
   async createMessageForConversation(conversationId: string, memberId: string, message: CreateMessage): Promise<Message> {
-    return this.messagesRepository.createMessageForConversation(conversationId, memberId, message);
+    return await this.messagesRepository.createMessageForConversation(conversationId, memberId, message);
   }
 
   /**

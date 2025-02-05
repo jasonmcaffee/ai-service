@@ -39,6 +39,11 @@ export class ChatService {
   }
 
   async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string, model:Model, messageContext: MessageContext,){
+    //add datasources to conversation
+    for (let datasourceContext of messageContext.datasources) {
+      await this.conversationService.addDatasourceToConversation(memberId, parseInt(datasourceContext.id), conversationId);
+    }
+
     const messageText = messageContext.textWithoutTags;
     //add the prompt to the messages table
     await this.conversationService.addMessageToConversation(memberId, conversationId, {messageText, role: 'user'});
@@ -106,9 +111,9 @@ export class ChatService {
             }
           }
           const endSignal = JSON.stringify({ end: 'true' });
+          await handleResponseCompleted(completeText, model);
           handleOnText(endSignal);
           observer.next(endSignal);
-          await handleResponseCompleted(completeText, model);
           observer.complete();
         })
         .catch((error) => {

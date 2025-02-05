@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   Conversation,
   CreateConversation,
-  CreateMessage, Suggestion,
+  CreateMessage, Document, Message, Suggestion,
 } from '../models/api/conversationApiModels';
 import { ConversationsRepository } from '../repositories/conversations.repository';
 import { MessagesService } from './messages.service';
@@ -10,20 +10,32 @@ import config from '../config/config';
 import { InferenceService } from './inference.service';
 import { createOpenAIMessagesFromMessages, formatDeepSeekResponse } from '../utils/utils';
 import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
+import { DatasourcesService } from './datasource.service';
+import { documentPrompt } from '../utils/prompts';
 @Injectable()
 export class ConversationService {
   constructor(
     private readonly conversationsRepository: ConversationsRepository,
     private readonly messagesService: MessagesService,
     private readonly inferenceService: InferenceService,
+    private readonly datasourcesService: DatasourcesService,
   ) {}
 
+  /**
+   * Retrieves all messages and datasources for a conversation.
+   * Note: datasource documents are added to messages when added to the conversation.
+   * @param memberId
+   * @param conversationId
+   */
   async getConversation(memberId: string, conversationId: string, ): Promise<Conversation | undefined> {
     await this.ensureMemberOwnsConversation(memberId, conversationId);
     const conversation = await this.conversationsRepository.getConversation(conversationId);
     if(!conversation){ return undefined; }
     const messages = await this.messagesService.getMessagesForConversation(conversation.conversationId);
     conversation.messages = messages || [];
+    //return datasources so the UI can indicate which datasources belong to the conversation, and also prevent the datasource from trying to be added again, which is not allowed on the backend.
+    const datasources = await this.datasourcesService.getDatasourcesForConversation(memberId, conversationId);
+    conversation.datasources = datasources;
     return conversation;
   }
 
@@ -52,9 +64,26 @@ export class ConversationService {
     return await this.conversationsRepository.getConversationsForMember(memberId);
   }
 
+  /**
+   * Add a snapshot of the documents for the datasource to the messages.
+   * I went back and forth on whether to do this, or always pull the latest version of the document, but I think it makes more sense as a snapshot.
+   * If users update, then
+   * @param memberId
+   * @param datasourceId
+   * @param conversationId
+   */
   async addDatasourceToConversation(memberId: string, datasourceId: number, conversationId: string){
     await this.ensureMemberOwnsConversation(memberId, conversationId);
-    return this.conversationsRepository.addDatasourceToConversation(conversationId, datasourceId);
+    if(await this.conversationsRepository.doesDatasourceExistInConversation(conversationId, datasourceId)){
+      throw new Error('Datasource is already part of the conversation and cant be added again or updated');
+    }
+    await this.conversationsRepository.addDatasourceToConversation(conversationId, datasourceId); //this will intentionally break if the datasource is already part of the conversation.
+
+    const documentsForDatasource = await this.datasourcesService.getDocumentsForDatasource(memberId, datasourceId);
+    for(let document of documentsForDatasource){
+      const createMessage = formatDocumentAsMessage(document);
+      await this.messagesService.createMessageForConversation(conversationId, memberId, createMessage);
+    }
   }
 
   async ensureMemberOwnsConversation(memberId: string, conversationId: string){
@@ -91,22 +120,15 @@ export class ConversationService {
     const suggestions = await this.conversationsRepository.getAutoCompleteSuggestions(memberId, text);
     // console.log(`suggestions for text: ${text}`, suggestions);
     return suggestions;
-    //
-    // //get model names for member
-    // //get datasource names for member
-    // const suggestions: Suggestion[] = [
-    //   {type: 'model', name: 'Test', id: '1234'},
-    //   {type: 'model', name: 'Test 2', id: '5678'},
-    //   {type: 'model', name: 'Test 3', id: 'a'},
-    //   {type: 'model', name: 'Test 4', id: 'b'},
-    //   {type: 'model', name: 'Test 5', id: 'c'},
-    //   {type: 'model', name: 'Test 2', id: 'd'},
-    //   {type: 'model', name: 'Test 2', id: 'e'},
-    //   {type: 'model', name: 'Test 2', id: 'f'},
-    //   {type: 'model', name: 'Test 2', id: 'g'},
-    //   {type: 'model', name: 'Test 10', id: 'h'},
-    // ];
-    // return suggestions;
   }
 
+}
+
+function formatDocumentAsMessage(document: Document){
+  const documentTextWithInstruction = documentPrompt(document);
+  const message: CreateMessage = {
+    messageText: documentTextWithInstruction,
+    role: "user"
+  };
+  return message;
 }
