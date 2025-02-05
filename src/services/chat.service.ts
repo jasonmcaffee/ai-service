@@ -48,7 +48,7 @@ export class ChatService {
     //add the prompt to the messages table
     await this.conversationService.addMessageToConversation(memberId, conversationId, {messageText, role: 'user'});
     //get all the messages in the conversation
-    const conversation = await this.conversationService.getConversation(memberId, conversationId);
+    const conversation = await this.conversationService.getConversation(memberId, conversationId, true);
     if(!conversation){ throw new Error('Conversation not found'); }
 
     let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);

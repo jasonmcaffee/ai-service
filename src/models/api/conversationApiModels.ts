@@ -96,6 +96,9 @@ export class Datasource {
 
   @ApiProperty({type: [Document], nullable: true})
   documents?: Document[]
+
+  @ApiProperty({nullable: true})
+  dateAddedToConversation?: string;// from created_date of conversation_datasource.
 }
 
 export class Conversation {

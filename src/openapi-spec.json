@@ -1020,6 +1020,10 @@
             "items": {
               "$ref": "#/components/schemas/Document"
             }
+          },
+          "dateAddedToConversation": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -1028,7 +1032,8 @@
           "createdDate",
           "datasourceTypeId",
           "name",
-          "documents"
+          "documents",
+          "dateAddedToConversation"
         ]
       },
       "Conversation": {

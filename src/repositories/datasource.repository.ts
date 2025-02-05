@@ -122,17 +122,19 @@ export class DatasourcesRepository {
 
   /**
    * Retrieves all datasources for a given conversation.
+   * Datasource will have a date_added_to_conversation entry which is useful for sorting messages and datasources by date, so they're given to the llm in order.
    * @param conversationId - The ID of the conversation.
    */
   async getDatasourcesForConversation(conversationId: string): Promise<Datasource[]> {
     const result = await this.sql<Datasource[]>`
-      SELECT ds.*
+      SELECT ds.*, cd.created_date AS date_added_to_conversation
       FROM datasource ds
       JOIN conversation_datasource cd ON ds.id = cd.datasource_id
       WHERE cd.conversation_id = ${conversationId};
   `;
     return result;
   }
+
 
   /**
    * Retrieves all documents for a given conversation by fetching the associated datasources and their documents.

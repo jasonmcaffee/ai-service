@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   Conversation,
   CreateConversation,
-  CreateMessage, Document, Message, Suggestion,
+  CreateMessage, Datasource, Document, Message, Suggestion,
 } from '../models/api/conversationApiModels';
 import { ConversationsRepository } from '../repositories/conversations.repository';
 import { MessagesService } from './messages.service';
@@ -26,16 +26,31 @@ export class ConversationService {
    * Note: datasource documents are added to messages when added to the conversation.
    * @param memberId
    * @param conversationId
+   * @param includeDocumentsAsMessages - useful for chat interactions, where we want to send docs as messages.  not useful when painting the screen with messages, as we don't want to show these.
    */
-  async getConversation(memberId: string, conversationId: string, ): Promise<Conversation | undefined> {
+  async getConversation(memberId: string, conversationId: string, includeDocumentsAsMessages = false): Promise<Conversation | undefined> {
     await this.ensureMemberOwnsConversation(memberId, conversationId);
     const conversation = await this.conversationsRepository.getConversation(conversationId);
     if(!conversation){ return undefined; }
-    const messages = await this.messagesService.getMessagesForConversation(conversation.conversationId);
-    conversation.messages = messages || [];
+    let messages = await this.messagesService.getMessagesForConversation(conversation.conversationId);
+
     //return datasources so the UI can indicate which datasources belong to the conversation, and also prevent the datasource from trying to be added again, which is not allowed on the backend.
     const datasources = await this.datasourcesService.getDatasourcesForConversation(memberId, conversationId);
     conversation.datasources = datasources;
+
+    if(includeDocumentsAsMessages){
+      //get messages for datasource
+      // const docs = await this.datasourcesService.getDocumentsForConversation(memberId, conversationId);
+      for(let ds of datasources){
+        const docs = await this.datasourcesService.getDocumentsForDatasource(memberId, ds.id);
+        const documentsAsMessages = docs.map(d => formatDocumentAsMessage(memberId, ds, d));
+        messages = [...messages, ...documentsAsMessages];
+      }
+    }
+    //sort messages in ascending order
+    messages.sort((a, b) => new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime());
+
+    conversation.messages = messages || [];
     return conversation;
   }
 
@@ -65,9 +80,8 @@ export class ConversationService {
   }
 
   /**
-   * Add a snapshot of the documents for the datasource to the messages.
-   * I went back and forth on whether to do this, or always pull the latest version of the document, but I think it makes more sense as a snapshot.
-   * If users update, then
+   * DONT Add a snapshot of the documents for the datasource to the messages.
+   * I went back and forth on whether to do this, or always pull the latest version of the document.
    * @param memberId
    * @param datasourceId
    * @param conversationId
@@ -79,11 +93,11 @@ export class ConversationService {
     }
     await this.conversationsRepository.addDatasourceToConversation(conversationId, datasourceId); //this will intentionally break if the datasource is already part of the conversation.
 
-    const documentsForDatasource = await this.datasourcesService.getDocumentsForDatasource(memberId, datasourceId);
-    for(let document of documentsForDatasource){
-      const createMessage = formatDocumentAsMessage(document);
-      await this.messagesService.createMessageForConversation(conversationId, memberId, createMessage);
-    }
+    // const documentsForDatasource = await this.datasourcesService.getDocumentsForDatasource(memberId, datasourceId);
+    // for(let document of documentsForDatasource){
+    //   const createMessage = formatDocumentAsMessage(document);
+    //   await this.messagesService.createMessageForConversation(conversationId, memberId, createMessage);
+    // }
   }
 
   async ensureMemberOwnsConversation(memberId: string, conversationId: string){
@@ -124,11 +138,24 @@ export class ConversationService {
 
 }
 
-function formatDocumentAsMessage(document: Document){
+// function formatDocumentAsMessage(document: Document){
+//   const documentTextWithInstruction = documentPrompt(document);
+//   const message: CreateMessage = {
+//     messageText: documentTextWithInstruction,
+//     role: "user"
+//   };
+//   return message;
+// }
+
+function formatDocumentAsMessage(memberId: string, datasource: Datasource, document: Document){
   const documentTextWithInstruction = documentPrompt(document);
-  const message: CreateMessage = {
+  const message: Message = {
     messageText: documentTextWithInstruction,
-    role: "user"
+    role: "user",
+    createdDate: datasource.dateAddedToConversation!,
+    sentByMemberId: memberId,
+    messageId: '',
+    messageContext: undefined,
   };
   return message;
 }

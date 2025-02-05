@@ -98,6 +98,7 @@ export async function ensureTablesExist() {
   await sql`CREATE TABLE IF NOT EXISTS conversation_datasource (
         conversation_id TEXT,
         datasource_id INTEGER,
+        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (conversation_id) REFERENCES conversation(conversation_id),
         FOREIGN KEY (datasource_id) REFERENCES datasource(id),
         PRIMARY KEY (conversation_id, datasource_id)                                     
