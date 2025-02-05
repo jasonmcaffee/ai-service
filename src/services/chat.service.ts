@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import OpenAI from 'openai';
 import { ConversationService } from './conversation.service';
-import { Message, Model } from '../models/api/conversationApiModels';
+import {Message, MessageContext, Model} from '../models/api/conversationApiModels';
 import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 import config from '../config/config';
-import { createOpenAIMessagesFromMessages, formatDeepSeekResponse } from '../utils/utils';
+import {
+  createOpenAIMessagesFromMessages,
+  extractMessageContextFromMessage,
+  formatDeepSeekResponse
+} from '../utils/utils';
 import {chatPageSystemPrompt} from "../utils/prompts";
 import { ModelsService } from './models.service';
 
@@ -16,17 +20,28 @@ export class ChatService {
               private readonly modelsService: ModelsService) {}
 
   async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string): Promise<Observable<string>> {
-    const model = await this.modelsService.getModelByIdOrGetDefault(memberId, modelId);
+    const messageContext = extractMessageContextFromMessage(prompt);
+    console.log(`streamInference messageContext: `, messageContext);
+    if(messageContext.datasources.length > 0){
+      //todo add datasource to conversation or to message
+    }
+    const model = await this.getModelToUseForMessage(memberId, messageContext, modelId);
     if(conversationId){
-      return this.streamInferenceWithConversation(prompt, memberId, conversationId, model);
+      return this.streamInferenceWithConversation(prompt, memberId, conversationId, model, messageContext);
     }else {
-      return this.streamInferenceWithoutConversation(prompt, memberId, model);
+      return this.streamInferenceWithoutConversation(prompt, memberId, model, messageContext);
     }
   }
 
-  async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string, model:Model){
+  async getModelToUseForMessage(memberId: string, messageContext: MessageContext, modelId?: string){
+    const modelIdForMessage = messageContext.models.length > 0 ? messageContext.models[0].id : modelId;
+    return this.modelsService.getModelByIdOrGetDefault(memberId, modelIdForMessage);
+  }
+
+  async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string, model:Model, messageContext: MessageContext,){
+    const messageText = messageContext.textWithoutTags;
     //add the prompt to the messages table
-    await this.conversationService.addMessageToConversation(memberId, conversationId, {messageText: prompt, role: 'user'});
+    await this.conversationService.addMessageToConversation(memberId, conversationId, {messageText, role: 'user'});
     //get all the messages in the conversation
     const conversation = await this.conversationService.getConversation(memberId, conversationId);
     if(!conversation){ throw new Error('Conversation not found'); }
@@ -53,7 +68,7 @@ export class ChatService {
     return observable;
   }
 
-  async streamInferenceWithoutConversation(prompt: string, memberId: string, model: Model){
+  async streamInferenceWithoutConversation(prompt: string, memberId: string, model: Model, messageContext: MessageContext,){
     const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
     let openAiMessages = createOpenAIMessagesFromMessages([userMessage]);
     if(model.initialMessage){

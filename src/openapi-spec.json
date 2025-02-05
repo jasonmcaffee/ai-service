@@ -885,6 +885,50 @@
   "servers": [],
   "components": {
     "schemas": {
+      "ModelOrDatasource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ]
+      },
+      "MessageContext": {
+        "type": "object",
+        "properties": {
+          "textWithoutTags": {
+            "type": "string"
+          },
+          "originalText": {
+            "type": "string"
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelOrDatasource"
+            }
+          },
+          "datasources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelOrDatasource"
+            }
+          }
+        },
+        "required": [
+          "textWithoutTags",
+          "originalText",
+          "models",
+          "datasources"
+        ]
+      },
       "Message": {
         "type": "object",
         "properties": {
@@ -902,6 +946,9 @@
           },
           "role": {
             "type": "string"
+          },
+          "messageContext": {
+            "$ref": "#/components/schemas/MessageContext"
           }
         },
         "required": [
@@ -909,7 +956,8 @@
           "sentByMemberId",
           "messageText",
           "createdDate",
-          "role"
+          "role",
+          "messageContext"
         ]
       },
       "Conversation": {

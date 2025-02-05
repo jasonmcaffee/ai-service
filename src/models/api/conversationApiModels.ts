@@ -1,14 +1,30 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-// models/User.ts
-export class User {
+export class Member {
   @ApiProperty()
   userId: string;
   @ApiProperty()
   userName: string;
 }
 
-// models/Message.ts
+export class ModelOrDatasource {
+  @ApiProperty()
+  id: string;
+  @ApiProperty()
+  type: "model" | "datasource";
+}
+
+export class MessageContext {
+  @ApiProperty()
+  textWithoutTags: string;
+  @ApiProperty()
+  originalText: string;
+  @ApiProperty({type: [ModelOrDatasource]})
+  models: ModelOrDatasource[];
+  @ApiProperty({type: [ModelOrDatasource]})
+  datasources: ModelOrDatasource[];
+}
+
 export class Message {
   @ApiProperty()
   messageId: string;
@@ -20,6 +36,8 @@ export class Message {
   createdDate: string; // ISO format date string
   @ApiProperty()
   role: string; //user, system
+  @ApiProperty()
+  messageContext?: MessageContext; //not sent back yet, but want to force including the type in openapi-spec.
 }
 
 export class CreateMessage {
@@ -29,7 +47,6 @@ export class CreateMessage {
   role: string;
 }
 
-// models/Conversation.ts
 export class Conversation {
   @ApiProperty()
   conversationId: string;
@@ -44,16 +61,6 @@ export class Conversation {
 export class CreateConversation {
   @ApiProperty()
   conversationName: string;
-}
-
-// models/StartConversationResponse.ts
-export class StartConversationResponse {
-  @ApiProperty()
-  conversationId: string;
-  @ApiProperty()
-  conversationName: string;
-  @ApiProperty()
-  createdDate: string;
 }
 
 export class ModelType {
@@ -116,37 +123,6 @@ export class UpdateModel {
   initialMessage?: string; //initial message to send to the llm. aka persona
 }
 
-// models/AddMessageResponse.ts
-export class AddMessageResponse {
-  @ApiProperty()
-  messages: Message[];
-}
-
-// models/GetConversationResponse.ts
-export class GetConversationResponse {
-  @ApiProperty()
-  conversationId: string;
-  @ApiProperty()
-  conversationName: string;
-  @ApiProperty()
-  messages: Message[];
-}
-
-export class GetConversationsForMemberResponse {
-  @ApiProperty()
-  conversations: Conversation[];
-}
-
-// export class HaveAINameTheConversationRequest{
-//   @ApiProperty()
-//   conversationName: string;
-// }
-
-// export class HaveAINameTheConversationResponse{
-//   @ApiProperty()
-//   conversationName: string;
-// }
-
 export class Suggestion {
   @ApiProperty()
   id: string;
@@ -160,11 +136,6 @@ export class GetAutoCompleteSuggestionsRequest {
   @ApiProperty()
   text: string;
 }
-
-// export class GetAtAutoCompleteSuggestionsResponse {
-//   @ApiProperty()
-//   suggestions: Suggestion[];
-// }
 
 export class DatasourceType {
   @ApiProperty()
@@ -230,25 +201,6 @@ export class CreateDocument {
 
   @ApiProperty()
   fileName: string;
-}
-
-export class DatasourceDocument {
-  @ApiProperty()
-  datasourceId: number;
-
-  @ApiProperty()
-  documentId: number;
-
-  @ApiProperty()
-  lastVectorBuildDate: string; // ISO format date string
-}
-
-export class ConversationDatasource {
-  @ApiProperty()
-  conversationId: string;
-
-  @ApiProperty()
-  datasourceId: number;
 }
 
 export class ChatInference {
