@@ -58,10 +58,10 @@ export class ChatService {
       // console.log('handle on text got: ', text);
     };
 
-    const handleResponseCompleted = async (completeResponse: string) => {
+    const handleResponseCompleted = async (completeResponse: string, model: Model) => {
       console.log('handle response completed got: ', completeResponse);
       const formattedResponse = formatDeepSeekResponse(completeResponse);
-      await this.conversationService.addMessageToConversation(config.getAiMemberId(), conversationId, {messageText: formattedResponse, role: 'system'});
+      await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
     const observable = this.createInferenceObservable(openAiMessages, handleOnText, handleResponseCompleted, model);
@@ -81,7 +81,7 @@ export class ChatService {
 
   createInferenceObservable(openAiMessages: ChatCompletionMessageParam[],
                             handleOnText: (text: string) => void,
-                            handleResponseCompleted: (text: string) => void,
+                            handleResponseCompleted: (text: string, model: Model) => void,
                             model: Model,
   ): Observable<string> {
     const apiKey = model.apiKey;
@@ -108,7 +108,7 @@ export class ChatService {
           const endSignal = JSON.stringify({ end: 'true' });
           handleOnText(endSignal);
           observer.next(endSignal);
-          await handleResponseCompleted(completeText);
+          await handleResponseCompleted(completeText, model);
           observer.complete();
         })
         .catch((error) => {

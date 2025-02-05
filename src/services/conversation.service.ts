@@ -41,8 +41,10 @@ export class ConversationService {
     await this.conversationsRepository.deleteConversation(memberId, conversationId);
   }
 
-  async addMessageToConversation(memberId: string, conversationId: string, message: CreateMessage){
-    await this.ensureMemberOwnsConversation(memberId, conversationId);
+  async addMessageToConversation(memberId: string, conversationId: string, message: CreateMessage, shouldEnsureMemberOwnership = true){
+    if(shouldEnsureMemberOwnership){ //sometimes we want to add the message from the model
+      await this.ensureMemberOwnsConversation(memberId, conversationId);
+    }
     return await this.messagesService.createMessageForConversation(conversationId, memberId, message);
   }
 
