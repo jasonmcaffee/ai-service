@@ -1,4 +1,4 @@
-import {Document} from '../models/api/conversationApiModels';
+import { Conversation, Document } from '../models/api/conversationApiModels';
 
 export const chatPageSystemPrompt = `
     All of your responses exclude any preamble, such as "Sure, here you go...", "The answer to 5 + 5 is...", etc.
@@ -36,4 +36,22 @@ export function documentPrompt(document:Document){
   ${document.text}
   </document>
   `;
+}
+
+export function nameConversationPrompt(conversation: Conversation){
+  // let datasourcesText = '';
+  // if(conversation.datasources?.length){
+  //   for (let ds of conversation.datasources){
+  //     const datasourceText = `<datasourceName>${ds.name}</datasourceName>`;
+  //   }
+  //
+  // }
+
+  const prompt = `
+      You are an expert at succinctly coming up with the title for a conversation, based on the messages in the conversation.
+      Look at the previous messages that have been sent in this conversation, and come up with a title that is ten words or less.
+      Do not respond with preamble, such as "Ok, here is the title", etc.  Only respond with the title.
+    `;
+
+  return prompt;
 }

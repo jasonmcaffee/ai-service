@@ -11,7 +11,7 @@ import { InferenceService } from './inference.service';
 import { createOpenAIMessagesFromMessages, formatDeepSeekResponse } from '../utils/utils';
 import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 import { DatasourcesService } from './datasource.service';
-import { documentPrompt } from '../utils/prompts';
+import { documentPrompt, nameConversationPrompt } from '../utils/prompts';
 @Injectable()
 export class ConversationService {
   constructor(
@@ -107,14 +107,12 @@ export class ConversationService {
 
   async haveAiNameTheConversation(memberId: string, conversationId: string){
     await this.ensureMemberOwnsConversation(memberId, conversationId);
-    const prompt = `
-      You are an expert at succinctly coming up with the title for a conversation, based on the messages in the conversation.
-      Look at the previous messages that have been sent in this conversation, and come up with a title that is ten words or less.
-      Do not respond with preamble, such as "Ok, here is the title", etc.  Only respond with the title.
-    `;
 
     const conversation = await this.getConversation(memberId, conversationId);
     if(!conversation) { return new Error('Conversation not found'); }
+
+    const prompt = nameConversationPrompt(conversation);
+
     let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages || []);
     const lastMessage = {role: 'user', content: prompt} as ChatCompletionMessageParam;
     openAiMessages = [...openAiMessages, lastMessage];
