@@ -44,12 +44,16 @@ export class ChatService {
       await this.conversationService.addDatasourceToConversation(memberId, parseInt(datasourceContext.id), conversationId);
     }
 
-    const messageText = messageContext.textWithoutTags;
+    const messageText = messageContext.originalText; //store the original text, unaltered.  alter before sending out.  // messageContext.textWithoutTags;
     //add the prompt to the messages table
     await this.conversationService.addMessageToConversation(memberId, conversationId, {messageText, role: 'user'});
     //get all the messages in the conversation
     const conversation = await this.conversationService.getConversation(memberId, conversationId, true);
     if(!conversation){ throw new Error('Conversation not found'); }
+
+    //send user messages without <datasource> and <model> text.
+    conversation.messages?.filter(m => m.sentByMemberId === memberId)
+      .forEach(m => m.messageText = extractMessageContextFromMessage(m.messageText).textWithoutTags)
 
     let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
     if(model.initialMessage){
