@@ -52,6 +52,21 @@
         ]
       }
     },
+    "/chat/stop": {
+      "get": {
+        "operationId": "stop",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "stop the current stream for a member",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
     "/conversations/conversation/{conversationId}": {
       "get": {
         "operationId": "getConversation",

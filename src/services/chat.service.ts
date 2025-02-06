@@ -13,12 +13,21 @@ import {
 import {chatPageSystemPrompt} from "../utils/prompts";
 import { ModelsService } from './models.service';
 
-
 @Injectable()
 export class ChatService {
+  //clientId to abortcontroller map so we can stop.
+  private abortControllers: Map<string, { controller: AbortController }> = new Map();
+
   constructor(private readonly conversationService: ConversationService,
               private readonly modelsService: ModelsService) {}
 
+  async stop(memberId: string){
+    const associatedAbortController = this.abortControllers.get(memberId);
+    if(!associatedAbortController){
+      return console.log(`no associated abort controller for member id: ${memberId}`);
+    }
+    associatedAbortController.controller.abort();
+  }
   async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string): Promise<Observable<string>> {
     const messageContext = extractMessageContextFromMessage(prompt);
     console.log(`streamInference messageContext: `, messageContext);
@@ -73,7 +82,7 @@ export class ChatService {
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
-    const observable = this.createInferenceObservable(openAiMessages, handleOnText, handleResponseCompleted, model);
+    const observable = this.createInferenceObservable(openAiMessages, handleOnText, handleResponseCompleted, model, memberId);
     return observable;
   }
 
@@ -84,7 +93,7 @@ export class ChatService {
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
     }
-    const observable = this.createInferenceObservable(openAiMessages, ()=>{}, ()=>{}, model);
+    const observable = this.createInferenceObservable(openAiMessages, ()=>{}, ()=>{}, model, memberId);
     return observable;
   }
 
@@ -92,18 +101,25 @@ export class ChatService {
                             handleOnText: (text: string) => void,
                             handleResponseCompleted: (text: string, model: Model) => void,
                             model: Model,
+                            memberId: string,
   ): Observable<string> {
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL,});
     return new Observable((observer) => {
       let completeText = '';
+
+      //allow a mechanism to cancel the request.
+      const controller = new AbortController();
+      const signal = controller.signal;
+      this.abortControllers.set(memberId, {controller});
+
       openai.chat.completions
         .create({
           model: model.modelName, //'gpt-4',
           messages: [{role: 'system', content: chatPageSystemPrompt}, ...openAiMessages],
           stream: true,
-        })
+        }, {signal})
         .then(async (stream) => {
           for await (const chunk of stream) {
             const content = chunk.choices[0]?.delta?.content || '';
@@ -116,12 +132,14 @@ export class ChatService {
           }
           const endSignal = JSON.stringify({ end: 'true' });
           await handleResponseCompleted(completeText, model);
+          this.abortControllers.delete(memberId);
           handleOnText(endSignal);
           observer.next(endSignal);
           observer.complete();
         })
         .catch((error) => {
           console.log(`openai error: `, error);
+          this.abortControllers.delete(memberId);
           observer.error(error);
         });
     });

@@ -32,4 +32,12 @@ export class ChatController {
     const memberId = this.authenticationService.getMemberId();
     return this.chatService.streamInference(prompt, memberId, conversationId, modelId);
   }
+
+  @ApiOperation({summary: 'stop the current stream for a member'})
+  @Get('stop')
+  @ApiResponse({status: 201})
+  async stop(){
+    const memberId = this.authenticationService.getMemberId();
+    return this.chatService.stop(memberId);
+  }
 }
