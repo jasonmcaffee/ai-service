@@ -100,7 +100,7 @@ export class ChatService {
       let completeText = '';
       openai.chat.completions
         .create({
-          model: 'gpt-4',
+          model: model.modelName, //'gpt-4',
           messages: [{role: 'system', content: chatPageSystemPrompt}, ...openAiMessages],
           stream: true,
         })
@@ -121,9 +121,13 @@ export class ChatService {
           observer.complete();
         })
         .catch((error) => {
+          console.log(`openai error: `, error);
           observer.error(error);
         });
     });
   }
 
 }
+
+//from chatgpt
+//data: 429 You exceeded your current quota
