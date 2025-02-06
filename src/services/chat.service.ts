@@ -26,7 +26,9 @@ export class ChatService {
     if(!associatedAbortController){
       return console.log(`no associated abort controller for member id: ${memberId}`);
     }
+    console.log(`aborting controller`)
     associatedAbortController.controller.abort();
+    this.abortControllers.delete(memberId);
   }
   async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string): Promise<Observable<string>> {
     const messageContext = extractMessageContextFromMessage(prompt);
