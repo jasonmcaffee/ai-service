@@ -698,6 +698,73 @@
         ]
       }
     },
+    "/image/prompt/{promptId}": {
+      "get": {
+        "operationId": "pollImageStatus",
+        "parameters": [
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PollImageStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Poll the status of an ai image that is being created.",
+        "tags": [
+          "Image"
+        ]
+      }
+    },
+    "/image/conversation": {
+      "post": {
+        "operationId": "createConversation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Params to create the image.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateAiImageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prompt id to poll for image status, then get the image name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateAiImageResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Have ai generate an image",
+        "tags": [
+          "Image"
+        ]
+      }
+    },
     "/models/model-types": {
       "get": {
         "operationId": "getModelTypes",
@@ -1185,6 +1252,51 @@
         "required": [
           "id",
           "datasourceType"
+        ]
+      },
+      "PollImageStatusResponse": {
+        "type": "object",
+        "properties": {
+          "imageName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "imageName"
+        ]
+      },
+      "GenerateAiImageRequest": {
+        "type": "object",
+        "properties": {
+          "height": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "height",
+          "width",
+          "prompt",
+          "prefix"
+        ]
+      },
+      "GenerateAiImageResponse": {
+        "type": "object",
+        "properties": {
+          "promptId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "promptId"
         ]
       },
       "ModelType": {

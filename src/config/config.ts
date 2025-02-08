@@ -30,6 +30,14 @@ const config = {
         }
       }
     }
+  },
+
+  isProduction() {
+    return process.env.NODE_ENV === 'production';
+  },
+
+  getSharedDriveBasePath(){
+    return this.isProduction()? `C:/shared-drive` : `/Volumes/shared-drive`;
   }
 }
 export default config;

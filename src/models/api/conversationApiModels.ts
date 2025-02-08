@@ -101,6 +101,27 @@ export class Datasource {
   dateAddedToConversation?: string;// from created_date of conversation_datasource.
 }
 
+export class PollImageStatusResponse {
+  @ApiProperty()
+  imageName: string;
+}
+
+export class GenerateAiImageRequest {
+  @ApiProperty()
+  height: number;
+  @ApiProperty()
+  width: number;
+  @ApiProperty()
+  prompt: string;
+  @ApiProperty()
+  prefix: string;
+}
+
+export class GenerateAiImageResponse{
+  @ApiProperty()
+  promptId: string;
+}
+
 export class Conversation {
   @ApiProperty()
   conversationId: string;
