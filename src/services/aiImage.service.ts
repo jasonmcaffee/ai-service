@@ -1,4 +1,4 @@
-import fs from 'fs/promises';
+import * as fs from 'fs/promises';
 import config from '../config/config';
 import {Injectable} from "@nestjs/common";
 import {GenerateAiImageResponse, PollImageStatusResponse} from "../models/api/conversationApiModels";
@@ -47,7 +47,7 @@ export class AIImageService {
 
             console.log(`generate image called: `);
             if(!workflow){
-                console.log(`reading workflow file path: ${workflowPath}`);
+                console.log(`reading workflow file path: ${workflowPath}`, fs);
                 workflow = await fs.readFile(workflowPath, 'utf-8');
                 // console.log(`workflow is:`, workflow);
                 console.log(`workflow loaded`);
