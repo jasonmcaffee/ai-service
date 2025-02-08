@@ -29,8 +29,8 @@ export class ImageController {
     @ApiOperation({ summary: 'Have ai generate an image' })
     @ApiBody({ description: 'Params to create the image.', type: GenerateAiImageRequest, })
     @ApiResponse({ status: 200, description: 'Prompt id to poll for image status, then get the image name.', type: GenerateAiImageResponse})
-    @Post('conversation')
-    async createConversation(@Body() request: GenerateAiImageRequest) {
+    @Post('generateAiImage')
+    async generateAiImage(@Body() request: GenerateAiImageRequest) {
         const memberId = this.authenticationService.getMemberId();
         const {width, height, prompt, prefix} = request;
         const result = await this.aiImageService.generateImage(width, height, prompt, prefix);

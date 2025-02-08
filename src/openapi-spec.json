@@ -732,9 +732,9 @@
         ]
       }
     },
-    "/image/conversation": {
+    "/image/generateAiImage": {
       "post": {
-        "operationId": "createConversation",
+        "operationId": "generateAiImage",
         "parameters": [],
         "requestBody": {
           "required": true,
