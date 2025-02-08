@@ -1,11 +1,17 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Res, HttpStatus } from '@nestjs/common';
 import { ConversationService } from '../services/conversation.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import {
     Conversation,
     CreateConversation,
-    CreateMessage, GenerateAiImageRequest, GenerateAiImageResponse, GetAutoCompleteSuggestionsRequest,
-    Message, PollImageStatusResponse, Suggestion,
+    CreateMessage,
+    GenerateAiImageRequest,
+    GenerateAiImageResponse,
+    GenerateAndReturnAiImageResponse,
+    GetAutoCompleteSuggestionsRequest,
+    Message,
+    PollImageStatusResponse,
+    Suggestion,
 } from '../models/api/conversationApiModels';
 import { AuthenticationService } from '../services/authentication.service';
 import {AIImageService} from "../services/aiImage.service";
@@ -37,4 +43,31 @@ export class ImageController {
         return result;
     }
 
+    @ApiOperation({ summary: 'Have AI generate an image and return it directly' })
+    @ApiBody({ description: 'Params to create the image.', type: GenerateAiImageRequest })
+    @ApiResponse({
+        status: 200,
+        description: 'Returns the generated image directly',
+        content: {
+            'image/png': {
+                schema: {
+                    type: 'string',
+                    format: 'binary'
+                }
+            },
+            'image/jpeg': {
+                schema: {
+                    type: 'string',
+                    format: 'binary'
+                }
+            }
+        }
+    })
+    @Post('generateAndReturnImage')
+    async generateAndReturnImage(@Body() request: GenerateAiImageRequest): Promise<GenerateAndReturnAiImageResponse> {
+        const memberId = this.authenticationService.getMemberId();
+        const { width, height, prompt, prefix } = request;
+        const result = await this.aiImageService.generateAndReturnImage(width, height, prompt, prefix);
+        return result;
+    }
 }

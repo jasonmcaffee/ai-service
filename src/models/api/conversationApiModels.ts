@@ -122,6 +122,13 @@ export class GenerateAiImageResponse{
   promptId: string;
 }
 
+export class GenerateAndReturnAiImageResponse{
+  @ApiProperty()
+  data: string;
+  @ApiProperty()
+  mimeType: string;
+}
+
 export class Conversation {
   @ApiProperty()
   conversationId: string;

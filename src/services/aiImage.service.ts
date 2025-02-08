@@ -2,18 +2,63 @@ import * as fs from 'fs/promises';
 import config from '../config/config';
 import {Injectable} from "@nestjs/common";
 import {GenerateAiImageResponse, PollImageStatusResponse} from "../models/api/conversationApiModels";
+import { wait } from '../utils/utils';
+import crypto from 'crypto';
+import * as path from 'path';
 const WORKFLOW_DIR = `${config.getSharedDriveBasePath()}/llm_models/ComfyUI_windows_portable/comfyui_workflows`;
 // const workflowPath = `${WORKFLOW_DIR}/api version flux realism lora and upscaler - jason - v6.json`;
 const workflowPath = `${WORKFLOW_DIR}/api flux v1 dev hand-lora realism-lora no-upscale - jason v1.json`;
+const imagesPath = `${config.getSharedDriveBasePath()}/llm_models/ComfyUI_windows_portable/ComfyUI/output`;
 
 let workflow: any;
 const baseUrl = 'http://192.168.0.209:8082';
 const generateImageUrl = `${baseUrl}/prompt`;
 const getImageStatusUrl = `${baseUrl}/history`;
-const clientId = "123456";
 
+const maxPollTries = 5 * 60;
 @Injectable()
 export class AIImageService {
+
+    async generateAndReturnImage(width: number, height: number, prompt: string, prefix: string): Promise<{data: string, mimeType: string}> {
+        const {promptId} = await this.generateImage(width, height, prompt, prefix);
+
+        return new Promise(async (resolve, reject) => {
+            let count = 0;
+            const maxAttempts = 30; // Maximum polling attempts (30 seconds)
+
+            while(count < maxAttempts) {
+                try {
+                    const result = await this.pollImageStatus(promptId);
+                    if (result.imageName) {
+                        console.log(`got back imageName: ${result.imageName}`);
+                        const imagePath = path.join(imagesPath, decodeURIComponent(result.imageName));
+
+                        // Read the file and convert to base64
+                        const imageBuffer = await fs.readFile(imagePath);
+                        const base64Image = imageBuffer.toString('base64');
+
+                        // Determine MIME type based on file extension
+                        const mimeType = result.imageName.toLowerCase().endsWith('.png')
+                          ? 'image/png'
+                          : 'image/jpeg';
+
+                        resolve({
+                            data: `data:${mimeType};base64,${base64Image}`,
+                            mimeType
+                        });
+                        return;
+                    }
+                } catch(e) {
+                    console.error('Error polling image status:', e);
+                }
+
+                count += 1;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            reject(new Error('Timeout waiting for image generation'));
+        });
+    }
 
     async pollImageStatus(promptId: string): Promise<PollImageStatusResponse>{
         const pollUrl = `${getImageStatusUrl}/${promptId}`;

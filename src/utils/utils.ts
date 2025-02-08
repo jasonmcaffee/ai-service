@@ -35,3 +35,9 @@ export function parseModelAndDatasourceTagsFromMessage(text: string): ModelOrDat
 function removeModelAndDatasourceTagsFromMessage(text: string): string {
   return text.replace(/<\s*(model|datasource)[^>]*>.*?<\s*\/\s*\1\s*>\s*/gi, '');
 }
+
+export function wait(ms: number){
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
