@@ -47,6 +47,7 @@ export class AIImageService {
 
             console.log(`generate image called: `);
             if(!workflow){
+                console.log(`reading workflow file path: ${workflowPath}`);
                 workflow = await fs.readFile(workflowPath, 'utf-8');
                 // console.log(`workflow is:`, workflow);
                 console.log(`workflow loaded`);
@@ -106,8 +107,8 @@ export class AIImageService {
             return {promptId};
 
         } catch (error) {
-            console.error('Error serving image:', error);
-            throw new Error(`Error serving image: ${error}`);
+            console.error('Error generating image:', error);
+            throw new Error(`Error generating image: ${error}`);
         }
     }
 }
