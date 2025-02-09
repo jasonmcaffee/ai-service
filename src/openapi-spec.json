@@ -784,16 +784,9 @@
           "200": {
             "description": "Returns the generated image directly",
             "content": {
-              "image/png": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              },
-              "image/jpeg": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
+                  "$ref": "#/components/schemas/GenerateAndReturnAiImageResponse"
                 }
               }
             }
@@ -1337,6 +1330,29 @@
         },
         "required": [
           "promptId"
+        ]
+      },
+      "GenerateAndReturnAiImageResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "promptId": {
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "mimeType",
+          "promptId",
+          "prompt"
         ]
       },
       "ModelType": {

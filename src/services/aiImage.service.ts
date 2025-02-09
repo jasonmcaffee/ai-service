@@ -1,7 +1,11 @@
 import * as fs from 'fs/promises';
 import config from '../config/config';
 import {Injectable} from "@nestjs/common";
-import {GenerateAiImageResponse, PollImageStatusResponse} from "../models/api/conversationApiModels";
+import {
+    GenerateAiImageResponse,
+    GenerateAndReturnAiImageResponse,
+    PollImageStatusResponse
+} from "../models/api/conversationApiModels";
 import { wait } from '../utils/utils';
 import crypto from 'crypto';
 import * as path from 'path';
@@ -15,18 +19,17 @@ const baseUrl = 'http://192.168.0.209:8082';
 const generateImageUrl = `${baseUrl}/prompt`;
 const getImageStatusUrl = `${baseUrl}/history`;
 
-const maxPollTries = 5 * 60;
+
 @Injectable()
 export class AIImageService {
 
-    async generateAndReturnImage(width: number, height: number, prompt: string, prefix: string): Promise<{data: string, mimeType: string}> {
+    async generateAndReturnImage(width: number, height: number, prompt: string, prefix: string): Promise<GenerateAndReturnAiImageResponse> {
         const {promptId} = await this.generateImage(width, height, prompt, prefix);
 
         return new Promise(async (resolve, reject) => {
             let count = 0;
-            const maxAttempts = 30; // Maximum polling attempts (30 seconds)
-
-            while(count < maxAttempts) {
+            const maxPollTries = 5 * 60;
+            while(count < maxPollTries) {
                 try {
                     const result = await this.pollImageStatus(promptId);
                     if (result.imageName) {
@@ -44,7 +47,9 @@ export class AIImageService {
 
                         resolve({
                             data: `data:${mimeType};base64,${base64Image}`,
-                            mimeType
+                            mimeType,
+                            promptId,
+                            prompt,
                         });
                         return;
                     }

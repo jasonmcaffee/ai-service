@@ -45,24 +45,7 @@ export class ImageController {
 
     @ApiOperation({ summary: 'Have AI generate an image and return it directly' })
     @ApiBody({ description: 'Params to create the image.', type: GenerateAiImageRequest })
-    @ApiResponse({
-        status: 200,
-        description: 'Returns the generated image directly',
-        content: {
-            'image/png': {
-                schema: {
-                    type: 'string',
-                    format: 'binary'
-                }
-            },
-            'image/jpeg': {
-                schema: {
-                    type: 'string',
-                    format: 'binary'
-                }
-            }
-        }
-    })
+    @ApiResponse({status: 200, description: 'Returns the generated image directly', type: GenerateAndReturnAiImageResponse,})
     @Post('generateAndReturnImage')
     async generateAndReturnImage(@Body() request: GenerateAiImageRequest): Promise<GenerateAndReturnAiImageResponse> {
         const memberId = this.authenticationService.getMemberId();
