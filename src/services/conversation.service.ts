@@ -9,7 +9,8 @@ import { MessagesService } from './messages.service';
 import config from '../config/config';
 import { InferenceService } from './inference.service';
 import { createOpenAIMessagesFromMessages, formatDeepSeekResponse } from '../utils/utils';
-import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
+// import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { DatasourcesService } from './datasource.service';
 import { documentPrompt, nameConversationPrompt } from '../utils/prompts';
 @Injectable()

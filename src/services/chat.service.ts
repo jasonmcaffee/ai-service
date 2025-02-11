@@ -3,7 +3,9 @@ import { Observable, of } from 'rxjs';
 import OpenAI from 'openai';
 import { ConversationService } from './conversation.service';
 import {Message, MessageContext, Model} from '../models/api/conversationApiModels';
-import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
+// import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+
 import config from '../config/config';
 import {
   createOpenAIMessagesFromMessages,

@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { PlaywrightCrawler } from 'crawlee';
+import { PlaywrightCrawler, RequestQueue } from 'crawlee';
+
 require('dotenv').config();
 
 const ccNumber = process.env.CC_NUMBER;
@@ -15,24 +16,19 @@ const firstName = process.env.FIRST_NAME;
 const lastName = process.env.LAST_NAME;
 const state = process.env.STATE;
 const shouldRun = process.env.SHOULD_RUN;
-console.log('CC_NUMBER', ccNumber);
-console.log('CC_CSV_NUMBER', csvNumber);
-console.log('CC_EXPIRATION', ccExpiration);
-console.log('ADDRESS_STREET', addressStreet);
-console.log('ADDRESS_CITY', addressCity);
-console.log('ADDRESS_ZIP', addressZip);
-console.log('USERNAME', username);
-console.log('PASSWORD', password);
 
 let hasAddedToCart = false;
+let isRunning = false;
 
-@Injectable()
-export class BestBuyScraperService implements OnModuleInit {
+// @Injectable()
+// export class BestBuyScraperService implements OnModuleInit {
+export class BestBuyScraperService {
   private readonly logger = new Logger(BestBuyScraperService.name);
   private readonly url = 'https://www.bestbuy.com/site/nvidia-geforce-rtx-5090-32gb-gddr7-graphics-card-dark-gun-metal/6614151.p?skuId=6614151';
   // private readonly url = 'https://www.bestbuy.com/site/crucial-p3-1tb-internal-ssd-pcie-gen-3-x4-nvme/6509712.p?skuId=6509712';
   private readonly signInUrl = 'https://www.bestbuy.com/identity/global/signin';
-
+  private crawler: PlaywrightCrawler;
+  private queue: RequestQueue;
   async signIn(page, request){
     // await page.goto(this.signInUrl);
     await page.waitForSelector('input#fld-e');
@@ -84,6 +80,8 @@ export class BestBuyScraperService implements OnModuleInit {
     console.log('determining if the item is sold out..');
     const buttonState = await page.evaluate(el => el.getAttribute('data-button-state'), addToCartButton);
     console.log(`Button state: ${buttonState}`);
+
+    // await page.screenshot({ path: `soldout-${request.id}.png` });
 
     if (buttonState === 'SOLD_OUT') {
       console.log('Item is SOLD OUT.');
@@ -218,46 +216,78 @@ export class BestBuyScraperService implements OnModuleInit {
 
     await page.waitForSelector('button.btn-primary[data-track="Place your Order - In-line"]');
     console.log('Placing the order');
+    await page.screenshot({ path: `purchasable-${request.id}.png` });
     await page.click('button.btn-primary[data-track="Place your Order - In-line"]');
 
     hasAddedToCart = true;
+    await page.screenshot({ path: `purchased-${request.id}.png` });
+    await wait(24 * 60 * 60 * 1000); //wait 24 hours.
     process.exit();
-
   }
 
   async scrapeBestBuy() {
+    if (isRunning) {
+      console.log('Previous scraping operation still in progress. Skipping...');
+      return;
+    }
+
     console.log('Checking Best Buy stock status...');
+    isRunning = true;
 
-    const signIn = this.signIn.bind(this);
+    try {
+      const crawler = new PlaywrightCrawler({
+        headless: false,
+        requestHandler: this.requestHandler.bind(this),
+        requestQueue: undefined,
+        maxRequestsPerCrawl: undefined,
+        maxConcurrency: 1,
+      });
 
-    const crawler = new PlaywrightCrawler({
-      // When you turn off headless mode, the crawler
-      // will run with a visible browser window.
-      headless: false,
-      // Let's limit our crawls to make our tests shorter and safer.
-      // maxRequestsPerCrawl: 50,
-      requestHandler: this.requestHandler.bind(this),
-    });
-
-    await crawler.run([this.signInUrl]);
-  }
-
-  @Cron('0 * * * * *') // Runs every 60 seconds
-  async scheduledScrape() {
-    await this.scrapeBestBuy();
-  }
-
-  async onModuleInit() {
-    console.log('Running scraper immediately on startup...');
-    await this.scrapeBestBuy(); // Run once when the server starts
+      await crawler.addRequests([`${this.signInUrl}?d=${Date.now()}`]);
+      await crawler.run();
+    } catch (error) {
+      console.error('Error during scraping:', error);
+    } finally {
+      isRunning = false;
+      console.log('Scraping operation completed');
+    }
   }
 }
 
+const service = new BestBuyScraperService();
+async function runScraper() {
+  const intervalMs = 60 * 1000;
 
-function wait(ms: number){
+  while (true) {
+    const startTime = Date.now();
+
+    try {
+      await service.scrapeBestBuy();
+    } catch (error) {
+      console.error("Error occurred during scraping:", error);
+    }
+
+    // Calculate remaining time to wait
+    const elapsedTime = Date.now() - startTime;
+    const waitTime = Math.max(0, intervalMs - elapsedTime);
+
+    if (waitTime > 0) {
+      console.log(`Waiting ${waitTime}ms before next check...`);
+      await wait(waitTime);
+    }
+  }
+}
+
+function wait(ms: number) {
   return new Promise<void>(resolve => {
-    setTimeout(()=> {
+    setTimeout(() => {
       resolve();
     }, ms);
-  })
+  });
 }
+
+// Start the scraper
+runScraper().catch(error => {
+  console.error('Fatal error in scraper:', error);
+  process.exit(1);
+});

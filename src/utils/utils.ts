@@ -1,6 +1,6 @@
 import {Message, MessageContext, ModelOrDatasource} from '../models/api/conversationApiModels';
-import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
-
+// import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 export function createOpenAIMessagesFromMessages(messages: Message[]){
   return messages.map((m) => {

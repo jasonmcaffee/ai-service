@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
+// import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import OpenAI from 'openai';
 
 @Injectable()
