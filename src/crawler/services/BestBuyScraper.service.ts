@@ -254,7 +254,7 @@ export class BestBuyScraperService {
 
 const service = new BestBuyScraperService();
 async function runScraper() {
-  const intervalMs = 60 * 1000;
+  const intervalMs = 20 * 1000;
 
   while (true) {
     const startTime = Date.now();
