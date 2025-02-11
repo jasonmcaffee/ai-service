@@ -27,8 +27,6 @@ export class BestBuyScraperService {
   private readonly url = 'https://www.bestbuy.com/site/nvidia-geforce-rtx-5090-32gb-gddr7-graphics-card-dark-gun-metal/6614151.p?skuId=6614151';
   // private readonly url = 'https://www.bestbuy.com/site/crucial-p3-1tb-internal-ssd-pcie-gen-3-x4-nvme/6509712.p?skuId=6509712';
   private readonly signInUrl = 'https://www.bestbuy.com/identity/global/signin';
-  private crawler: PlaywrightCrawler;
-  private queue: RequestQueue;
   async signIn(page, request){
     // await page.goto(this.signInUrl);
     await page.waitForSelector('input#fld-e');
