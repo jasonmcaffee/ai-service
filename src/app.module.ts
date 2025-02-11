@@ -17,8 +17,11 @@ function loadModules(directory: string, suffix: string) {
 const controllers = loadModules(join(__dirname, 'controllers'), '.controller.js');
 const services = loadModules(join(__dirname, 'services'), '.service.js');
 const repositories = loadModules(join(__dirname, 'repositories'), '.repository.js');
+
+const crawlerServices = loadModules(join(__dirname, 'crawler/services'), '.service.js');
+
 // const repositories = [];
-const providers = [...services, ...repositories];
+const providers = [...services, ...crawlerServices, ...repositories];
 
 @Module({
   imports: [],
