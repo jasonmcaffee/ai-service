@@ -10,12 +10,32 @@ const ccExpiration = process.env.CC_EXPIRATION;
 const addressStreet = process.env.ADDRESS_STREET;
 const addressCity = process.env.ADDRESS_CITY;
 const addressZip = process.env.ADDRESS_ZIP;
-const username = process.env.USERNAME;
+const username = process.env.USERNAME2;
 const password = process.env.PASSWORD;
 const firstName = process.env.FIRST_NAME;
 const lastName = process.env.LAST_NAME;
 const state = process.env.STATE;
 const shouldRun = process.env.SHOULD_RUN;
+
+console.log(`userName: ${username}`);
+console.log(`ccNumber: ${ccNumber}`);
+console.log(`csvNumber: ${csvNumber}`);
+
+console.log({
+  ccNumber,
+  csvNumber,
+  ccExpiration,
+  addressStreet,
+  addressCity,
+  addressZip,
+  username,
+  password,
+  firstName,
+  lastName,
+  state,
+  shouldRun,
+});
+
 
 let hasAddedToCart = false;
 let isRunning = false;
@@ -30,8 +50,10 @@ export class BestBuyScraperService {
   async signIn(page, request){
     // await page.goto(this.signInUrl);
     await page.waitForSelector('input#fld-e');
+    await page.focus('input#fld-e');
     // Fill in email and continue
-    await page.fill('input#fld-e', username);
+    console.log(`username is: ${username}`);
+    await page.type('input#fld-e', username);
     await page.click('button[data-track="Sign In - Continue"]');
 
     // Wait for the password selection option
