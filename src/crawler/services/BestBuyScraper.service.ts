@@ -114,7 +114,8 @@ export class BestBuyScraperService {
 
     hasAddedToCart = true;
     await page.screenshot({ path: `purchased-${Date.now()}-${request.id}.png` });
-    // await wait(24 * 60 * 60 * 1000); //wait 24 hours.
+    await wait(4 * 60 * 1000); //wait 5 minutes
+    await page.screenshot({ path: `purchased2-${Date.now()}-${request.id}.png` });
     process.exit();
 
   }
