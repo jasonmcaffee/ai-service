@@ -17,26 +17,6 @@ const lastName = process.env.LAST_NAME;
 const state = process.env.STATE;
 const shouldRun = process.env.SHOULD_RUN;
 
-console.log(`userName: ${username}`);
-console.log(`ccNumber: ${ccNumber}`);
-console.log(`csvNumber: ${csvNumber}`);
-
-console.log({
-  ccNumber,
-  csvNumber,
-  ccExpiration,
-  addressStreet,
-  addressCity,
-  addressZip,
-  username,
-  password,
-  firstName,
-  lastName,
-  state,
-  shouldRun,
-});
-
-
 let hasAddedToCart = false;
 let isRunning = false;
 
