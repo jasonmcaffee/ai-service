@@ -20,6 +20,11 @@ const shouldRun = process.env.SHOULD_RUN;
 let hasAddedToCart = false;
 let isRunning = false;
 
+const maxRetries = 1000;
+const sleepMs = 5 * 1000;
+const maxWaitTimeMs = (maxRetries * sleepMs) + (60 * 1000);
+const maxWaitTimeSeconds = maxWaitTimeMs / 1000;
+
 // @Injectable()
 // export class BestBuyScraperService implements OnModuleInit {
 export class BestBuyScraperService {
@@ -68,87 +73,23 @@ export class BestBuyScraperService {
     console.log('done signing in');
 
     await page.goto(this.url);
-    console.log('Evaluating if able to ADD TO CART...');
+    console.log('Reloading the page until ADD TO CART is available or max retries reached...');
     // await page.waitForSelector('button', { timeout: 5000 });
+    let shouldExit = await this.reloadThePageUntilAddToCartIsAvailableOrMaxRetriesIsReached(page);
+    if(shouldExit){ return; }
 
-    const addToCartButton = await page.$('.fulfillment-add-to-cart-button button.add-to-cart-button');
-    if (!addToCartButton) {
-      console.warn('No "Add to Cart" button found.');
-      return;
-    }
-
-    console.log('determining if the item is sold out..');
-    const buttonState = await page.evaluate(el => el.getAttribute('data-button-state'), addToCartButton);
-    console.log(`Button state: ${buttonState}`);
-
-    // await page.screenshot({ path: `soldout-${request.id}.png` });
-
-    if (buttonState === 'SOLD_OUT') {
-      console.log('Item is SOLD OUT.');
-      return;
-    }
-
-    if (buttonState !== 'ADD_TO_CART') {
-      console.log('Button is not ADD_TO_CART');
-      return;
-    }
-
-    console.log('Item is IN STOCK. Adding to cart...');
-    await addToCartButton.click();
-
+    console.log('trying to click on shipping button...');
     // Wait for the shipping option and click it if available
-    await page.waitForSelector('button[aria-label^="Shipping"]');
-    const shippingButton = await page.$('button[aria-label^="Shipping"]');
-    if (shippingButton) {
-      console.log('Selecting shipping option...');
-      await shippingButton.click();
-    } else {
-      console.warn('Shipping option not found.');
-      // return;
-    }
+    await this.tryClickingTheFirstShippingButton(page);
 
     console.log('Going to cart...');
     await page.waitForSelector('a[href*="cart"]');
     await page.goto('https://www.bestbuy.com/cart');
 
-    try {
-      // Wait for the shipping option to appear (max 5s)
-      await page.waitForSelector('.availability__fulfillment[data-test-fulfillment="shipping"]', { timeout: 5000 });
+    await this.tryClickingTheShippingOptionOnTheCartPage(page);
 
-      // Locate the shipping option element
-      const shippingEntry = await page.$('.availability__fulfillment[data-test-fulfillment="shipping"]');
-
-      if (shippingEntry) {
-        // Extract text content to confirm it's "FREE Shipping"
-        const shippingText = await shippingEntry.innerText();
-
-        if (shippingText.includes('FREE Shipping')) {
-          console.log('FREE Shipping option found, selecting it...');
-
-          // Click the associated radio button
-          const radioButtonSelector = '.availability__fulfillment[data-test-fulfillment="shipping"] input[type="radio"]';
-          await page.click(radioButtonSelector);
-
-          console.log('FREE Shipping option selected.');
-        } else {
-          console.log('Shipping option found, but does not match "FREE Shipping".');
-        }
-      }
-    } catch (error) {
-      console.log('Shipping option not found within timeout. Continuing...');
-    }
-
-
-
-    await page.waitForSelector('button[data-track="Checkout - Top"]');
-    const checkoutButton = await page.$('button[data-track="Checkout - Top"]');
-    if (checkoutButton) {
-      console.log('Proceeding to checkout...');
-      await checkoutButton.click();
-    } else {
-      console.warn('Checkout button not found.');
-      return;
-    }
+    shouldExit = await this.clickTheCheckoutButton(page);
+    if(shouldExit){ return; }
 
     //Shipping info
     console.log('Filling out shipping info...');
@@ -164,6 +105,21 @@ export class BestBuyScraperService {
     }
 
     //Payment info
+    await this.fillOutCreditCardInfo(page);
+
+    await page.waitForSelector('button.btn-primary[data-track="Place your Order - In-line"]');
+    console.log('Placing the order');
+    await page.screenshot({ path: `purchasable-${Date.now()}-${request.id}.png` });
+    await page.click('button.btn-primary[data-track="Place your Order - In-line"]');
+
+    hasAddedToCart = true;
+    await page.screenshot({ path: `purchased-${Date.now()}-${request.id}.png` });
+    // await wait(24 * 60 * 60 * 1000); //wait 24 hours.
+    process.exit();
+
+  }
+
+  private async fillOutCreditCardInfo(page) {
     console.log('filling out cc info...');
     await page.waitForSelector('#cc-number', { timeout: 10000 });
     await page.type('#cc-number', ccNumber);
@@ -205,24 +161,113 @@ export class BestBuyScraperService {
         // Dispatch both 'input' and 'change' events
         stateSelect.dispatchEvent(new Event('input', { bubbles: true }));
         stateSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      }else{
-        console.error('no state element')
+      } else {
+        console.error('no state element');
       }
     });
 
     await page.waitForSelector('#postalCode', { timeout: 10000 });
     await page.focus('#postalCode');
     await page.type('#postalCode', addressZip);
+  }
 
-    await page.waitForSelector('button.btn-primary[data-track="Place your Order - In-line"]');
-    console.log('Placing the order');
-    await page.screenshot({ path: `purchasable-${request.id}.png` });
-    await page.click('button.btn-primary[data-track="Place your Order - In-line"]');
+  private async clickTheCheckoutButton(page) {
+    await page.waitForSelector('button[data-track="Checkout - Top"]');
+    const checkoutButton = await page.$('button[data-track="Checkout - Top"]');
+    if (checkoutButton) {
+      console.log('Proceeding to checkout...');
+      await checkoutButton.click();
+    } else {
+      console.warn('Checkout button not found.');
+      return true;
+    }
+    return false;
+  }
 
-    hasAddedToCart = true;
-    await page.screenshot({ path: `purchased-${request.id}.png` });
-    await wait(24 * 60 * 60 * 1000); //wait 24 hours.
-    process.exit();
+  private async tryClickingTheShippingOptionOnTheCartPage(page) {
+    try {
+      // Wait for the shipping option to appear (max 5s)
+      await page.waitForSelector('.availability__fulfillment[data-test-fulfillment="shipping"]', { timeout: 5000 });
+
+      // Locate the shipping option element
+      const shippingEntry = await page.$('.availability__fulfillment[data-test-fulfillment="shipping"]');
+
+      if (shippingEntry) {
+        // Extract text content to confirm it's "FREE Shipping"
+        const shippingText = await shippingEntry.innerText();
+
+        if (shippingText.includes('FREE Shipping')) {
+          console.log('FREE Shipping option found, selecting it...');
+
+          // Click the associated radio button
+          const radioButtonSelector = '.availability__fulfillment[data-test-fulfillment="shipping"] input[type="radio"]';
+          await page.click(radioButtonSelector);
+
+          console.log('FREE Shipping option selected.');
+        } else {
+          console.log('Shipping option found, but does not match "FREE Shipping".');
+        }
+      }
+    } catch (error) {
+      console.log('Shipping option not found within timeout. Continuing...');
+    }
+  }
+
+  private async tryClickingTheFirstShippingButton(page) {
+    await page.waitForSelector('button[aria-label^="Shipping"]');
+    const shippingButton = await page.$('button[aria-label^="Shipping"]');
+    if (shippingButton) {
+      console.log('Selecting shipping option...');
+      await shippingButton.click();
+    } else {
+      console.warn('Shipping option not found.');
+    }
+  }
+
+  private async reloadThePageUntilAddToCartIsAvailableOrMaxRetriesIsReached(page) {
+    let retryCount = 0;
+    let addToCartButton;
+
+    while (true) {
+      if (retryCount++ >= maxRetries) {
+        console.log(`tried checking for ADD TO CART button ${retryCount} times`);
+        return true;
+      }
+
+      await page.reload();
+      await page.waitForLoadState('domcontentloaded');
+
+      addToCartButton = await page.$('.fulfillment-add-to-cart-button button.add-to-cart-button');
+      if (!addToCartButton) {
+        console.warn(`No "Add to Cart" button found. Sleeping for ${sleepMs}ms (attempt ${retryCount}/${maxRetries}, ${((maxRetries - retryCount) * sleepMs) / 1000 / 60 } minutes remaining)`);
+        await wait(sleepMs);
+        continue;
+      }
+
+      console.log('determining if the item is sold out..');
+      const buttonState = await page.evaluate(el => el.getAttribute('data-button-state'), addToCartButton);
+      console.log(`Button state: ${buttonState}`);
+
+      if (buttonState === 'ADD_TO_CART') {
+        console.log('Button is ADD_TO_CART');
+        break;
+      } else {
+        console.log(`Button is ${buttonState}. Sleeping for ${sleepMs}ms (attempt ${retryCount}/${maxRetries}, ${((maxRetries - retryCount) * sleepMs) / 1000 / 60 } minutes remaining)`);
+        await wait(sleepMs);
+        continue;
+      }
+    }
+
+    console.log('Item is IN STOCK. Adding to cart...');
+
+    const button = await page.$('#survey_invite_no');
+    if (button) {
+      console.info('Survey button found, clicking no');
+      await button.click();
+    }
+
+    await addToCartButton.click();
+    return false;
   }
 
   async scrapeBestBuy() {
@@ -236,6 +281,7 @@ export class BestBuyScraperService {
 
     try {
       const crawler = new PlaywrightCrawler({
+        requestHandlerTimeoutSecs: maxWaitTimeSeconds,
         headless: false,
         requestHandler: this.requestHandler.bind(this),
         requestQueue: undefined,
