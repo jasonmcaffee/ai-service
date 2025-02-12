@@ -25,7 +25,10 @@ const sleepMs = 5 * 1000;
 const maxWaitTimeMs = (maxRetries * sleepMs) + (60 * 1000);
 const maxWaitTimeSeconds = maxWaitTimeMs / 1000;
 
+const buttonTimeout = { timeout: 70000 };
+
 const shouldTest = false;
+
 // @Injectable()
 // export class BestBuyScraperService implements OnModuleInit {
 export class BestBuyScraperService {
@@ -67,15 +70,13 @@ export class BestBuyScraperService {
       console.log('already added to cart');
       return;
     }
-    console.log(`Scraping: ${this.url}`);
-
+    console.log(`${getDayAndTime()}`);
     console.log('signing in...');
     await this.signIn(page, request);
     console.log('done signing in');
 
     await page.goto(this.url);
     console.log('Reloading the page until ADD TO CART is available or max retries reached...');
-    // await page.waitForSelector('button', { timeout: 5000 });
     let shouldExit = await this.reloadThePageUntilAddToCartIsAvailableOrMaxRetriesIsReached(page);
     if(shouldExit){ return; }
 
@@ -86,7 +87,7 @@ export class BestBuyScraperService {
     await page.screenshot({ path: `wasAbleToClickFirstShippingButton-${Date.now()}-${request.id}.png` });
 
     console.log('Going to cart...');
-    await page.waitForSelector('a[href*="cart"]');
+    await page.waitForSelector('a[href*="cart"]', buttonTimeout);
     await page.goto('https://www.bestbuy.com/cart');
 
     await this.tryClickingTheShippingOptionOnTheCartPage(page);
@@ -96,21 +97,23 @@ export class BestBuyScraperService {
 
     //Shipping info
     console.log('Filling out shipping info...');
-    await page.waitForSelector('.button--continue button.btn-secondary', { timeout: 10000 });
-
+    await page.waitForSelector('.button--continue button.btn-secondary', buttonTimeout);
     const continueToPaymentButton = await page.$('.button--continue button.btn-secondary');
     if (continueToPaymentButton) {
       console.log('Clicking "Continue to Payment Information" button...');
       await continueToPaymentButton.click();
     } else {
       console.warn('"Continue to Payment Information" button not found.');
+      console.error('exiting due to no Continue to Payment Information.');
+      await page.screenshot({ path: `noContinueToPaymentInformation-${Date.now()}-${request.id}.png` });
       return;
     }
 
     //Payment info
+    console.log(`filling out credit card info`);
     await this.fillOutCreditCardInfo(page);
 
-    await page.waitForSelector('button.btn-primary[data-track="Place your Order - In-line"]');
+    await page.waitForSelector('button.btn-primary[data-track="Place your Order - In-line"]', buttonTimeout);
     console.log('Placing the order');
 
     if(!shouldTest){
@@ -129,38 +132,38 @@ export class BestBuyScraperService {
 
   private async fillOutCreditCardInfo(page) {
     console.log('filling out cc info...');
-    await page.waitForSelector('#cc-number', { timeout: 10000 });
+    await page.waitForSelector('#cc-number', buttonTimeout);
     await page.type('#cc-number', ccNumber);
 
-    await page.waitForSelector('#expirationDate', { timeout: 10000 });
+    await page.waitForSelector('#expirationDate', buttonTimeout);
     await page.focus('#expirationDate');
     await page.fill('#expirationDate', ccExpiration);
 
-    await page.waitForSelector('#cvv', { timeout: 10000 });
+    await page.waitForSelector('#cvv', buttonTimeout);
     await page.focus('#cvv');
     await page.type('#cvv', csvNumber);
 
-    await page.waitForSelector('#first-name', { timeout: 10000 });
+    await page.waitForSelector('#first-name', buttonTimeout);
     await page.focus('#first-name');
     await page.type('#first-name', firstName);
 
-    await page.waitForSelector('#last-name', { timeout: 10000 });
+    await page.waitForSelector('#last-name', buttonTimeout);
     await page.focus('#last-name');
     await page.type('#last-name', lastName);
 
-    await page.waitForSelector('.autocomplete__button'); // Wait for the button to be available
+    await page.waitForSelector('.autocomplete__button', buttonTimeout); // Wait for the button to be available
     await page.click('.autocomplete__button'); // Click the button
 
-    await page.waitForSelector('#address-input', { timeout: 10000 });
+    await page.waitForSelector('#address-input', buttonTimeout);
     await page.focus('#address-input');
     await page.type('#address-input', addressStreet);
     // await wait(1 * 2000); //weird issue where it fills out the city etc on the same line.
 
-    await page.waitForSelector('#city', { timeout: 10000 });
+    await page.waitForSelector('#city', buttonTimeout);
     await page.focus('#city');
     await page.type('#city', addressCity);
 
-    await page.waitForSelector('#state', { timeout: 10000 });
+    await page.waitForSelector('#state', buttonTimeout);
     // Set the state dropdown value
     await page.evaluate(() => {
       const stateSelect = document.querySelector('#state') as HTMLSelectElement;
@@ -174,19 +177,20 @@ export class BestBuyScraperService {
       }
     });
 
-    await page.waitForSelector('#postalCode', { timeout: 10000 });
+    await page.waitForSelector('#postalCode', buttonTimeout);
     await page.focus('#postalCode');
     await page.type('#postalCode', addressZip);
   }
 
   private async clickTheCheckoutButton(page) {
-    await page.waitForSelector('button[data-track="Checkout - Top"]');
+    await page.waitForSelector('button[data-track="Checkout - Top"]', buttonTimeout);
     const checkoutButton = await page.$('button[data-track="Checkout - Top"]');
     if (checkoutButton) {
       console.log('Proceeding to checkout...');
       await checkoutButton.click();
     } else {
       console.warn('Checkout button not found.');
+      await page.screenshot({ path: `noCheckoutButton-${Date.now()}.png` });
       return true;
     }
     return false;
@@ -259,7 +263,7 @@ export class BestBuyScraperService {
 
       addToCartButton = await page.$('.fulfillment-add-to-cart-button button.add-to-cart-button');
       if (!addToCartButton) {
-        console.warn(`No "Add to Cart" button found. Sleeping for ${sleepMs}ms (attempt ${retryCount}/${maxRetries}, ${((maxRetries - retryCount) * sleepMs) / 1000 / 60 } minutes remaining)`);
+        console.warn(`${getDayAndTime()} No "Add to Cart" button found. Sleeping for ${sleepMs}ms (attempt ${retryCount}/${maxRetries}, ${((maxRetries - retryCount) * sleepMs) / 1000 / 60 } minutes remaining)`);
         await wait(sleepMs);
         continue;
       }
@@ -271,7 +275,7 @@ export class BestBuyScraperService {
       if (buttonState === 'ADD_TO_CART') {
         break;
       } else {
-        console.log(`Button is ${buttonState}. Sleeping for ${sleepMs}ms (attempt ${retryCount}/${maxRetries}, ${((maxRetries - retryCount) * sleepMs) / 1000 / 60 } minutes remaining)`);
+        console.log(`${getDayAndTime()} Button is ${buttonState}. Sleeping for ${sleepMs}ms (attempt ${retryCount}/${maxRetries}, ${((maxRetries - retryCount) * sleepMs) / 1000 / 60 } minutes remaining)`);
         await wait(sleepMs);
         continue;
       }
@@ -356,3 +360,11 @@ runScraper().catch(error => {
   console.error('Fatal error in scraper:', error);
   process.exit(1);
 });
+
+function getDayAndTime(){
+  const now = new Date();
+  const dayList = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const day = dayList[now.getDay()];
+  const time = now.toLocaleTimeString();
+  return `${day} ${time}`;
+}
