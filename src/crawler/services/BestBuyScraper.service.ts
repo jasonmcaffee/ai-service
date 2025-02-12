@@ -269,7 +269,6 @@ export class BestBuyScraperService {
       console.log(`Button state: ${buttonState}`);
 
       if (buttonState === 'ADD_TO_CART') {
-        console.log('Button is ADD_TO_CART');
         break;
       } else {
         console.log(`Button is ${buttonState}. Sleeping for ${sleepMs}ms (attempt ${retryCount}/${maxRetries}, ${((maxRetries - retryCount) * sleepMs) / 1000 / 60 } minutes remaining)`);
