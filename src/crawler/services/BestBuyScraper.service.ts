@@ -25,12 +25,13 @@ const sleepMs = 5 * 1000;
 const maxWaitTimeMs = (maxRetries * sleepMs) + (60 * 1000);
 const maxWaitTimeSeconds = maxWaitTimeMs / 1000;
 
+const shouldTest = false;
 // @Injectable()
 // export class BestBuyScraperService implements OnModuleInit {
 export class BestBuyScraperService {
-  private readonly logger = new Logger(BestBuyScraperService.name);
-  private readonly url = 'https://www.bestbuy.com/site/nvidia-geforce-rtx-5090-32gb-gddr7-graphics-card-dark-gun-metal/6614151.p?skuId=6614151';
-  // private readonly url = 'https://www.bestbuy.com/site/crucial-p3-1tb-internal-ssd-pcie-gen-3-x4-nvme/6509712.p?skuId=6509712';
+  private readonly rtxUrl = 'https://www.bestbuy.com/site/nvidia-geforce-rtx-5090-32gb-gddr7-graphics-card-dark-gun-metal/6614151.p?skuId=6614151';
+  private readonly testUrl = 'https://www.bestbuy.com/site/crucial-p3-1tb-internal-ssd-pcie-gen-3-x4-nvme/6509712.p?skuId=6509712';
+  private readonly url = shouldTest ? this.testUrl : this.rtxUrl;
   private readonly signInUrl = 'https://www.bestbuy.com/identity/global/signin';
   async signIn(page, request){
     // await page.goto(this.signInUrl);
@@ -80,7 +81,9 @@ export class BestBuyScraperService {
 
     console.log('trying to click on shipping button...');
     // Wait for the shipping option and click it if available
-    await this.tryClickingTheFirstShippingButton(page);
+    const wasAbleToClickFirstShippingButton = await this.tryClickingTheFirstShippingButton(page);
+    console.log('wasAbleToClickFirstShippingButton: ', wasAbleToClickFirstShippingButton);
+    await page.screenshot({ path: `wasAbleToClickFirstShippingButton-${Date.now()}-${request.id}.png` });
 
     console.log('Going to cart...');
     await page.waitForSelector('a[href*="cart"]');
@@ -109,15 +112,19 @@ export class BestBuyScraperService {
 
     await page.waitForSelector('button.btn-primary[data-track="Place your Order - In-line"]');
     console.log('Placing the order');
-    await page.screenshot({ path: `purchasable-${Date.now()}-${request.id}.png` });
-    await page.click('button.btn-primary[data-track="Place your Order - In-line"]');
 
-    hasAddedToCart = true;
-    await page.screenshot({ path: `purchased-${Date.now()}-${request.id}.png` });
-    await wait(4 * 60 * 1000); //wait 5 minutes
-    await page.screenshot({ path: `purchased2-${Date.now()}-${request.id}.png` });
-    process.exit();
+    if(!shouldTest){
+      await page.screenshot({ path: `purchasable-${Date.now()}-${request.id}.png` });
 
+      //purchase
+      await page.click('button.btn-primary[data-track="Place your Order - In-line"]');
+
+      hasAddedToCart = true;
+      await page.screenshot({ path: `purchased-${Date.now()}-${request.id}.png` });
+      await wait(4 * 60 * 1000); //wait 5 minutes
+      await page.screenshot({ path: `purchased2-${Date.now()}-${request.id}.png` });
+      process.exit();
+    }
   }
 
   private async fillOutCreditCardInfo(page) {
@@ -215,14 +222,26 @@ export class BestBuyScraperService {
   }
 
   private async tryClickingTheFirstShippingButton(page) {
-    await page.waitForSelector('button[aria-label^="Shipping"]');
-    const shippingButton = await page.$('button[aria-label^="Shipping"]');
-    if (shippingButton) {
-      console.log('Selecting shipping option...');
-      await shippingButton.click();
-    } else {
-      console.warn('Shipping option not found.');
+    try {
+      // Wait for the button with aria-label starting with "Shipping"
+      const shippingButton = await page.waitForSelector('button[aria-label^="Shipping"]', {
+        state: 'visible',
+        timeout: 5 * 60 * 1000 // 5 minutes in milliseconds
+      });
+
+      // Verify the button exists and is clickable
+      if (!shippingButton) {
+        console.log(`shipping button didn't show up after 5 minutes`)
+      }else{
+        // If you need to click the button:
+        await shippingButton.click();
+        return true;
+      }
+
+    } catch (error) {
+      console.error('Error while waiting for shipping button:', error);
     }
+    return false;
   }
 
   private async reloadThePageUntilAddToCartIsAvailableOrMaxRetriesIsReached(page) {
