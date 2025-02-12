@@ -41,7 +41,7 @@ export class BestBuyScraperService {
     await page.waitForSelector('input#fld-e');
     await page.focus('input#fld-e');
     // Fill in email and continue
-    console.log(`username is: ${username}`);
+    console.log(`username is: ${username} shouldUseManualCheckout: ${shouldUseManualCheckout}`);
     await page.type('input#fld-e', username);
     await page.click('button[data-track="Sign In - Continue"]');
 
