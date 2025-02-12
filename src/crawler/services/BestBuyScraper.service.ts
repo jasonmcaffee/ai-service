@@ -1,8 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { PlaywrightCrawler, RequestQueue } from 'crawlee';
-
+import { PlaywrightCrawler } from 'crawlee';
 require('dotenv').config();
+const player = require('play-sound')();
 
 const ccNumber = process.env.CC_NUMBER;
 const csvNumber = process.env.CC_CSV_NUMBER;
@@ -16,6 +14,7 @@ const firstName = process.env.FIRST_NAME;
 const lastName = process.env.LAST_NAME;
 const state = process.env.STATE;
 const shouldRun = process.env.SHOULD_RUN;
+const shouldManual = process.env.SHOULD_MANUAL;
 
 let hasAddedToCart = false;
 let isRunning = false;
@@ -28,6 +27,7 @@ const maxWaitTimeSeconds = maxWaitTimeMs / 1000;
 const buttonTimeout = { timeout: 70000 };
 
 const shouldTest = false;
+const shouldUseManualCheckout = shouldManual == 'true' ? true : false;
 
 // @Injectable()
 // export class BestBuyScraperService implements OnModuleInit {
@@ -61,7 +61,7 @@ export class BestBuyScraperService {
     console.log('Successfully signed in!');
   }
 
-  async requestHandler({ page, request }) {
+  async requestHandler({ page, request, browserController }) {
     if(shouldRun !== 'true'){
       console.log('dont run');
       return;
@@ -79,6 +79,13 @@ export class BestBuyScraperService {
     console.log('Reloading the page until ADD TO CART is available or max retries reached...');
     let shouldExit = await this.reloadThePageUntilAddToCartIsAvailableOrMaxRetriesIsReached(page);
     if(shouldExit){ return; }
+
+    if(shouldUseManualCheckout){
+      console.log(`shouldRequireManualCheckout ADD to cart available`);
+      playAlert();
+      await wait(15 * 60 * 1000);
+      return;
+    }
 
     console.log('trying to click on shipping button...');
     // Wait for the shipping option and click it if available
@@ -272,10 +279,17 @@ export class BestBuyScraperService {
       const buttonState = await page.evaluate(el => el.getAttribute('data-button-state'), addToCartButton);
       console.log(`Button state: ${buttonState}`);
 
+      if(buttonState === 'COMING_SOON' && shouldUseManualCheckout){
+        playAlert(1);
+      }
+
       if (buttonState === 'ADD_TO_CART') {
         break;
       } else {
         console.log(`${getDayAndTime()} Button is ${buttonState}. Sleeping for ${sleepMs}ms (attempt ${retryCount}/${maxRetries}, ${((maxRetries - retryCount) * sleepMs) / 1000 / 60 } minutes remaining)`);
+
+        //COMING_SOON
+
         await wait(sleepMs);
         continue;
       }
@@ -355,7 +369,18 @@ function wait(ms: number) {
   });
 }
 
-// Start the scraper
+function playAlert(times = 5) {
+  if (times <= 0) return;
+
+  player.play('./alert.mp3', (err) => {
+    if (err) {
+      console.log(`Could not play sound: ${err}`)
+      return
+    }
+    playAlert(times - 1)
+  })
+}
+
 runScraper().catch(error => {
   console.error('Fatal error in scraper:', error);
   process.exit(1);
