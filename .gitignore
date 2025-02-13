@@ -7,6 +7,8 @@
 /build
 .idea
 
+src/client/api-client/node_modules
+storage/
 # Logs
 logs
 *.log
