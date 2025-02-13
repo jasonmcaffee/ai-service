@@ -57,6 +57,7 @@ export class ImagesService {
 
     async deleteImage(memberId: string, imageFileName: string){
         await this.imagesRepository.ensureMemberOwnsImageFileName(memberId, imageFileName);
+        await this.aiImageService.deleteImageFromDrive(imageFileName);
         return this.imagesRepository.deleteImage(imageFileName);
     }
 }

@@ -23,6 +23,11 @@ const getImageStatusUrl = `${baseUrl}/history`;
 @Injectable()
 export class AIImageService {
 
+    async deleteImageFromDrive(imageName: string){
+        const filePath = path.join(`${imagesPath}`, imageName);
+        console.log(`deleting image from drive: ${filePath}`);
+        await fs.rm(filePath);
+    }
     async generateAndReturnImage(width: number, height: number, prompt: string, prefix: string): Promise<GenerateAndReturnAiImageResponse> {
         const {promptId} = await this.generateImage(width, height, prompt, prefix);
 
