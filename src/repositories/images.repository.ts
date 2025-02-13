@@ -12,7 +12,7 @@ export class ImagesRepository {
     }
 
     async getImageByPromptId(promptId: string): Promise<Image>{
-        const result = this.sql<Image[]>`
+        const result = await this.sql<Image[]>`
             select * from image where prompt_id = ${promptId}
         `;
         return result[0];
@@ -66,37 +66,40 @@ export class ImagesRepository {
     }
 
     async createImage(memberId: string, createImage: CreateImage): Promise<Image> {
-        const result = await this.sql<Image[]>`
-            insert into image (
-                image_file_name,
-                prompt_used_to_create_image,
-                prompt_id,
-                height,
-                width,
-                member_id
-            )
-            values (
-                       ${createImage.imageFileName},
-                       ${createImage.promptUsedToCreateImage},
-                       ${createImage.promptId},
-                       ${createImage.height},
-                       ${createImage.width},
-                       ${memberId}
-                   )
-            returning *
-        `;
-        return result[0];
+        try {
+
+
+            const result = await this.sql<Image[]>`
+                insert into image (image_file_name,
+                                   prompt_used_to_create_image,
+                                   prompt_id,
+                                   height,
+                                   width,
+                                   member_id)
+                values (${createImage.imageFileName},
+                        ${createImage.promptUsedToCreateImage},
+                        ${createImage.promptId},
+                        ${createImage.height},
+                        ${createImage.width},
+                        ${memberId})
+                returning *
+            `;
+            return result[0];
+        }catch(e){
+            console.error(`error creating image: `, 3);
+            throw e;
+        }
     }
 
-    async updateImage(imageFileName: string, updateData: CreateImage): Promise<Image> {
+    async updateImage(promptId: string, updateData: CreateImage): Promise<Image> {
         const result = await this.sql<Image[]>`
             UPDATE image 
             SET 
                 prompt_used_to_create_image = COALESCE(${updateData.promptUsedToCreateImage}, prompt_used_to_create_image),
-                prompt_id = COALESCE(${updateData.promptId}, prompt_id),
+                image_file_name = COALESCE(${updateData.imageFileName}, image_file_name),
                 height = COALESCE(${updateData.height}, height),
                 width = COALESCE(${updateData.width}, width)
-            WHERE image_file_name = ${imageFileName}
+            WHERE prompt_id = ${promptId}
             RETURNING *
         `;
 

@@ -32,6 +32,7 @@ export class ImageController {
     @ApiResponse({ status: 404, type: undefined })
     @Get('prompt/:promptId')
     async pollImageStatus(@Param('promptId') promptId: string) {
+        console.log(`polling promptId: ${promptId}`);
         const memberId = this.authenticationService.getMemberId();
         // const result = await this.aiImageService.pollImageStatus(promptId);
         const result = await this.imagesService.pollImageStatusAndUpdateEntryInDb(memberId, promptId);

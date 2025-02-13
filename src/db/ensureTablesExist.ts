@@ -11,12 +11,12 @@ export async function ensureTablesExist() {
     )`;
 
   await sql`CREATE TABLE IF NOT EXISTS image (
-        image_file_name TEXT PRIMARY KEY,
+        prompt_id TEXT PRIMARY KEY,
+        image_file_name TEXT,
         prompt_used_to_create_image TEXT,
         height INTEGER,
         width INTEGER,
         member_id TEXT,
-        prompt_id TEXT,
         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (member_id) REFERENCES member(member_id)
   )`;

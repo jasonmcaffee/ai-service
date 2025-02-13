@@ -29,16 +29,22 @@ export class ImagesService {
     }
 
     async pollImageStatusAndUpdateEntryInDb(memberId: string, promptId: string): Promise<PollImageStatusResponse>{
-        await this.imagesRepository.ensureMemberOwnsImagePromptId(memberId, promptId);
-        //this will throw Not Found error if it's not ready yet. imageName is returned if it is ready.
-        const pollImageResponse = await this.aiImageService.pollImageStatus(promptId);
+        try{
+            await this.imagesRepository.ensureMemberOwnsImagePromptId(memberId, promptId);
+            //this will throw Not Found error if it's not ready yet. imageName is returned if it is ready.
+            const pollImageResponse = await this.aiImageService.pollImageStatus(promptId);
 
-        const image = await this.imagesRepository.getImageByPromptId(promptId);
-        image.imageFileName = pollImageResponse.imageName;
+            const image = await this.imagesRepository.getImageByPromptId(promptId);
+            image.imageFileName = pollImageResponse.imageName;
 
-        const updatedImage = await this.imagesRepository.updateImage(image.imageFileName, image);
+            const updatedImage = await this.imagesRepository.updateImage(promptId, image);
 
-        return pollImageResponse;
+            return pollImageResponse;
+        }catch(e){
+            console.error('error polling for image status: ', e);
+            throw e;
+        }
+
     }
 
     async createImage(memberId: string, createImage: CreateImage){
