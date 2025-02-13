@@ -726,7 +726,7 @@
             "description": ""
           }
         },
-        "summary": "Poll the status of an ai image that is being created.",
+        "summary": "Poll the status of an ai image that is being created. Updates the db if image name is returned.",
         "tags": [
           "Image"
         ]
@@ -759,7 +759,7 @@
             }
           }
         },
-        "summary": "Have ai generate an image",
+        "summary": "Have ai generate an image.  Store entry in image table, so the image is returned from all images endpoint.",
         "tags": [
           "Image"
         ]
@@ -792,7 +792,73 @@
             }
           }
         },
-        "summary": "Have AI generate an image and return it directly",
+        "summary": "Have AI generate an image and return it directly.  No db involved.",
+        "tags": [
+          "Image"
+        ]
+      }
+    },
+    "/image/paged": {
+      "get": {
+        "operationId": "getPagedImages",
+        "parameters": [
+          {
+            "name": "pageNumber",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "numberOfImagesPerPage",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paged list of images",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedImages"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get paged images for the current member",
+        "tags": [
+          "Image"
+        ]
+      }
+    },
+    "/image/{imageFileName}": {
+      "delete": {
+        "operationId": "deleteImage",
+        "parameters": [
+          {
+            "name": "imageFileName",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image has been deleted"
+          },
+          "404": {
+            "description": "Image not found"
+          }
+        },
+        "summary": "Delete an image",
         "tags": [
           "Image"
         ]
@@ -1353,6 +1419,71 @@
           "mimeType",
           "promptId",
           "prompt"
+        ]
+      },
+      "Image": {
+        "type": "object",
+        "properties": {
+          "imageFileName": {
+            "type": "string"
+          },
+          "promptUsedToCreateImage": {
+            "type": "string"
+          },
+          "height": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number"
+          },
+          "memberId": {
+            "type": "string"
+          },
+          "createdDate": {
+            "type": "string"
+          },
+          "promptId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "imageFileName",
+          "promptUsedToCreateImage",
+          "height",
+          "width",
+          "memberId",
+          "createdDate",
+          "promptId"
+        ]
+      },
+      "PagedImages": {
+        "type": "object",
+        "properties": {
+          "pageNumber": {
+            "type": "number"
+          },
+          "numberOfImagesPerPage": {
+            "type": "number"
+          },
+          "remainingPages": {
+            "type": "number"
+          },
+          "remainingImages": {
+            "type": "number"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Image"
+            }
+          }
+        },
+        "required": [
+          "pageNumber",
+          "numberOfImagesPerPage",
+          "remainingPages",
+          "remainingImages",
+          "images"
         ]
       },
       "ModelType": {

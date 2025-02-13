@@ -32,7 +32,6 @@ export class DatasourcesController {
 
   @ApiOperation({ summary: 'Get document by ID' })
   @ApiParam({ name: 'documentId', type: 'number' })
-  // @ApiParam({ name: 'datasourceId', type: 'number' })  not really needed.  might be good for verification
   @ApiResponse({ status: 200, description: 'The document details', type: Document })
   @ApiResponse({ status: 404, description: 'Document not found' })
   @Get('datasource/documents/:documentId')

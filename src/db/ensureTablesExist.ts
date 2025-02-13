@@ -10,6 +10,17 @@ export async function ensureTablesExist() {
         member_name TEXT
     )`;
 
+  await sql`CREATE TABLE IF NOT EXISTS image (
+        image_file_name TEXT PRIMARY KEY,
+        prompt_used_to_create_image TEXT,
+        height INTEGER,
+        width INTEGER,
+        member_id TEXT,
+        prompt_id TEXT,
+        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (member_id) REFERENCES member(member_id)
+  )`;
+
   await sql`CREATE TABLE IF NOT EXISTS conversation (
         conversation_id TEXT PRIMARY KEY,
         conversation_name TEXT DEFAULT ('chat on ' || to_char(current_timestamp, 'Day') || ' at ' || to_char(current_timestamp, 'HH24:MI')),

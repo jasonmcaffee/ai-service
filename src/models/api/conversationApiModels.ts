@@ -25,6 +25,49 @@ export class MessageContext {
   datasources: ModelOrDatasource[];
 }
 
+export class Image {
+  @ApiProperty()
+  imageFileName: string;
+  @ApiProperty()
+  promptUsedToCreateImage: string;
+  @ApiProperty()
+  height: number;
+  @ApiProperty()
+  width: number;
+  @ApiProperty()
+  memberId: string;
+  @ApiProperty()
+  createdDate: string;
+  @ApiProperty()
+  promptId: string;
+}
+
+export class CreateImage {
+  @ApiProperty()
+  imageFileName: string;
+  @ApiProperty()
+  promptUsedToCreateImage: string;
+  @ApiProperty()
+  height: number;
+  @ApiProperty()
+  width: number;
+  @ApiProperty()
+  promptId: string;
+}
+
+export class PagedImages {
+  @ApiProperty()
+  pageNumber: number;
+  @ApiProperty()
+  numberOfImagesPerPage: number;
+  @ApiProperty()
+  remainingPages: number;
+  @ApiProperty()
+  remainingImages: number;
+  @ApiProperty({type: [Image]})
+  images: Image[]
+}
+
 export class Message {
   @ApiProperty()
   messageId: string;
