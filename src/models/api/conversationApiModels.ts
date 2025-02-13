@@ -149,6 +149,11 @@ export class PollImageStatusResponse {
   imageName: string;
 }
 
+export class UpscaleImageRequest {
+  @ApiProperty()
+  imageName: string;
+}
+
 export class GenerateAiImageRequest {
   @ApiProperty()
   height: number;

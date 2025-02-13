@@ -18,6 +18,13 @@ export class ImagesRepository {
         return result[0];
     }
 
+    async getImageByImageFileName(imageFileName: string): Promise<Image>{
+        const result = await this.sql<Image[]>`
+            select * from image where image_file_name = ${imageFileName}
+        `;
+        return result[0];
+    }
+
     /**
      * get all images for the member.
      * @param memberId

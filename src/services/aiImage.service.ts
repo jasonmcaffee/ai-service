@@ -6,19 +6,21 @@ import {
     GenerateAndReturnAiImageResponse,
     PollImageStatusResponse
 } from "../models/api/conversationApiModels";
-import { wait } from '../utils/utils';
-import crypto from 'crypto';
+
 import * as path from 'path';
 const WORKFLOW_DIR = `${config.getSharedDriveBasePath()}/llm_models/ComfyUI_windows_portable/comfyui_workflows`;
 // const workflowPath = `${WORKFLOW_DIR}/api version flux realism lora and upscaler - jason - v6.json`;
-const workflowPath = `${WORKFLOW_DIR}/api flux v1 dev hand-lora realism-lora no-upscale - jason v1.json`;
+const generateImageWorkflowPath = `${WORKFLOW_DIR}/api flux v1 dev hand-lora realism-lora no-upscale - jason v1.json`;
+const upscaleImageWorkflowPath = `${WORKFLOW_DIR}/api upscale image flux - jason v1.json`;
+
 const imagesPath = `${config.getSharedDriveBasePath()}/llm_models/ComfyUI_windows_portable/ComfyUI/output`;
 
-let workflow: any;
+let generateImageWorkflow: any;
+let upscaleWorkflow: any;
 const baseUrl = 'http://192.168.0.209:8082';
 const generateImageUrl = `${baseUrl}/prompt`;
 const getImageStatusUrl = `${baseUrl}/history`;
-
+const uploadImageUrl = `${baseUrl}/upload/image`;
 
 @Injectable()
 export class AIImageService {
@@ -101,14 +103,14 @@ export class AIImageService {
             const batchSize = 1; //only allow 1 to make polling simpler.
 
             console.log(`generate image called: `);
-            if(!workflow){
-                console.log(`reading workflow file path: ${workflowPath}`, fs);
-                workflow = await fs.readFile(workflowPath, 'utf-8');
+            if(!generateImageWorkflow){
+                console.log(`reading workflow file path: ${generateImageWorkflowPath}`, fs);
+                generateImageWorkflow = await fs.readFile(generateImageWorkflowPath, 'utf-8');
                 // console.log(`workflow is:`, workflow);
                 console.log(`workflow loaded`);
             }
 
-            const workflowJson = JSON.parse(workflow);
+            const workflowJson = JSON.parse(generateImageWorkflow);
             // console.log(`workflowJson: `, workflowJson);
             //
             console.log(`setting node values...`);
@@ -164,6 +166,95 @@ export class AIImageService {
         } catch (error) {
             console.error('Error generating image:', error);
             throw new Error(`Error generating image: ${error}`);
+        }
+    }
+
+    /**
+     * Upscales image by 1.1 (upscale_by param of Ultimate SD Upscale)
+     * Finds the imageName in the images dir.
+     * Uploads the image to comfyUI.
+     * Sends the request to upscale the image.
+     * Returns a promptId that can be used for polling the prompt status.
+     * @param imageName
+     */
+    async upscaleImage(imageName: string): Promise<GenerateAiImageResponse>{
+        try {
+            const prefix = `upscaled_${imageName.replace(/\.[^/.]+$/, "")}`;
+
+            console.log(`generate image called: `, imageName);
+            if(!upscaleWorkflow){
+                upscaleWorkflow = await fs.readFile(upscaleImageWorkflowPath, 'utf-8');
+            }
+
+            const imagePath = `${imagesPath}/${imageName}`;
+            const uploadedImageName = await this.uploadImageToComfyUI(imagePath);
+            console.log(`upscaleImaged uploaded image name: ${uploadedImageName}`);
+
+            const workflowJson = JSON.parse(upscaleWorkflow);
+            console.log(`setting node values...`);
+            // const promptNode = workflowJson["83"];
+            const promptNode = findObjectsByClassType(workflowJson,"LoadImage")?.[0]!;
+            promptNode.inputs.image = uploadedImageName;
+
+            const prefixNode = findObjectsByClassType(workflowJson,"SaveImage")?.[0]!;
+            prefixNode.inputs.filename_prefix = prefix;
+
+            // console.log(`making request...`, JSON.stringify(workflowJson));
+            const request = {prompt: workflowJson} ; //use the same client id so to avoid reloading the model between each request
+            const requestString = JSON.stringify(request);
+
+            const response = await fetch(generateImageUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: requestString,
+            });
+
+            if (!response.ok) {
+                throw new Error(`error telling comfyui to upscale image: ${response}`)
+            }
+
+            const data = await response.json();
+            console.log('Upscale image generation started:', data);
+            const promptId = data.prompt_id;
+            return {promptId};
+        } catch (error) {
+            console.error('Error upscaling image:', error);
+            throw new Error(`error upscaling image: ${error}`);
+        }
+    }
+
+    /**
+     * Uploads an image to comfyui and returns the image name.
+     * Used during the upscaling process.
+     * @param imagePath
+     */
+    async uploadImageToComfyUI(imagePath: string): Promise<string> {
+        try {
+            // Read the image file
+            const imageBuffer = await fs.readFile(imagePath);
+
+            // Create a FormData-like object
+            const formData = new FormData();
+            formData.append('image', new Blob([imageBuffer]), path.basename(imagePath));
+
+            // Make the POST request to ComfyUI's upload endpoint
+
+            const response = await fetch(uploadImageUrl, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            return result.name;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            throw error;
         }
     }
 }

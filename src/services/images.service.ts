@@ -28,6 +28,23 @@ export class ImagesService {
         return generateImageResponse; //just return the promptId so they can poll
     }
 
+    async upscaleImageAndStoreInDb(memberId: string, imageFileName: string): Promise<GenerateAiImageResponse>{
+        await this.imagesRepository.ensureMemberOwnsImageFileName(memberId, imageFileName);
+        const imageToUpscale = await this.imagesRepository.getImageByImageFileName(imageFileName);
+        const upscaleImageResponse = await this.aiImageService.upscaleImage(imageFileName);
+
+        //create an entry in the db with an empty file name, which will be updated once polling completes.
+        const createImageRequest: CreateImage = {
+            width: imageToUpscale.width,
+            height: imageToUpscale.height,
+            promptUsedToCreateImage: imageToUpscale.promptUsedToCreateImage,
+            promptId: upscaleImageResponse.promptId,
+            imageFileName: '' //won't have until polling is done.  could be a static gif of loading.
+        };
+        await this.createImage(memberId, createImageRequest);
+        return upscaleImageResponse;
+    }
+
     async pollImageStatusAndUpdateEntryInDb(memberId: string, promptId: string): Promise<PollImageStatusResponse>{
         try{
             await this.imagesRepository.ensureMemberOwnsImagePromptId(memberId, promptId);

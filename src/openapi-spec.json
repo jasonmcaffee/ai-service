@@ -864,6 +864,39 @@
         ]
       }
     },
+    "/image/upscaleImage": {
+      "post": {
+        "operationId": "upscaleImage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Params to upscale the image.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpscaleImageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prompt id to poll for image status, then get the image name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateAiImageResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Have ai upscale an existing image.  Store entry in image table, so the image is returned from all images endpoint.",
+        "tags": [
+          "Image"
+        ]
+      }
+    },
     "/models/model-types": {
       "get": {
         "operationId": "getModelTypes",
@@ -1484,6 +1517,17 @@
           "remainingPages",
           "remainingImages",
           "images"
+        ]
+      },
+      "UpscaleImageRequest": {
+        "type": "object",
+        "properties": {
+          "imageName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "imageName"
         ]
       },
       "ModelType": {

@@ -11,7 +11,7 @@ import {
     GetAutoCompleteSuggestionsRequest,
     Message, PagedImages,
     PollImageStatusResponse,
-    Suggestion,
+    Suggestion, UpscaleImageRequest,
 } from '../models/api/conversationApiModels';
 import { AuthenticationService } from '../services/authentication.service';
 import {AIImageService} from "../services/aiImage.service";
@@ -82,5 +82,14 @@ export class ImageController {
     async deleteImage(@Param('imageFileName') imageFileName: string): Promise<void> {
         const memberId = this.authenticationService.getMemberId();
         return this.imagesService.deleteImage(memberId, imageFileName);
+    }
+
+    @ApiOperation({ summary: 'Have ai upscale an existing image.  Store entry in image table, so the image is returned from all images endpoint.' })
+    @ApiBody({ description: 'Params to upscale the image.', type: UpscaleImageRequest, })
+    @ApiResponse({ status: 200, description: 'Prompt id to poll for image status, then get the image name.', type: GenerateAiImageResponse})
+    @Post('upscaleImage')
+    async upscaleImage(@Body() request: UpscaleImageRequest) {
+        const memberId = this.authenticationService.getMemberId();
+        return this.imagesService.upscaleImageAndStoreInDb(memberId, request.imageName);
     }
 }
