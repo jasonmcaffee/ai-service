@@ -35,7 +35,7 @@ export class ImageController {
         console.log(`polling promptId: ${promptId}`);
         const memberId = this.authenticationService.getMemberId();
         // const result = await this.aiImageService.pollImageStatus(promptId);
-        const result = await this.imagesService.pollImageStatusAndUpdateEntryInDb(memberId, promptId);
+        const result = await this.imagesService.pollImageStatusByCheckingTheDb(memberId, promptId);
         return result;
     }
 

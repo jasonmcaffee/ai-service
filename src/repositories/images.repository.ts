@@ -121,6 +121,10 @@ export class ImagesRepository {
         await this.sql`delete from image where image_file_name = ${imageFileName}`;
     }
 
+    async deleteImageByPromptId(promptId: string){
+        await this.sql`delete from image where prompt_id = ${promptId}`;
+    }
+
     async ensureMemberOwnsImageFileName(memberId: string, imageFileName: string){
         const ownershipCheck = await this.sql`
             select 1 from image i

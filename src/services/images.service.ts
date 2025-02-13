@@ -25,6 +25,18 @@ export class ImagesService {
         };
         await this.createImage(memberId, createImageRequest);
 
+        console.log(`generate image is now polling for upscale imageFileName result...`);
+        this.aiImageService.startPollingForImageCompletionAndReturnImageNameWhenReady(generateImageResponse.promptId).then(async imageFileName => {
+            console.log(`generate image completed.  updating the db.`);
+            const image = await this.imagesRepository.getImageByPromptId(generateImageResponse.promptId);
+            image.imageFileName = imageFileName;
+            const updatedImage = await this.imagesRepository.updateImage(generateImageResponse.promptId, image);
+        }).catch(e => {
+            console.error(`image was not generated, so deleting the entry from the db: ${generateImageResponse.promptId}`);
+            //delete from the db.
+            this.imagesRepository.deleteImageByPromptId(generateImageResponse.promptId);
+        });
+
         return generateImageResponse; //just return the promptId so they can poll
     }
 
@@ -42,26 +54,35 @@ export class ImagesService {
             imageFileName: '' //won't have until polling is done.  could be a static gif of loading.
         };
         await this.createImage(memberId, createImageRequest);
+
+        //start polling without waiting, and update the when ready.
+        console.log(`upscale image is now polling for upscale imageFileName result...`);
+        this.aiImageService.startPollingForImageCompletionAndReturnImageNameWhenReady(upscaleImageResponse.promptId).then(async imageFileName => {
+            console.log(`upscale image completed.  updating the db.`)
+            const image = await this.imagesRepository.getImageByPromptId(upscaleImageResponse.promptId);
+            image.imageFileName = imageFileName;
+            const updatedImage = await this.imagesRepository.updateImage(upscaleImageResponse.promptId, image);
+        }).catch(e => {
+            console.error(`image was not upscaled, so deleting the entry from the db: ${upscaleImageResponse.promptId}`);
+            //delete from the db.
+            this.imagesRepository.deleteImageByPromptId(upscaleImageResponse.promptId);
+        });
         return upscaleImageResponse;
     }
 
-    async pollImageStatusAndUpdateEntryInDb(memberId: string, promptId: string): Promise<PollImageStatusResponse>{
-        try{
-            await this.imagesRepository.ensureMemberOwnsImagePromptId(memberId, promptId);
-            //this will throw Not Found error if it's not ready yet. imageName is returned if it is ready.
-            const pollImageResponse = await this.aiImageService.pollImageStatus(promptId);
-
-            const image = await this.imagesRepository.getImageByPromptId(promptId);
-            image.imageFileName = pollImageResponse.imageName;
-
-            const updatedImage = await this.imagesRepository.updateImage(promptId, image);
-
-            return pollImageResponse;
-        }catch(e){
-            console.error('error polling for image status: ', e);
-            throw e;
+    /**
+     * We expect polling to start on the server side when generate or upscale are called.
+     * The client will call this function to check the db status.
+     * @param memberId
+     * @param promptId
+     */
+    async pollImageStatusByCheckingTheDb(memberId: string, promptId: string): Promise<PollImageStatusResponse>{
+        await this.imagesRepository.ensureMemberOwnsImagePromptId(memberId, promptId);
+        const image = await this.imagesRepository.getImageByPromptId(promptId);
+        if(image.imageFileName == ''){
+            throw new Error('Image is still generating.');
         }
-
+        return {imageName: image.imageFileName};
     }
 
     async createImage(memberId: string, createImage: CreateImage){
@@ -77,4 +98,6 @@ export class ImagesService {
         await this.aiImageService.deleteImageFromDrive(imageFileName);
         return this.imagesRepository.deleteImage(imageFileName);
     }
+
+
 }

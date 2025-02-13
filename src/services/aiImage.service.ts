@@ -30,6 +30,32 @@ export class AIImageService {
         console.log(`deleting image from drive: ${filePath}`);
         await fs.rm(filePath);
     }
+
+    async startPollingForImageCompletionAndReturnImageNameWhenReady(promptId: string): Promise<string>{
+        const waitTimeBetweenPollsMs = 1000;
+        const maxMinutesMs = 5 * 60 * 1000;
+        const maxPollTries = Math.ceil(maxMinutesMs / waitTimeBetweenPollsMs);
+        return new Promise<string>(async (resolve, reject) => {
+            let count = 0;
+            while(count < maxPollTries) {
+                try {
+                    const result = await this.pollImageStatus(promptId);
+                    if (result.imageName) {
+                        resolve(result.imageName);
+                        return;
+                    }
+                } catch(e) {
+                    // console.error('startPollingForImageCompletionThenUpdateDb Error polling image status:', e);
+                }
+
+                count += 1;
+                await new Promise(resolve => setTimeout(resolve, waitTimeBetweenPollsMs));
+            }
+
+            reject(new Error('startPollingForImageCompletionThenUpdateDb Timeout waiting for image generation'));
+        });
+    }
+
     async generateAndReturnImage(width: number, height: number, prompt: string, prefix: string): Promise<GenerateAndReturnAiImageResponse> {
         const {promptId} = await this.generateImage(width, height, prompt, prefix);
 
