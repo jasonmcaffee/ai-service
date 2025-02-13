@@ -114,20 +114,6 @@ export class ImagesRepository {
         await this.sql`delete from image where image_file_name = ${imageFileName}`;
     }
 
-    // //todo: use Partial<CreateImage>
-    // async updateImage(imageFileName: string, updateData: CreateImage): Promise<Image> {
-    //     const [updatedImage] = await this.sql<Image[]>`
-    //         UPDATE image
-    //         SET
-    //             prompt_used_to_create_image = ${updateData.promptUsedToCreateImage},
-    //             height = COALESCE(${updateData.height}, height),
-    //             width = COALESCE(${updateData.width}, width)
-    //         WHERE image_file_name = ${imageFileName}
-    //         RETURNING *`;
-    //
-    //     return updatedImage;
-    // }
-
     async ensureMemberOwnsImageFileName(memberId: string, imageFileName: string){
         const ownershipCheck = await this.sql`
             select 1 from image i
