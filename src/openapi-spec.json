@@ -1141,7 +1141,7 @@
               "text/event-stream": {
                 "schema": {
                   "type": "string",
-                  "example": "data: { \n                        \"searchResults\": [{\n                            \"url\": \"http://example.com\",\n                            \"title\": \"Example dot com\",\n                            \"blurb\": \"Some example stuff\",\n                        }], \n                        \"end\": \"true\" }"
+                  "example": "data: { \n                        \"searchResults\": [{\n                            \"url\": \"http://example.com\",\n                            \"title\": \"Example dot com\",\n                            \"blurb\": \"Some example stuff\",\n                        }], \n                        \"end\": \"true\" \n                      }"
                 }
               }
             }

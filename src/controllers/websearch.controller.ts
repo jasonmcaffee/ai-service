@@ -30,13 +30,15 @@ export class WebsearchController {
             'text/event-stream': {
                 schema: {
                     type: 'string',
-                    example: `data: { 
+                    example:
+                      `data: { 
                         "searchResults": [{
                             "url": "http://example.com",
                             "title": "Example dot com",
                             "blurb": "Some example stuff",
                         }], 
-                        "end": "true" }`, //end is true when response is complete.
+                        "end": "true" 
+                      }`, //end is true when response is complete.
                 },
             },
         },
