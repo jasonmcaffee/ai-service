@@ -14,9 +14,38 @@ export class WebsearchController {
     @ApiQuery({ name: 'query', type: String, description: 'search terms' })
     @Get('search')
     @ApiResponse({status: 200, description: 'Successful response', type: SearchResultResponse})
-    async streamInference(@Query('query') query: string, ) {
+    async webSearch(@Query('query') query: string, ) {
         const memberId = this.authenticationService.getMemberId();
-        return this.websearchService.searchDuckDuckGo(query);
+        return this.websearchService.search(query);
     }
+
+    @ApiOperation({ summary: 'Stream a message based on a prompt' })
+    @ApiQuery({ name: 'query', type: String, description: 'Search query' })
+    @Get('streamWebSearch') // Must be GET for EventSource to work
+    @Sse() // Server-Sent Events so we can stream LLM response back the client.
+    @ApiResponse({
+        status: 200,
+        description: 'Successful response',
+        content: {
+            'text/event-stream': {
+                schema: {
+                    type: 'string',
+                    example: `data: { 
+                        "searchResults": [{
+                            "url": "http://example.com",
+                            "title": "Example dot com",
+                            "blurb": "Some example stuff",
+                        }], 
+                        "end": "true" }`, //end is true when response is complete.
+                },
+            },
+        },
+    })
+    async streamWebSearch(@Query('query') query: string,) {
+        console.log('got stream web search request: ', query);
+        const memberId = this.authenticationService.getMemberId();
+        return this.websearchService.streamSearch(query);
+    }
+
 
 }

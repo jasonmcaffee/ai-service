@@ -1090,7 +1090,7 @@
     },
     "/webSearch/search": {
       "get": {
-        "operationId": "streamInference",
+        "operationId": "webSearch",
         "parameters": [
           {
             "name": "query",
@@ -1115,6 +1115,39 @@
           }
         },
         "summary": "search the web",
+        "tags": [
+          "WebSearch"
+        ]
+      }
+    },
+    "/webSearch/streamWebSearch": {
+      "get": {
+        "operationId": "streamWebSearch",
+        "parameters": [
+          {
+            "name": "query",
+            "required": true,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "example": "data: { \n                        \"searchResults\": [{\n                            \"url\": \"http://example.com\",\n                            \"title\": \"Example dot com\",\n                            \"blurb\": \"Some example stuff\",\n                        }], \n                        \"end\": \"true\" }"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stream a message based on a prompt",
         "tags": [
           "WebSearch"
         ]

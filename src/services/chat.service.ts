@@ -23,15 +23,14 @@ export class ChatService {
   constructor(private readonly conversationService: ConversationService,
               private readonly modelsService: ModelsService) {}
 
-  async stop(memberId: string){
-    const associatedAbortController = this.abortControllers.get(memberId);
-    if(!associatedAbortController){
-      return console.log(`no associated abort controller for member id: ${memberId}`);
-    }
-    console.log(`aborting controller`)
-    associatedAbortController.controller.abort();
-    this.abortControllers.delete(memberId);
-  }
+
+  /**
+   * Use an observable to stream back text as it's received from the LLM.
+   * @param prompt
+   * @param memberId
+   * @param conversationId
+   * @param modelId
+   */
   async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string): Promise<Observable<string>> {
     const messageContext = extractMessageContextFromMessage(prompt);
     console.log(`streamInference messageContext: `, messageContext);
@@ -46,7 +45,21 @@ export class ChatService {
     }
   }
 
-  async getModelToUseForMessage(memberId: string, messageContext: MessageContext, modelId?: string){
+  /**
+   * Stop current generation for the member id.  Assumes 1 generation per member at a time
+   * @param memberId
+   */
+  async stop(memberId: string){
+    const associatedAbortController = this.abortControllers.get(memberId);
+    if(!associatedAbortController){
+      return console.log(`no associated abort controller for member id: ${memberId}`);
+    }
+    console.log(`aborting controller`)
+    associatedAbortController.controller.abort();
+    this.abortControllers.delete(memberId);
+  }
+
+  private async getModelToUseForMessage(memberId: string, messageContext: MessageContext, modelId?: string){
     const modelIdForMessage = messageContext.models.length > 0 ? messageContext.models[0].id : modelId;
     return this.modelsService.getModelByIdOrGetDefault(memberId, modelIdForMessage);
   }

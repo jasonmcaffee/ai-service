@@ -2,44 +2,49 @@ import config from '../config/config';
 import {Injectable} from "@nestjs/common";
 import {SearchResult, SearchResultResponse} from "../models/api/conversationApiModels";
 import { chromium, Page } from 'playwright';
+import { Observable, Subject, lastValueFrom } from 'rxjs';
+import {toArray} from 'rxjs/operators';
 
 @Injectable()
 export class WebsearchService {
-    async searchDuckDuckGo(query: string, maxPages=5): Promise<SearchResultResponse>{
+    async streamSearch(query: string, maxPages=5): Promise<Observable<string>> {
+        const searchResultsSubject = new Subject<string>();
+        this.searchDuckDuckGo(query, searchResultsSubject, maxPages);
+        return searchResultsSubject.asObservable();
+    }
+
+    async search(query: string, maxPages=5): Promise<SearchResultResponse> {
+        return this.searchDuckDuckGo(query, undefined, maxPages);
+    }
+
+    async searchDuckDuckGo(query: string, searchResultsSubject?: Subject<string>, maxPages=5): Promise<SearchResultResponse>{
         const browser = await chromium.launch();
         const allResults: SearchResult[] = [];
         try {
             const context = await browser.newContext();
             const page = await context.newPage();
-
             // Navigate to DuckDuckGo and perform search
             await page.goto(`https://duckduckgo.com/?t=h_&q=${query}&ia=web`);
-            // await page.fill('input[name="q"]', query);
-            // await page.press('input[name="q"]', 'Enter');
-
             // Wait for results to load
             await page.waitForSelector('article[data-testid="result"]');
-
             // Extract results
-            const initialResults = await parseSearchResults(page);
-
+            const initialResults = await parseSearchResults(page, searchResultsSubject);
             allResults.push(...initialResults);
 
             // Load more pages if requested
             let currentPage = 1;
-
             while (currentPage < maxPages) {
                 const hasMore = await loadMoreResults(page);
                 if (!hasMore) {
                     console.log('No more results available');
                     break;
                 }
-
-                const newResults = await parseSearchResults(page);
+                const newResults = await parseSearchResults(page, searchResultsSubject);
                 allResults.push(...newResults);
                 currentPage++;
             }
-
+            searchResultsSubject?.next(JSON.stringify({end: true}));
+            searchResultsSubject?.complete();
             return {
                 searchResults: allResults,
                 query
@@ -51,11 +56,9 @@ export class WebsearchService {
             await browser.close();
         }
     }
-
-
 }
 
-async function parseSearchResults(page: Page): Promise<SearchResult[]> {
+async function parseSearchResults(page: Page, searchResultsSubject?: Subject<string>): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
 
     // Extract results
@@ -86,41 +89,38 @@ async function parseSearchResults(page: Page): Promise<SearchResult[]> {
             } else {
                 blurb = snippetSpans.join(' ');
             }
-
-            results.push({
-                title,
-                url,
-                blurb,
-                ...(date && { date })
-            });
+            const searchResult: SearchResult = { title, url, blurb, ...(date && { date }) };
+            results.push(searchResult);
+            searchResultsSubject?.next(JSON.stringify({data: {searchResults: [searchResult]}, end: false})); //for now do an array of 1, but we can batch if needed.
         } catch (error) {
             console.warn('Failed to parse result:', error);
             continue;
         }
     }
-
     return results;
 }
 
 async function loadMoreResults(page: Page): Promise<boolean> {
     try {
-        // Check if the "More results" button exists
-        const moreButton = await page.$('button#more-results');
-        if (!moreButton) {
-            return false;
-        }
+        // Wait for the button to be present, visible, and enabled
+        await page.waitForSelector('button#more-results', {
+            state: 'visible',
+            timeout: 5000
+        });
 
-        // Scroll to the button to ensure it's in view
-        await moreButton.scrollIntoViewIfNeeded();
+        // Use page.click() with improved options
+        await page.click('button#more-results', {
+            force: true
+        });
 
-        // Click the button
-        await moreButton.click();
+        // Wait for network idle to ensure new content is loaded
+        await page.waitForLoadState('networkidle', { timeout: 5000 });
 
-        // Wait for new results to load
-        await page.waitForSelector('article[data-testid="result"]');
-
-        // Small delay to ensure all content is loaded
-        await page.waitForTimeout(1000);
+        // Wait for new results to be visible
+        await page.waitForSelector('article[data-testid="result"]', {
+            state: 'attached',
+            timeout: 5000
+        });
 
         return true;
     } catch (error) {
@@ -128,3 +128,26 @@ async function loadMoreResults(page: Page): Promise<boolean> {
         return false;
     }
 }
+
+// async function loadMoreResults(page: Page): Promise<boolean> {
+//     try {
+//         // Check if the "More results" button exists
+//         await page.waitForSelector('button#more-results');
+//         const moreButton = await page.$('button#more-results');
+//         if (!moreButton) {
+//             return false;
+//         }
+//         // Scroll to the button to ensure it's in view
+//         await moreButton.scrollIntoViewIfNeeded();
+//         // Click the button
+//         await moreButton.click();
+//         // Wait for new results to load
+//         await page.waitForSelector('article[data-testid="result"]');
+//         // Small delay to ensure all content is loaded
+//         // await page.waitForTimeout(1000);
+//         return true;
+//     } catch (error) {
+//         console.warn('Failed to load more results:', error);
+//         return false;
+//     }
+// }
