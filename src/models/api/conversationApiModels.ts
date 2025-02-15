@@ -294,3 +294,18 @@ export class ChatInference {
   @ApiProperty()
   prompt: string;
 }
+
+export class SearchResult {
+  @ApiProperty()
+  title: string;
+  @ApiProperty()
+  url: string;
+  @ApiProperty()
+  blurb: string;
+}
+
+
+export class SearchResultResponse{
+  @ApiProperty({type: [SearchResult]})
+  searchResults: SearchResult[];
+}

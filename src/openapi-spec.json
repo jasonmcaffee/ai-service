@@ -1087,6 +1087,38 @@
           "OpenApi"
         ]
       }
+    },
+    "/webSearch/search": {
+      "get": {
+        "operationId": "streamInference",
+        "parameters": [
+          {
+            "name": "query",
+            "required": true,
+            "in": "query",
+            "description": "search terms",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "search the web",
+        "tags": [
+          "WebSearch"
+        ]
+      }
     }
   },
   "info": {
@@ -1652,6 +1684,39 @@
           "isDefault",
           "modelTypeId",
           "initialMessage"
+        ]
+      },
+      "SearchResult": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "blurb": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "url",
+          "blurb"
+        ]
+      },
+      "SearchResultResponse": {
+        "type": "object",
+        "properties": {
+          "searchResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            }
+          }
+        },
+        "required": [
+          "searchResults"
         ]
       }
     }
