@@ -1708,6 +1708,9 @@
       "SearchResultResponse": {
         "type": "object",
         "properties": {
+          "query": {
+            "type": "string"
+          },
           "searchResults": {
             "type": "array",
             "items": {
@@ -1716,6 +1719,7 @@
           }
         },
         "required": [
+          "query",
           "searchResults"
         ]
       }
