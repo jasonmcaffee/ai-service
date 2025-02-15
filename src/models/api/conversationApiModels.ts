@@ -306,6 +306,8 @@ export class SearchResult {
 
 
 export class SearchResultResponse{
+  @ApiProperty()
+  query: string;
   @ApiProperty({type: [SearchResult]})
   searchResults: SearchResult[];
 }

@@ -7,7 +7,6 @@ import { chromium, Page } from 'playwright';
 export class WebsearchService {
     async searchDuckDuckGo(query: string, maxPages=5): Promise<SearchResultResponse>{
         const browser = await chromium.launch();
-        const results: SearchResult[] = [];
         const allResults: SearchResult[] = [];
         try {
             const context = await browser.newContext();
@@ -43,6 +42,7 @@ export class WebsearchService {
 
             return {
                 searchResults: allResults,
+                query
             }
         } catch (error) {
             console.error('Search failed:', error);
