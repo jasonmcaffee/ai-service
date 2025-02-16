@@ -1152,6 +1152,38 @@
           "WebSearch"
         ]
       }
+    },
+    "/webSearch/getPageContents": {
+      "get": {
+        "operationId": "getPageContents",
+        "parameters": [
+          {
+            "name": "url",
+            "required": true,
+            "in": "query",
+            "description": "url to fetch",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "fetch the contents of the page.",
+        "tags": [
+          "WebSearch"
+        ]
+      }
     }
   },
   "info": {

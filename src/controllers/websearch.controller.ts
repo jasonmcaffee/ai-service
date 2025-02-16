@@ -49,5 +49,15 @@ export class WebsearchController {
         return this.websearchService.streamSearch(query);
     }
 
+    @ApiOperation({ summary: 'fetch the contents of the page.' })
+    @ApiQuery({ name: 'url', type: String, description: 'url to fetch' })
+    @Get('getPageContents')
+    @ApiResponse({status: 200, description: 'Successful response', type: String})
+    async getPageContents(@Query('url') url: string, ) {
+        const memberId = this.authenticationService.getMemberId();
+        return this.websearchService.getMarkdownContentsOfPage(url);
+    }
+
+
 
 }

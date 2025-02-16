@@ -1,9 +1,11 @@
 import config from '../config/config';
 import {Injectable} from "@nestjs/common";
 import {SearchResult, SearchResultResponse} from "../models/api/conversationApiModels";
-import { chromium, Page } from 'playwright';
+import {Browser, BrowserContext, chromium, Page} from 'playwright';
 import { Observable, Subject, lastValueFrom } from 'rxjs';
 import {toArray} from 'rxjs/operators';
+
+const TurndownService = require('turndown');
 
 @Injectable()
 export class WebsearchService {
@@ -17,7 +19,7 @@ export class WebsearchService {
         return this.searchDuckDuckGo(query, undefined, maxPages);
     }
 
-    async searchDuckDuckGo(query: string, searchResultsSubject?: Subject<string>, maxPages=5): Promise<SearchResultResponse>{
+    private async searchDuckDuckGo(query: string, searchResultsSubject?: Subject<string>, maxPages=5): Promise<SearchResultResponse>{
         const browser = await chromium.launch();
         const allResults: SearchResult[] = [];
         try {
@@ -55,6 +57,49 @@ export class WebsearchService {
         } finally {
             await browser.close();
         }
+    }
+
+    async getMarkdownContentsOfPage(url: string, browser?: Browser , context?: BrowserContext): Promise<string>{
+        const turndownService = new TurndownService();
+        const htmlContents = await this.getHtmlContentsOfPage(url);
+        const markdown = turndownService.turndown(htmlContents);
+        return markdown;
+    }
+
+    async getHtmlContentsOfPage(url: string, browser?: Browser , context?: BrowserContext): Promise<string> {
+        const browser2 = browser ? browser : await chromium.launch();
+        const context2 = context ? context : await browser2!.newContext();
+        const page = await context2!.newPage();
+        await page.goto(url, {
+            waitUntil: 'domcontentloaded'
+        });
+
+        // Add a small delay to allow for CSR (adjust timing as needed)
+        await page.waitForTimeout(500);
+
+        // Remove all script and style tags using page.evaluate
+        // Remove scripts and styles, then get only body content
+        const bodyContent = await page.evaluate(() => {
+            // Remove script tags
+            const scripts = document.getElementsByTagName('script');
+            while (scripts[0]) scripts[0].parentNode!.removeChild(scripts[0]);
+
+            // Remove style tags
+            const styles = document.getElementsByTagName('style');
+            while (styles[0]) styles[0].parentNode!.removeChild(styles[0]);
+
+            // Remove link tags with rel="stylesheet"
+            const styleLinks = document.querySelectorAll('link[rel="stylesheet"]');
+            styleLinks.forEach(link => link.parentNode!.removeChild(link));
+
+            // Return only the body content
+            return document.body.innerHTML;
+        });
+
+        // Get the entire HTML content
+        // const htmlContent = await page.content();
+        const htmlContent = bodyContent;
+        return htmlContent;
     }
 }
 
@@ -129,25 +174,3 @@ async function loadMoreResults(page: Page): Promise<boolean> {
     }
 }
 
-// async function loadMoreResults(page: Page): Promise<boolean> {
-//     try {
-//         // Check if the "More results" button exists
-//         await page.waitForSelector('button#more-results');
-//         const moreButton = await page.$('button#more-results');
-//         if (!moreButton) {
-//             return false;
-//         }
-//         // Scroll to the button to ensure it's in view
-//         await moreButton.scrollIntoViewIfNeeded();
-//         // Click the button
-//         await moreButton.click();
-//         // Wait for new results to load
-//         await page.waitForSelector('article[data-testid="result"]');
-//         // Small delay to ensure all content is loaded
-//         // await page.waitForTimeout(1000);
-//         return true;
-//     } catch (error) {
-//         console.warn('Failed to load more results:', error);
-//         return false;
-//     }
-// }
