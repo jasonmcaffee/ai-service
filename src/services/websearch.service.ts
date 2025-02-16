@@ -4,6 +4,7 @@ import {SearchResult, SearchResultResponse} from "../models/api/conversationApiM
 import {Browser, BrowserContext, chromium, Page} from 'playwright';
 import { Observable, Subject, lastValueFrom } from 'rxjs';
 import {toArray} from 'rxjs/operators';
+import { wait } from '../utils/utils';
 
 const TurndownService = require('turndown');
 
@@ -19,7 +20,7 @@ export class WebsearchService {
         return this.searchDuckDuckGo(query, undefined, maxPages);
     }
 
-    private async searchDuckDuckGo(query: string, searchResultsSubject?: Subject<string>, maxPages=5): Promise<SearchResultResponse>{
+    private async searchDuckDuckGo(query: string, searchResultsSubject?: Subject<string>, maxPages=4): Promise<SearchResultResponse>{
         const browser = await chromium.launch();
         const allResults: SearchResult[] = [];
         try {
@@ -30,8 +31,9 @@ export class WebsearchService {
 
             // first go through and load all pages/results by click More button
             let currentPage = 1;
-            while (currentPage < maxPages) {
-                const hasMore = await loadMoreResults(page);
+            while (currentPage <= maxPages) {
+                console.log(`getting page ${currentPage} of ${maxPages}`);
+                const hasMore = await loadMoreResults(currentPage, page);
                 if (!hasMore) {
                     console.log('No more results available');
                     break;
@@ -42,6 +44,7 @@ export class WebsearchService {
             const newResults = await parseSearchResults(page, searchResultsSubject);
             allResults.push(...newResults);
 
+            console.log(`total results: ${allResults.length}`);
             searchResultsSubject?.next(JSON.stringify({end: true}));
             searchResultsSubject?.complete();
             return {
@@ -142,7 +145,7 @@ async function parseSearchResults(page: Page, searchResultsSubject?: Subject<str
     return results;
 }
 
-async function loadMoreResults(page: Page): Promise<boolean> {
+async function loadMoreResults(currentPageNumber: number, page: Page): Promise<boolean> {
     try {
         // Wait for the button to be present, visible, and enabled
         await page.waitForSelector('button#more-results', {
@@ -154,6 +157,11 @@ async function loadMoreResults(page: Page): Promise<boolean> {
         await page.click('button#more-results', {
             force: true
         });
+
+        if(currentPageNumber != 1){
+            console.log(`waiting for page ${currentPageNumber} div to show up...`);
+            await page.waitForSelector(`div[aria-label="Page ${currentPageNumber}"]`)
+        }
 
         // Wait for network idle to ensure new content is loaded
         await page.waitForLoadState('networkidle', { timeout: 5000 });
