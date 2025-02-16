@@ -27,13 +27,8 @@ export class WebsearchService {
             const page = await context.newPage();
             // Navigate to DuckDuckGo and perform search
             await page.goto(`https://duckduckgo.com/?t=h_&q=${query}&ia=web`);
-            // Wait for results to load
-            await page.waitForSelector('article[data-testid="result"]');
-            // Extract results
-            const initialResults = await parseSearchResults(page, searchResultsSubject);
-            allResults.push(...initialResults);
 
-            // Load more pages if requested
+            // first go through and load all pages/results by click More button
             let currentPage = 1;
             while (currentPage < maxPages) {
                 const hasMore = await loadMoreResults(page);
@@ -41,10 +36,12 @@ export class WebsearchService {
                     console.log('No more results available');
                     break;
                 }
-                const newResults = await parseSearchResults(page, searchResultsSubject);
-                allResults.push(...newResults);
                 currentPage++;
             }
+            //then gather up all the results.
+            const newResults = await parseSearchResults(page, searchResultsSubject);
+            allResults.push(...newResults);
+
             searchResultsSubject?.next(JSON.stringify({end: true}));
             searchResultsSubject?.complete();
             return {
