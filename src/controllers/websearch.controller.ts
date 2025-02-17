@@ -21,6 +21,8 @@ export class WebsearchController {
 
     @ApiOperation({ summary: 'Stream a message based on a prompt' })
     @ApiQuery({ name: 'query', type: String, description: 'Search query' })
+    @ApiQuery({ name: 'startingPage', type: Number, description: 'page to start on. e.g. 1' })
+    @ApiQuery({ name: 'maxPages', type: Number, description: 'number of pages to retrieve.' })
     @Get('streamWebSearch') // Must be GET for EventSource to work
     @Sse() // Server-Sent Events so we can stream LLM response back the client.
     @ApiResponse({
@@ -43,10 +45,10 @@ export class WebsearchController {
             },
         },
     })
-    async streamWebSearch(@Query('query') query: string,) {
+    async streamWebSearch(@Query('query') query: string, @Query('startingPage') startingPage: number, @Query('maxPages') maxPages: number) {
         console.log('got stream web search request: ', query);
         const memberId = this.authenticationService.getMemberId();
-        return this.websearchService.streamSearch(query);
+        return this.websearchService.streamSearch(query, maxPages, startingPage);
     }
 
     @ApiOperation({ summary: 'fetch the contents of the page.' })

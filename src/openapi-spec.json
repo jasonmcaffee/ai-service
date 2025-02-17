@@ -1132,6 +1132,24 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "startingPage",
+            "required": true,
+            "in": "query",
+            "description": "page to start on. e.g. 1",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxPages",
+            "required": true,
+            "in": "query",
+            "description": "number of pages to retrieve.",
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "responses": {
