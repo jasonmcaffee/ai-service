@@ -10,17 +10,17 @@ const TurndownService = require('turndown');
 
 @Injectable()
 export class WebsearchService {
-    async streamSearch(query: string, maxPages=5): Promise<Observable<string>> {
+    async streamSearch(query: string, maxPages=3, startPage=1, ): Promise<Observable<string>> {
         const searchResultsSubject = new Subject<string>();
-        this.searchDuckDuckGo(query, searchResultsSubject, maxPages);
+        this.searchDuckDuckGo(query, searchResultsSubject, maxPages, startPage);
         return searchResultsSubject.asObservable();
     }
 
-    async search(query: string, maxPages=5): Promise<SearchResultResponse> {
-        return this.searchDuckDuckGo(query, undefined, maxPages);
+    async search(query: string, maxPages=3, startPage=1, ): Promise<SearchResultResponse> {
+        return this.searchDuckDuckGo(query, undefined, maxPages, startPage);
     }
 
-    private async searchDuckDuckGo(query: string, searchResultsSubject?: Subject<string>, maxPages=4): Promise<SearchResultResponse>{
+    private async searchDuckDuckGo(query: string, searchResultsSubject?: Subject<string>, maxPages=3, startPage=1, ): Promise<SearchResultResponse>{
         const browser = await chromium.launch();
         const allResults: SearchResult[] = [];
         try {
@@ -30,13 +30,17 @@ export class WebsearchService {
             await page.goto(`https://duckduckgo.com/?t=h_&q=${query}&ia=web`);
 
             // first go through and load all pages/results by click More button
-            let currentPage = 1;
-            while (currentPage <= maxPages) {
-                console.log(`getting page ${currentPage} of ${maxPages}`);
+            let currentPage = 1; //you must always start at 1 and click through More Results N times.  Just ignore results
+            const lastPageToGet = startPage + maxPages;
+            while (currentPage < lastPageToGet) {
+                console.log(`getting page ${currentPage} of ${lastPageToGet}`);
                 const hasMore = await clickMoreResultsAndWaitForCurrentPageNumberResultsToShowUp(currentPage, page);
-                const newResults = await parseSearchResults(currentPage, page, searchResultsSubject);
-                allResults.push(...newResults);
-                console.log(`got ${newResults.length} for page: ${currentPage}`);
+                await wait(1000);
+                if(currentPage >= startPage){
+                    const newResults = await parseSearchResults(currentPage, page, searchResultsSubject);
+                    allResults.push(...newResults);
+                    console.log(`got ${newResults.length} for page: ${currentPage}`);
+                }
 
                 if (!hasMore) {
                     console.log('No more results available');
@@ -45,6 +49,10 @@ export class WebsearchService {
                 currentPage++;
             }
             console.log(`total results: ${allResults.length}`);
+            // console.log(JSON.stringify(allResults));
+            // console.log('====================================================');
+            // console.log(await getHtmlContentsOfPage(page) + '<style>svg{display:none;}</style>');
+
             searchResultsSubject?.next(JSON.stringify({end: true}));
             searchResultsSubject?.complete();
             return {
@@ -60,7 +68,7 @@ export class WebsearchService {
     }
 
     async getFullHtmlPageContent(url: string){
-        return getHtmlContentsOfPage(url);
+        return getHtmlContentsOfUrl(url);
     }
 
 }
@@ -169,18 +177,22 @@ async function parseSearchResults(currentPageNumber: number, page: Page, searchR
 
 async function getMarkdownContentsOfPage(url: string, browser?: Browser , context?: BrowserContext): Promise<string>{
     const turndownService = new TurndownService();
-    const htmlContents = await getHtmlContentsOfPage(url);
+    const htmlContents = await getHtmlContentsOfUrl(url);
     const markdown = turndownService.turndown(htmlContents);
     return markdown;
 }
 
-async function getHtmlContentsOfPage(url: string, browser?: Browser , context?: BrowserContext): Promise<string> {
+async function getHtmlContentsOfUrl(url: string, browser?: Browser , context?: BrowserContext): Promise<string> {
     const browser2 = browser ? browser : await chromium.launch();
     const context2 = context ? context : await browser2!.newContext();
     const page = await context2!.newPage();
     await page.goto(url, {
         waitUntil: 'domcontentloaded'
     });
+    return await getHtmlContentsOfPage(page);
+}
+
+async function getHtmlContentsOfPage(page: Page){
 
     // Add a small delay to allow for CSR (adjust timing as needed)
     await page.waitForTimeout(500);
@@ -209,3 +221,4 @@ async function getHtmlContentsOfPage(url: string, browser?: Browser , context?: 
     const htmlContent = bodyContent;
     return htmlContent;
 }
+
