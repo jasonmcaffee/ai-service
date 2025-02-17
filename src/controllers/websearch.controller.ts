@@ -12,11 +12,13 @@ export class WebsearchController {
 
     @ApiOperation({ summary: 'search the web' })
     @ApiQuery({ name: 'query', type: String, description: 'search terms' })
+    @ApiQuery({ name: 'startingPage', type: Number, description: 'page to start on. e.g. 1' })
+    @ApiQuery({ name: 'maxPages', type: Number, description: 'number of pages to retrieve.' })
     @Get('search')
     @ApiResponse({status: 200, description: 'Successful response', type: SearchResultResponse})
-    async webSearch(@Query('query') query: string, ) {
+    async webSearch(@Query('query') query: string, @Query('startingPage') startingPage: number, @Query('maxPages') maxPages: number) {
         const memberId = this.authenticationService.getMemberId();
-        return this.websearchService.search(query);
+        return this.websearchService.search(query, maxPages, startingPage);
     }
 
     @ApiOperation({ summary: 'Stream a message based on a prompt' })
