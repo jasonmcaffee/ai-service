@@ -160,7 +160,8 @@ async function loadMoreResults(currentPageNumber: number, page: Page): Promise<b
 
         if(currentPageNumber != 1){
             console.log(`waiting for page ${currentPageNumber} div to show up...`);
-            await page.waitForSelector(`div[aria-label="Page ${currentPageNumber}"]`)
+            await page.waitForSelector(`div[aria-label="Page ${currentPageNumber}"]`);
+            console.log(`DONE waiting for page ${currentPageNumber} div to show up...`);
         }
 
         // Wait for network idle to ensure new content is loaded
