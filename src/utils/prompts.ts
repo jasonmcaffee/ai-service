@@ -13,6 +13,20 @@ export const chatPageSystemPrompt = `
     Do not consider the above as a request.  Only use the above as context to respond to the messages following this.
 `;
 
+export function markdownWebPagePrompt(markdown: string){
+  return `
+  Summarize the below markdown by succinctly stating the key points of the page. 
+  The markdown was converted from the html retrieved by visiting a url.
+  Ignore superfluous content, such as navigation, ads, marketing, etc.
+  Find the information that is likely to be useful to a human reader.
+  
+  The markdown is found below enclosed inside the markdown xml tags:
+  <markdown>
+  {markdown}
+  </markdown>
+  `;
+}
+
 export function documentPrompt(document:Document){
   return `
   You may be asked questions related to the document below, which is found between the <document> tags.

@@ -1,15 +1,22 @@
 import config from '../config/config';
 import {Injectable} from "@nestjs/common";
-import {SearchResult, SearchResultResponse} from "../models/api/conversationApiModels";
+import { Model, SearchResult, SearchResultResponse } from '../models/api/conversationApiModels';
 import {Browser, BrowserContext, chromium, Page} from 'playwright';
 import { Observable, Subject, lastValueFrom } from 'rxjs';
 import {toArray} from 'rxjs/operators';
 import { wait } from '../utils/utils';
+import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import OpenAI from 'openai';
+import { chatPageSystemPrompt, markdownWebPagePrompt } from '../utils/prompts';
+import { ModelsService } from './models.service';
 
 const TurndownService = require('turndown');
 
 @Injectable()
 export class WebsearchService {
+    private abortControllers: Map<string, { controller: AbortController }> = new Map();
+    constructor(private readonly modelsService: ModelsService) {}
+
     async streamSearch(query: string, maxPages=3, startPage=1, ): Promise<Observable<string>> {
         const searchResultsSubject = new Subject<string>();
         this.searchDuckDuckGo(query, searchResultsSubject, maxPages, startPage);
@@ -71,6 +78,74 @@ export class WebsearchService {
         return getHtmlContentsOfUrl(url);
     }
 
+    async getMarkdownContent(url: string){
+        return getMarkdownContentsOfPage(url);
+    }
+
+    async streamAiSummaryOfUrl(memberId: string, url: string){
+        const model = await this.modelsService.getModelByIdOrGetDefault(memberId);
+        const markdownForPage = await getMarkdownContentsOfPage(url);
+        return this.createInferenceObservable([{role: 'system', content: markdownWebPagePrompt(markdownForPage)}],
+          () => {}, ()=> {}, model, memberId);
+    }
+
+    createInferenceObservable(openAiMessages: ChatCompletionMessageParam[],
+                              handleOnText: (text: string) => void,
+                              handleResponseCompleted: (text: string, model: Model) => void,
+                              model: Model,
+                              memberId: string,
+    ): Observable<string> {
+        const apiKey = model.apiKey;
+        const baseURL = model.url;
+        const openai = new OpenAI({ apiKey, baseURL,});
+        return new Observable((observer) => {
+            let completeText = '';
+
+            //allow a mechanism to cancel the request.
+            const controller = new AbortController();
+            const signal = controller.signal;
+            this.abortControllers.set(memberId, {controller});
+
+            openai.chat.completions
+              .create({
+                  model: model.modelName, //'gpt-4',
+                  messages: openAiMessages,
+                  stream: true,
+              }, {signal})
+              .then(async (stream) => {
+                  for await (const chunk of stream) {
+                      const content = chunk.choices[0]?.delta?.content || '';
+                      if (content) {
+                          const text = JSON.stringify({ text: content });
+                          completeText += content;
+                          await handleOnText(content);
+                          observer.next(text);
+                      }
+                  }
+                  const endSignal = JSON.stringify({ end: 'true' });
+                  await handleResponseCompleted(completeText, model);
+                  this.abortControllers.delete(memberId);
+                  handleOnText(endSignal);
+                  observer.next(endSignal);
+                  observer.complete();
+              })
+              .catch((error) => {
+                  console.log(`openai error: `, error);
+                  this.abortControllers.delete(memberId);
+                  observer.error(error);
+              });
+        });
+    }
+
+    async stop(memberId: string){
+        const associatedAbortController = this.abortControllers.get(memberId);
+        if(!associatedAbortController){
+            return console.log(`no associated abort controller for member id: ${memberId}`);
+        }
+        console.log(`aborting controller`)
+        associatedAbortController.controller.abort();
+        this.abortControllers.delete(memberId);
+    }
 }
 
 
@@ -175,50 +250,53 @@ async function parseSearchResults(currentPageNumber: number, page: Page, searchR
 }
 
 
-async function getMarkdownContentsOfPage(url: string, browser?: Browser , context?: BrowserContext): Promise<string>{
+async function getMarkdownContentsOfPage(url: string, removeScriptsAndStyles=true, browser?: Browser , context?: BrowserContext): Promise<string>{
     const turndownService = new TurndownService();
-    const htmlContents = await getHtmlContentsOfUrl(url);
+    const htmlContents = await getHtmlContentsOfUrl(url, removeScriptsAndStyles, browser, context);
     const markdown = turndownService.turndown(htmlContents);
     return markdown;
 }
 
-async function getHtmlContentsOfUrl(url: string, browser?: Browser , context?: BrowserContext): Promise<string> {
+async function getHtmlContentsOfUrl(url: string, removeScriptsAndStyles=false, browser?: Browser , context?: BrowserContext): Promise<string> {
     const browser2 = browser ? browser : await chromium.launch();
     const context2 = context ? context : await browser2!.newContext();
     const page = await context2!.newPage();
     await page.goto(url, {
         waitUntil: 'domcontentloaded'
     });
-    return await getHtmlContentsOfPage(page);
+    return await getHtmlContentsOfPage(page, removeScriptsAndStyles);
 }
 
-async function getHtmlContentsOfPage(page: Page){
+async function getHtmlContentsOfPage(page: Page, removeScriptsAndStyles=false){
 
     // Add a small delay to allow for CSR (adjust timing as needed)
     await page.waitForTimeout(500);
 
     // Remove all script and style tags using page.evaluate
     // Remove scripts and styles, then get only body content
-    const bodyContent = await page.evaluate(() => {
-        // Remove script tags
-        const scripts = document.getElementsByTagName('script');
-        while (scripts[0]) scripts[0].parentNode!.removeChild(scripts[0]);
+    let bodyContent = '';
+    if(removeScriptsAndStyles){
+        bodyContent = await page.evaluate(() => {
+            // Remove script tags
+            const scripts = document.getElementsByTagName('script');
+            while (scripts[0]) scripts[0].parentNode!.removeChild(scripts[0]);
+            // Remove style tags
+            const styles = document.getElementsByTagName('style');
+            while (styles[0]) styles[0].parentNode!.removeChild(styles[0]);
+            // Remove link tags with rel="stylesheet"
+            const styleLinks = document.querySelectorAll('link[rel="stylesheet"]');
+            styleLinks.forEach(link => link.parentNode!.removeChild(link));
+            return document.body.innerHTML;
+        });
+    }else{
+        bodyContent = await page.evaluate(() => {return  document.documentElement.outerHTML;});
+    }
 
-        // Remove style tags
-        const styles = document.getElementsByTagName('style');
-        while (styles[0]) styles[0].parentNode!.removeChild(styles[0]);
-
-        // Remove link tags with rel="stylesheet"
-        const styleLinks = document.querySelectorAll('link[rel="stylesheet"]');
-        styleLinks.forEach(link => link.parentNode!.removeChild(link));
-
-        // Return only the body content
-        return document.body.innerHTML;
-    });
 
     // Get the entire HTML content
     // const htmlContent = await page.content();
     const htmlContent = bodyContent;
     return htmlContent;
 }
+
 

@@ -1220,6 +1220,54 @@
           "WebSearch"
         ]
       }
+    },
+    "/webSearch/streamSummarizeUrl": {
+      "get": {
+        "operationId": "streamSummarizeUrl",
+        "parameters": [
+          {
+            "name": "url",
+            "required": true,
+            "in": "query",
+            "description": "Url to summarize",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "example": "data: { \"text\": \"response\", \"end\": \"true\" }"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stream a summary based on url",
+        "tags": [
+          "WebSearch"
+        ]
+      }
+    },
+    "/webSearch/stopSummarizingUrl": {
+      "get": {
+        "operationId": "stopSummarizingUrl",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "stop the current stream for a member",
+        "tags": [
+          "WebSearch"
+        ]
+      }
     }
   },
   "info": {

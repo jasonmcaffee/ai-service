@@ -59,9 +59,36 @@ export class WebsearchController {
     @ApiResponse({status: 200, description: 'Successful response', type: String})
     async getPageContents(@Query('url') url: string, ) {
         const memberId = this.authenticationService.getMemberId();
-        return this.websearchService.getFullHtmlPageContent(url);
+        return this.websearchService.getMarkdownContent(url);
     }
 
+    @ApiOperation({ summary: 'Stream a summary based on url' })
+    @ApiQuery({ name: 'url', type: String, description: 'Url to summarize' })
+    @Get('streamSummarizeUrl') // Must be GET for EventSource to work
+    @Sse() // Server-Sent Events so we can stream LLM response back the client.
+    @ApiResponse({
+        status: 200,
+        description: 'Successful response',
+        content: {
+            'text/event-stream': {
+                schema: {
+                    type: 'string',
+                    example: 'data: { "text": "response", "end": "true" }', //end is true when response is complete.
+                },
+            },
+        },
+    })
+    async streamSummarizeUrl(@Query('url') url: string, ){
+        const memberId = this.authenticationService.getMemberId();
+        return this.websearchService.streamAiSummaryOfUrl(memberId, url);
+    }
 
+    @ApiOperation({summary: 'stop the current stream for a member'})
+    @Get('stopSummarizingUrl')
+    @ApiResponse({status: 201})
+    async stopSummarizingUrl(){
+        const memberId = this.authenticationService.getMemberId();
+        return this.websearchService.stop(memberId);
+    }
 
 }
