@@ -41,7 +41,7 @@ export class WebsearchService {
                 currentPage++;
             }
             //then gather up all the results.
-            const newResults = await parseSearchResults(page, searchResultsSubject);
+            const newResults = await parseSearchResults(1, page, searchResultsSubject);
             allResults.push(...newResults);
 
             console.log(`total results: ${allResults.length}`);
@@ -59,91 +59,12 @@ export class WebsearchService {
         }
     }
 
-    async getMarkdownContentsOfPage(url: string, browser?: Browser , context?: BrowserContext): Promise<string>{
-        const turndownService = new TurndownService();
-        const htmlContents = await this.getHtmlContentsOfPage(url);
-        const markdown = turndownService.turndown(htmlContents);
-        return markdown;
+    async getFullHtmlPageContent(url: string){
+        return getHtmlContentsOfPage(url);
     }
 
-    async getHtmlContentsOfPage(url: string, browser?: Browser , context?: BrowserContext): Promise<string> {
-        const browser2 = browser ? browser : await chromium.launch();
-        const context2 = context ? context : await browser2!.newContext();
-        const page = await context2!.newPage();
-        await page.goto(url, {
-            waitUntil: 'domcontentloaded'
-        });
-
-        // Add a small delay to allow for CSR (adjust timing as needed)
-        await page.waitForTimeout(500);
-
-        // Remove all script and style tags using page.evaluate
-        // Remove scripts and styles, then get only body content
-        const bodyContent = await page.evaluate(() => {
-            // Remove script tags
-            const scripts = document.getElementsByTagName('script');
-            while (scripts[0]) scripts[0].parentNode!.removeChild(scripts[0]);
-
-            // Remove style tags
-            const styles = document.getElementsByTagName('style');
-            while (styles[0]) styles[0].parentNode!.removeChild(styles[0]);
-
-            // Remove link tags with rel="stylesheet"
-            const styleLinks = document.querySelectorAll('link[rel="stylesheet"]');
-            styleLinks.forEach(link => link.parentNode!.removeChild(link));
-
-            // Return only the body content
-            return document.body.innerHTML;
-        });
-
-        // Get the entire HTML content
-        // const htmlContent = await page.content();
-        const htmlContent = bodyContent;
-        return htmlContent;
-    }
 }
 
-async function parseSearchResults(page: Page, searchResultsSubject?: Subject<string>): Promise<SearchResult[]> {
-    const results: SearchResult[] = [];
-
-    // Extract results
-    const searchResults = await page.$$('article[data-testid="result"]');
-
-    for (const result of searchResults) {
-        try {
-            // Title and URL extraction
-            const title = await result.$eval('h2 a span',
-                (el) => el.textContent?.trim() || '');
-
-            const url = await result.$eval('h2 a',
-                (el) => el.getAttribute('href') || '');
-
-            // Get text content from all spans in the snippet area
-            const snippetSpans = await result.$$eval('[data-result="snippet"] span > span',
-                (elements) => elements.map(el => el.textContent?.trim() || ''));
-
-            // Process the spans
-            let date: string | undefined;
-            let blurb: string;
-
-            // Check if first span matches date pattern (e.g., "Jul 3, 2024")
-            const datePattern = /^[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4}$/;
-            if (snippetSpans.length > 1 && datePattern.test(snippetSpans[0])) {
-                date = snippetSpans[0];
-                blurb = snippetSpans.slice(1).join(' ');
-            } else {
-                blurb = snippetSpans.join(' ');
-            }
-            const searchResult: SearchResult = { title, url, blurb, ...(date && { date }) };
-            results.push(searchResult);
-            searchResultsSubject?.next(JSON.stringify({data: {searchResults: [searchResult]}, end: false})); //for now do an array of 1, but we can batch if needed.
-        } catch (error) {
-            console.warn('Failed to parse result:', error);
-            continue;
-        }
-    }
-    return results;
-}
 
 async function loadMoreResults(currentPageNumber: number, page: Page): Promise<boolean> {
     try {
@@ -180,3 +101,88 @@ async function loadMoreResults(currentPageNumber: number, page: Page): Promise<b
     }
 }
 
+async function parseSearchResults(currentPageNumber: number, page: Page, searchResultsSubject?: Subject<string>): Promise<SearchResult[]> {
+    const results: SearchResult[] = [];
+
+    // Extract results
+    const searchResults = await page.$$('article[data-testid="result"]');
+
+    for (const result of searchResults) {
+        try {
+            // Title and URL extraction
+            const title = await result.$eval('h2 a span',
+              (el) => el.textContent?.trim() || '');
+
+            const url = await result.$eval('h2 a',
+              (el) => el.getAttribute('href') || '');
+
+            // Get text content from all spans in the snippet area
+            const snippetSpans = await result.$$eval('[data-result="snippet"] span > span',
+              (elements) => elements.map(el => el.textContent?.trim() || ''));
+
+            // Process the spans
+            let date: string | undefined;
+            let blurb: string;
+
+            // Check if first span matches date pattern (e.g., "Jul 3, 2024")
+            const datePattern = /^[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4}$/;
+            if (snippetSpans.length > 1 && datePattern.test(snippetSpans[0])) {
+                date = snippetSpans[0];
+                blurb = snippetSpans.slice(1).join(' ');
+            } else {
+                blurb = snippetSpans.join(' ');
+            }
+            const searchResult: SearchResult = { title, url, blurb, ...(date && { date }) };
+            results.push(searchResult);
+            searchResultsSubject?.next(JSON.stringify({data: {searchResults: [searchResult]}, end: false})); //for now do an array of 1, but we can batch if needed.
+        } catch (error) {
+            console.warn('Failed to parse result:', error);
+            continue;
+        }
+    }
+    return results;
+}
+
+
+async function getMarkdownContentsOfPage(url: string, browser?: Browser , context?: BrowserContext): Promise<string>{
+    const turndownService = new TurndownService();
+    const htmlContents = await getHtmlContentsOfPage(url);
+    const markdown = turndownService.turndown(htmlContents);
+    return markdown;
+}
+
+async function getHtmlContentsOfPage(url: string, browser?: Browser , context?: BrowserContext): Promise<string> {
+    const browser2 = browser ? browser : await chromium.launch();
+    const context2 = context ? context : await browser2!.newContext();
+    const page = await context2!.newPage();
+    await page.goto(url, {
+        waitUntil: 'domcontentloaded'
+    });
+
+    // Add a small delay to allow for CSR (adjust timing as needed)
+    await page.waitForTimeout(500);
+
+    // Remove all script and style tags using page.evaluate
+    // Remove scripts and styles, then get only body content
+    const bodyContent = await page.evaluate(() => {
+        // Remove script tags
+        const scripts = document.getElementsByTagName('script');
+        while (scripts[0]) scripts[0].parentNode!.removeChild(scripts[0]);
+
+        // Remove style tags
+        const styles = document.getElementsByTagName('style');
+        while (styles[0]) styles[0].parentNode!.removeChild(styles[0]);
+
+        // Remove link tags with rel="stylesheet"
+        const styleLinks = document.querySelectorAll('link[rel="stylesheet"]');
+        styleLinks.forEach(link => link.parentNode!.removeChild(link));
+
+        // Return only the body content
+        return document.body.innerHTML;
+    });
+
+    // Get the entire HTML content
+    // const htmlContent = await page.content();
+    const htmlContent = bodyContent;
+    return htmlContent;
+}

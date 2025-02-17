@@ -55,7 +55,7 @@ export class WebsearchController {
     @ApiResponse({status: 200, description: 'Successful response', type: String})
     async getPageContents(@Query('url') url: string, ) {
         const memberId = this.authenticationService.getMemberId();
-        return this.websearchService.getMarkdownContentsOfPage(url);
+        return this.websearchService.getFullHtmlPageContent(url);
     }
 
 
