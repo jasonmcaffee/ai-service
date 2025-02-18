@@ -22,7 +22,7 @@ export function markdownWebPagePrompt(markdown: string){
   
   The markdown is found below enclosed inside the markdown xml tags:
   <markdown>
-  {markdown}
+  ${markdown}
   </markdown>
   `;
 }
