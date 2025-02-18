@@ -84,12 +84,30 @@ export class WebsearchService {
 
     async streamAiSummaryOfUrl(memberId: string, url: string, searchQueryContext?: string){
         console.log(`streamAiSummaryOfUrl called for url:${url}`);
+        const streamAiSummaryOfUrlSubject = new Subject<string>();
+        //allow a mechanism to cancel the request.
+        const controller = new AbortController();
+        this.abortControllers.set(memberId, {controller});
         const model = await this.modelsService.getModelByIdOrGetDefault(memberId);
+        if (controller.signal.aborted) {
+            console.log(`1 Request aborted before processing for memberId: ${memberId}`);
+            const endSignal = JSON.stringify({ end: 'true' });
+            streamAiSummaryOfUrlSubject.next(endSignal);
+            streamAiSummaryOfUrlSubject.complete();
+            return streamAiSummaryOfUrlSubject;
+        }
         const markdownForPage = await getMarkdownContentsOfPage(url);
         const prompt = markdownWebPagePrompt(markdownForPage, searchQueryContext);
-        console.log(`prompt: `, prompt);
+        if (controller.signal.aborted) {
+            console.log(`2 Request aborted before processing for memberId: ${memberId}`);
+            const endSignal = JSON.stringify({ end: 'true' });
+            streamAiSummaryOfUrlSubject.next(endSignal);
+            streamAiSummaryOfUrlSubject.complete();
+            return streamAiSummaryOfUrlSubject;
+        }
+        // console.log(`prompt: `, prompt);
         return this.createInferenceObservable([{role: 'system', content: prompt}],
-          () => {}, ()=> {}, model, memberId);
+          () => {}, ()=> {}, model, memberId, controller, streamAiSummaryOfUrlSubject);
     }
 
     createInferenceObservable(openAiMessages: ChatCompletionMessageParam[],
@@ -97,48 +115,46 @@ export class WebsearchService {
                               handleResponseCompleted: (text: string, model: Model) => void,
                               model: Model,
                               memberId: string,
+                              abortController: AbortController,
+                              subject: Subject<string>
     ): Observable<string> {
         console.log(`websearch sending message to openai server model`);
         const apiKey = model.apiKey;
         const baseURL = model.url;
         const openai = new OpenAI({ apiKey, baseURL,});
-        return new Observable((observer) => {
-            let completeText = '';
 
-            //allow a mechanism to cancel the request.
-            const controller = new AbortController();
-            const signal = controller.signal;
-            this.abortControllers.set(memberId, {controller});
+        let completeText = '';
+        const signal = abortController.signal;
 
-            openai.chat.completions
-              .create({
-                  model: model.modelName, //'gpt-4',
-                  messages: openAiMessages,
-                  stream: true,
-              }, {signal})
-              .then(async (stream) => {
-                  for await (const chunk of stream) {
-                      const content = chunk.choices[0]?.delta?.content || '';
-                      if (content) {
-                          const text = JSON.stringify({ text: content });
-                          completeText += content;
-                          await handleOnText(content);
-                          observer.next(text);
-                      }
+        openai.chat.completions
+          .create({
+              model: model.modelName, //'gpt-4',
+              messages: openAiMessages,
+              stream: true,
+          }, {signal})
+          .then(async (stream) => {
+              for await (const chunk of stream) {
+                  const content = chunk.choices[0]?.delta?.content || '';
+                  if (content) {
+                      const text = JSON.stringify({ text: content });
+                      completeText += content;
+                      await handleOnText(content);
+                      subject.next(text);
                   }
-                  const endSignal = JSON.stringify({ end: 'true' });
-                  await handleResponseCompleted(completeText, model);
-                  this.abortControllers.delete(memberId);
-                  handleOnText(endSignal);
-                  observer.next(endSignal);
-                  observer.complete();
-              })
-              .catch((error) => {
-                  console.log(`openai error: `, error);
-                  this.abortControllers.delete(memberId);
-                  observer.error(error);
-              });
-        });
+              }
+              const endSignal = JSON.stringify({ end: 'true' });
+              await handleResponseCompleted(completeText, model);
+              this.abortControllers.delete(memberId);
+              handleOnText(endSignal);
+              subject.next(endSignal);
+              subject.complete();
+          })
+          .catch((error) => {
+              console.log(`openai error: `, error);
+              this.abortControllers.delete(memberId);
+              subject.error(error);
+          });
+        return subject;
     }
 
     async stop(memberId: string){

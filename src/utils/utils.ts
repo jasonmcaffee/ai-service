@@ -1,6 +1,7 @@
 import {Message, MessageContext, ModelOrDatasource} from '../models/api/conversationApiModels';
 // import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import { Observable } from 'rxjs';
 
 export function createOpenAIMessagesFromMessages(messages: Message[]){
   return messages.map((m) => {
@@ -41,3 +42,11 @@ export function wait(ms: number){
     setTimeout(resolve, ms);
   });
 }
+
+// export async function createObserver(){
+//   return new Promise((resolve) => {
+//     new Observable((observer) => {
+//       resolve(observer);
+//     })
+//   })
+// }
