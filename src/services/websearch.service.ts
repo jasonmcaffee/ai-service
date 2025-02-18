@@ -98,6 +98,7 @@ export class WebsearchService {
                               model: Model,
                               memberId: string,
     ): Observable<string> {
+        console.log(`websearch sending message to openai server model`);
         const apiKey = model.apiKey;
         const baseURL = model.url;
         const openai = new OpenAI({ apiKey, baseURL,});
