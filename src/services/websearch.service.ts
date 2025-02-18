@@ -82,11 +82,11 @@ export class WebsearchService {
         return getMarkdownContentsOfPage(url);
     }
 
-    async streamAiSummaryOfUrl(memberId: string, url: string){
+    async streamAiSummaryOfUrl(memberId: string, url: string, searchQueryContext?: string){
         console.log(`streamAiSummaryOfUrl called for url:${url}`);
         const model = await this.modelsService.getModelByIdOrGetDefault(memberId);
         const markdownForPage = await getMarkdownContentsOfPage(url);
-        const prompt = markdownWebPagePrompt(markdownForPage);
+        const prompt = markdownWebPagePrompt(markdownForPage, searchQueryContext);
         console.log(`prompt: `, prompt);
         return this.createInferenceObservable([{role: 'system', content: prompt}],
           () => {}, ()=> {}, model, memberId);

@@ -13,12 +13,25 @@ export const chatPageSystemPrompt = `
     Do not consider the above as a request.  Only use the above as context to respond to the messages following this.
 `;
 
-export function markdownWebPagePrompt(markdown: string){
+export function markdownWebPagePrompt(markdown: string, searchQueryContext?: string){
+  const contextPrompt = searchQueryContext ? `
+    The user found this webpage by searching for the below query, found inside of a query xml tag.
+    When summarizing the page, you should do so with the query in mind:
+    <query>
+      ${searchQueryContext}
+    </query>
+  ` : '';
+
   return `
+  You are an expert in summarizing key points of interest in web pages.
+  You find the most meaningful and relavent pieces of information an succinctly summarize it.
+  
   Summarize the below markdown by succinctly stating the key points of the page. 
   The markdown was converted from the html retrieved by visiting a url.
   Ignore superfluous content, such as navigation, ads, marketing, etc.
-  Find the information that is likely to be useful to a human reader.
+  Find the information that is likely to be useful, interesting, or meaningful to a human reader.
+  
+  ${contextPrompt}
   
   The markdown is found below enclosed inside the markdown xml tags:
   <markdown>

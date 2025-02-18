@@ -64,6 +64,7 @@ export class WebsearchController {
 
     @ApiOperation({ summary: 'Stream a summary based on url' })
     @ApiQuery({ name: 'url', type: String, description: 'Url to summarize' })
+    @ApiQuery({ name: 'searchQueryContext', type: String, description: 'context in which the url was originally fetched' , required:false})
     @Get('streamSummarizeUrl') // Must be GET for EventSource to work
     @Sse() // Server-Sent Events so we can stream LLM response back the client.
     @ApiResponse({
@@ -78,9 +79,10 @@ export class WebsearchController {
             },
         },
     })
-    async streamSummarizeUrl(@Query('url') url: string, ){
+    async streamSummarizeUrl(@Query('url') url: string, @Query('searchQueryContext') searchQueryContext?: string,){
         const memberId = this.authenticationService.getMemberId();
-        return this.websearchService.streamAiSummaryOfUrl(memberId, url);
+        console.log(`streamSummarizeUrl for ${searchQueryContext}`);
+        return this.websearchService.streamAiSummaryOfUrl(memberId, url, searchQueryContext);
     }
 
     @ApiOperation({summary: 'stop the current stream for a member'})

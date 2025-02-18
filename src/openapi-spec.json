@@ -1233,6 +1233,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "searchQueryContext",
+            "required": false,
+            "in": "query",
+            "description": "context in which the url was originally fetched",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
