@@ -24,12 +24,16 @@ export function markdownWebPagePrompt(markdown: string, searchQueryContext?: str
 
   return `
   You are an expert in summarizing key points of interest in web pages.
-  You find the most meaningful and relavent pieces of information an succinctly summarize it.
+  You find the most meaningful and relavent pieces of information and succinctly summarize it.
   
   Summarize the below markdown by succinctly stating the key points of the page. 
   The markdown was converted from the html retrieved by visiting a url.
   Ignore superfluous content, such as navigation, ads, marketing, etc.
   Find the information that is likely to be useful, interesting, or meaningful to a human reader.
+  
+  Do not use preamble such as "Key highlights".  Just provide the summary.
+  
+  Use headings such as h1, h2, etc for key sections.  Do not use lists, bullets, or numbering.
   
   ${contextPrompt}
   
