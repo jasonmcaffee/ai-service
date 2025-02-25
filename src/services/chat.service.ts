@@ -14,6 +14,7 @@ import {
 } from '../utils/utils';
 import {chatPageSystemPrompt} from "../utils/prompts";
 import { ModelsService } from './models.service';
+import InferenceSSESubject from "../models/InferenceSSESubject";
 
 @Injectable()
 export class ChatService {
@@ -38,11 +39,13 @@ export class ChatService {
       //todo add datasource to conversation or to message
     }
     const model = await this.getModelToUseForMessage(memberId, messageContext, modelId);
+    const inferenceSSESubject = new InferenceSSESubject();
     if(conversationId){
-      return this.streamInferenceWithConversation(prompt, memberId, conversationId, model, messageContext);
+      this.streamInferenceWithConversation(prompt, memberId, conversationId, model, messageContext, inferenceSSESubject);
     }else {
-      return this.streamInferenceWithoutConversation(prompt, memberId, model, messageContext);
+      this.streamInferenceWithoutConversation(prompt, memberId, model, messageContext, inferenceSSESubject);
     }
+    return inferenceSSESubject.getSubject();
   }
 
   /**
@@ -64,7 +67,7 @@ export class ChatService {
     return this.modelsService.getModelByIdOrGetDefault(memberId, modelIdForMessage);
   }
 
-  async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string, model:Model, messageContext: MessageContext,){
+  async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string, model:Model, messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject){
     //add datasources to conversation
     for (let datasourceContext of messageContext.datasources) {
       await this.conversationService.addDatasourceToConversation(memberId, parseInt(datasourceContext.id), conversationId);
@@ -99,19 +102,19 @@ export class ChatService {
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
-    const observable = this.createInferenceObservable(openAiMessages, handleOnText, handleResponseCompleted, model, memberId);
-    return observable;
+    this.createInferenceObservable(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject);
+
   }
 
-  async streamInferenceWithoutConversation(prompt: string, memberId: string, model: Model, messageContext: MessageContext,){
+  async streamInferenceWithoutConversation(prompt: string, memberId: string, model: Model, messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject){
     const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
     let openAiMessages = createOpenAIMessagesFromMessages([userMessage]);
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
     }
-    const observable = this.createInferenceObservable(openAiMessages, ()=>{}, ()=>{}, model, memberId);
-    return observable;
+    this.createInferenceObservable(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject);
+
   }
 
   createInferenceObservable(openAiMessages: ChatCompletionMessageParam[],
@@ -119,49 +122,49 @@ export class ChatService {
                             handleResponseCompleted: (text: string, model: Model) => void,
                             model: Model,
                             memberId: string,
-  ): Observable<string> {
+                            inferenceSSESubject: InferenceSSESubject
+  ) {
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL,});
-    return new Observable((observer) => {
-      let completeText = '';
 
-      //allow a mechanism to cancel the request.
-      const controller = new AbortController();
-      const signal = controller.signal;
-      this.abortControllers.set(memberId, {controller});
+    let completeText = '';
 
-      openai.chat.completions
-        .create({
-          model: model.modelName, //'gpt-4',
-          messages: [{role: 'system', content: chatPageSystemPrompt}, ...openAiMessages],
-          stream: true,
-        }, {signal})
-        .then(async (stream) => {
-          for await (const chunk of stream) {
-            const content = chunk.choices[0]?.delta?.content || '';
-            if (content) {
-              const text = JSON.stringify({ text: content });
-              completeText += content;
-              await handleOnText(content);
-              observer.next(text);
-            }
+    //allow a mechanism to cancel the request.
+    const controller = new AbortController();
+    const signal = controller.signal;
+    this.abortControllers.set(memberId, {controller});
+
+    openai.chat.completions
+      .create({
+        model: model.modelName, //'gpt-4',
+        messages: [{role: 'system', content: chatPageSystemPrompt}, ...openAiMessages],
+        stream: true,
+      }, {signal})
+      .then(async (stream) => {
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          if (content) {
+            // const text = JSON.stringify({ text: content });
+            completeText += content;
+            await handleOnText(content);
+            // observer.next(text);
+            inferenceSSESubject.sendText(content);
           }
-          const endSignal = JSON.stringify({ end: 'true' });
-          await handleResponseCompleted(completeText, model);
-          this.abortControllers.delete(memberId);
-          handleOnText(endSignal);
-          observer.next(endSignal);
-          observer.complete();
-        })
-        .catch((error) => {
-          console.log(`openai error: `, error);
-          this.abortControllers.delete(memberId);
-          observer.error(error);
-        });
-    });
+        }
+        const endSignal = JSON.stringify({ end: 'true' });
+        await handleResponseCompleted(completeText, model);
+        this.abortControllers.delete(memberId);
+        handleOnText(endSignal);
+        inferenceSSESubject.sendComplete();
+      })
+      .catch((error) => {
+        console.log(`openai error: `, error);
+        this.abortControllers.delete(memberId);
+        // observer.error(error);
+        inferenceSSESubject.sendError(error);
+      });
   }
-
 }
 
 //from chatgpt

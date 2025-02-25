@@ -122,17 +122,17 @@ export class WebsearchService {
             return streamAiSummaryOfUrlSubject.getSubject();
         }
         // console.log(`prompt: `, prompt);
-        this.createInferenceObservable([{role: 'system', content: prompt}],
+        this.callOpenAiUsingModelAndSubject([{role: 'system', content: prompt}],
           model, memberId, controller, streamAiSummaryOfUrlSubject);
 
         return streamAiSummaryOfUrlSubject.getSubject();
     }
 
-    createInferenceObservable(openAiMessages: ChatCompletionMessageParam[],
-                              model: Model,
-                              memberId: string,
-                              abortController: AbortController,
-                              subject: InferenceSSESubject
+    callOpenAiUsingModelAndSubject(openAiMessages: ChatCompletionMessageParam[],
+                                   model: Model,
+                                   memberId: string,
+                                   abortController: AbortController,
+                                   subject: InferenceSSESubject
     ) {
         console.log(`websearch sending message to openai server model`);
         const apiKey = model.apiKey;
