@@ -25,6 +25,12 @@ export interface CreateMessage {
      * @memberof CreateMessage
      */
     messageText: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateMessage
+     */
+    role: string;
 }
 
 /**
@@ -32,6 +38,7 @@ export interface CreateMessage {
  */
 export function instanceOfCreateMessage(value: object): value is CreateMessage {
     if (!('messageText' in value) || value['messageText'] === undefined) return false;
+    if (!('role' in value) || value['role'] === undefined) return false;
     return true;
 }
 
@@ -46,6 +53,7 @@ export function CreateMessageFromJSONTyped(json: any, ignoreDiscriminator: boole
     return {
         
         'messageText': json['messageText'],
+        'role': json['role'],
     };
 }
 
@@ -61,6 +69,7 @@ export function CreateMessageToJSONTyped(value?: CreateMessage | null, ignoreDis
     return {
         
         'messageText': value['messageText'],
+        'role': value['role'],
     };
 }
 

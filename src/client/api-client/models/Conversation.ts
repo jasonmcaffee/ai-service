@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { Datasource } from './Datasource';
+import {
+    DatasourceFromJSON,
+    DatasourceFromJSONTyped,
+    DatasourceToJSON,
+    DatasourceToJSONTyped,
+} from './Datasource';
 import type { Message } from './Message';
 import {
     MessageFromJSON,
@@ -51,6 +58,12 @@ export interface Conversation {
      * @memberof Conversation
      */
     messages: Array<Message> | null;
+    /**
+     * 
+     * @type {Array<Datasource>}
+     * @memberof Conversation
+     */
+    datasources: Array<Datasource> | null;
 }
 
 /**
@@ -61,6 +74,7 @@ export function instanceOfConversation(value: object): value is Conversation {
     if (!('conversationName' in value) || value['conversationName'] === undefined) return false;
     if (!('createdDate' in value) || value['createdDate'] === undefined) return false;
     if (!('messages' in value) || value['messages'] === undefined) return false;
+    if (!('datasources' in value) || value['datasources'] === undefined) return false;
     return true;
 }
 
@@ -78,6 +92,7 @@ export function ConversationFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'conversationName': json['conversationName'],
         'createdDate': json['createdDate'],
         'messages': (json['messages'] == null ? null : (json['messages'] as Array<any>).map(MessageFromJSON)),
+        'datasources': (json['datasources'] == null ? null : (json['datasources'] as Array<any>).map(DatasourceFromJSON)),
     };
 }
 
@@ -96,6 +111,7 @@ export function ConversationToJSONTyped(value?: Conversation | null, ignoreDiscr
         'conversationName': value['conversationName'],
         'createdDate': value['createdDate'],
         'messages': (value['messages'] == null ? null : (value['messages'] as Array<any>).map(MessageToJSON)),
+        'datasources': (value['datasources'] == null ? null : (value['datasources'] as Array<any>).map(DatasourceToJSON)),
     };
 }
 

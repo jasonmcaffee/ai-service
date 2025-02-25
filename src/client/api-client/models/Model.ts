@@ -21,10 +21,10 @@ import { mapValues } from '../runtime';
 export interface Model {
     /**
      * 
-     * @type {number}
+     * @type {string}
      * @memberof Model
      */
-    id: number;
+    id: string;
     /**
      * 
      * @type {string}
@@ -61,6 +61,12 @@ export interface Model {
      * @memberof Model
      */
     modelTypeId: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof Model
+     */
+    initialMessage: string;
 }
 
 /**
@@ -74,6 +80,7 @@ export function instanceOfModel(value: object): value is Model {
     if (!('modelName' in value) || value['modelName'] === undefined) return false;
     if (!('isDefault' in value) || value['isDefault'] === undefined) return false;
     if (!('modelTypeId' in value) || value['modelTypeId'] === undefined) return false;
+    if (!('initialMessage' in value) || value['initialMessage'] === undefined) return false;
     return true;
 }
 
@@ -94,6 +101,7 @@ export function ModelFromJSONTyped(json: any, ignoreDiscriminator: boolean): Mod
         'modelName': json['modelName'],
         'isDefault': json['isDefault'],
         'modelTypeId': json['modelTypeId'],
+        'initialMessage': json['initialMessage'],
     };
 }
 
@@ -115,6 +123,7 @@ export function ModelToJSONTyped(value?: Model | null, ignoreDiscriminator: bool
         'modelName': value['modelName'],
         'isDefault': value['isDefault'],
         'modelTypeId': value['modelTypeId'],
+        'initialMessage': value['initialMessage'],
     };
 }
 

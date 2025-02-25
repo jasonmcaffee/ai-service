@@ -18,12 +18,38 @@ import * as runtime from '../runtime';
 export interface StreamInferenceRequest {
     prompt: string;
     conversationId?: string;
+    modelId?: string;
 }
 
 /**
  * 
  */
 export class ChatApi extends runtime.BaseAPI {
+
+    /**
+     * stop the current stream for a member
+     */
+    async stopRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/chat/stop`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * stop the current stream for a member
+     */
+    async stop(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.stopRaw(initOverrides);
+    }
 
     /**
      * Stream a message based on a prompt
@@ -46,6 +72,10 @@ export class ChatApi extends runtime.BaseAPI {
             queryParameters['conversationId'] = requestParameters['conversationId'];
         }
 
+        if (requestParameters['modelId'] != null) {
+            queryParameters['modelId'] = requestParameters['modelId'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
@@ -65,8 +95,8 @@ export class ChatApi extends runtime.BaseAPI {
     /**
      * Stream a message based on a prompt
      */
-    async streamInference(prompt: string, conversationId?: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
-        const response = await this.streamInferenceRaw({ prompt: prompt, conversationId: conversationId }, initOverrides);
+    async streamInference(prompt: string, conversationId?: string, modelId?: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.streamInferenceRaw({ prompt: prompt, conversationId: conversationId, modelId: modelId }, initOverrides);
         return await response.value();
     }
 

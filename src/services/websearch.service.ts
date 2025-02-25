@@ -1,7 +1,11 @@
 import config from '../config/config';
 import {Injectable} from "@nestjs/common";
 import { Model, SearchResult, SearchResultResponse } from '../models/api/conversationApiModels';
-import {Browser, BrowserContext, chromium, Page} from 'playwright';
+import {Browser, BrowserContext, Page} from 'playwright';
+const { chromium } = require("playwright-extra");
+const stealth = require("puppeteer-extra-plugin-stealth")();
+
+
 import { Observable, Subject, lastValueFrom } from 'rxjs';
 import {toArray} from 'rxjs/operators';
 import { wait } from '../utils/utils';
@@ -15,7 +19,10 @@ const TurndownService = require('turndown');
 @Injectable()
 export class WebsearchService {
     private abortControllers: Map<string, { controller: AbortController }> = new Map();
-    constructor(private readonly modelsService: ModelsService) {}
+    private browser;
+    constructor(private readonly modelsService: ModelsService) {
+
+    }
 
     async streamSearch(query: string, maxPages=3, startPage=1, ): Promise<Observable<string>> {
         const searchResultsSubject = new Subject<string>();
@@ -28,11 +35,21 @@ export class WebsearchService {
     }
 
     private async searchDuckDuckGo(query: string, searchResultsSubject?: Subject<string>, maxPages=3, startPage=1, ): Promise<SearchResultResponse>{
-        const browser = await chromium.launch();
+        //duckduckgo has headless mode detection and throws an error.  use stealth to circumvent.
+        chromium.use(stealth);
+        this.browser = this.browser || await chromium.launch({
+            args: ['--disable-blink-features=AutomationControlled'],
+        });
+        const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36";
+
+        const context = await this.browser.newContext({
+            userAgent,
+            viewport: { width: 1280, height: 720 },
+            deviceScaleFactor: 1
+        });
+        const page = await context.newPage();
         const allResults: SearchResult[] = [];
         try {
-            const context = await browser.newContext();
-            const page = await context.newPage();
             // Navigate to DuckDuckGo and perform search
             await page.goto(`https://duckduckgo.com/?t=h_&q=${query}&ia=web`);
 
@@ -66,11 +83,14 @@ export class WebsearchService {
                 searchResults: allResults,
                 query
             }
+
         } catch (error) {
             console.error('Search failed:', error);
             throw error;
         } finally {
-            await browser.close();
+            page.close();
+            context.close();
+            // await this.browser.close();  //leave it open.
         }
     }
 

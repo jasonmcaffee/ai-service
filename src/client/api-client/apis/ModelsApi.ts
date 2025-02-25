@@ -36,15 +36,15 @@ export interface CreateModelRequest {
 }
 
 export interface DeleteModelRequest {
-    modelId: number;
+    modelId: string;
 }
 
 export interface GetModelByIdRequest {
-    modelId: number;
+    modelId: string;
 }
 
 export interface UpdateModelRequest {
-    modelId: number;
+    modelId: string;
     updateModel: UpdateModel;
 }
 
@@ -117,7 +117,7 @@ export class ModelsApi extends runtime.BaseAPI {
     /**
      * Delete a model
      */
-    async deleteModel(modelId: number, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+    async deleteModel(modelId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.deleteModelRaw({ modelId: modelId }, initOverrides);
     }
 
@@ -175,7 +175,7 @@ export class ModelsApi extends runtime.BaseAPI {
     /**
      * Get model by ID
      */
-    async getModelById(modelId: number, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Model> {
+    async getModelById(modelId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Model> {
         const response = await this.getModelByIdRaw({ modelId: modelId }, initOverrides);
         return await response.value();
     }
@@ -244,7 +244,7 @@ export class ModelsApi extends runtime.BaseAPI {
     /**
      * Update an existing model
      */
-    async updateModel(modelId: number, updateModel: UpdateModel, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Model> {
+    async updateModel(modelId: string, updateModel: UpdateModel, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Model> {
         const response = await this.updateModelRaw({ modelId: modelId, updateModel: updateModel }, initOverrides);
         return await response.value();
     }

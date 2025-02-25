@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { Document } from './Document';
+import {
+    DocumentFromJSON,
+    DocumentFromJSONTyped,
+    DocumentToJSON,
+    DocumentToJSONTyped,
+} from './Document';
+
 /**
  * 
  * @export
@@ -49,6 +57,18 @@ export interface Datasource {
      * @memberof Datasource
      */
     name: string;
+    /**
+     * 
+     * @type {Array<Document>}
+     * @memberof Datasource
+     */
+    documents: Array<Document> | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Datasource
+     */
+    dateAddedToConversation: string | null;
 }
 
 /**
@@ -60,6 +80,8 @@ export function instanceOfDatasource(value: object): value is Datasource {
     if (!('createdDate' in value) || value['createdDate'] === undefined) return false;
     if (!('datasourceTypeId' in value) || value['datasourceTypeId'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('documents' in value) || value['documents'] === undefined) return false;
+    if (!('dateAddedToConversation' in value) || value['dateAddedToConversation'] === undefined) return false;
     return true;
 }
 
@@ -78,6 +100,8 @@ export function DatasourceFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'createdDate': json['createdDate'],
         'datasourceTypeId': json['datasourceTypeId'],
         'name': json['name'],
+        'documents': (json['documents'] == null ? null : (json['documents'] as Array<any>).map(DocumentFromJSON)),
+        'dateAddedToConversation': json['dateAddedToConversation'],
     };
 }
 
@@ -97,6 +121,8 @@ export function DatasourceToJSONTyped(value?: Datasource | null, ignoreDiscrimin
         'createdDate': value['createdDate'],
         'datasourceTypeId': value['datasourceTypeId'],
         'name': value['name'],
+        'documents': (value['documents'] == null ? null : (value['documents'] as Array<any>).map(DocumentToJSON)),
+        'dateAddedToConversation': value['dateAddedToConversation'],
     };
 }
 

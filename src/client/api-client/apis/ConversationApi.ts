@@ -18,7 +18,9 @@ import type {
   Conversation,
   CreateConversation,
   CreateMessage,
+  GetAutoCompleteSuggestionsRequest,
   Message,
+  Suggestion,
 } from '../models/index';
 import {
     ConversationFromJSON,
@@ -27,8 +29,12 @@ import {
     CreateConversationToJSON,
     CreateMessageFromJSON,
     CreateMessageToJSON,
+    GetAutoCompleteSuggestionsRequestFromJSON,
+    GetAutoCompleteSuggestionsRequestToJSON,
     MessageFromJSON,
     MessageToJSON,
+    SuggestionFromJSON,
+    SuggestionToJSON,
 } from '../models/index';
 
 export interface AddMessageRequest {
@@ -42,6 +48,10 @@ export interface CreateConversationRequest {
 
 export interface DeleteConversationRequest {
     conversationId: string;
+}
+
+export interface GetAtAutoCompleteSuggestionsRequest {
+    getAutoCompleteSuggestionsRequest: GetAutoCompleteSuggestionsRequest;
 }
 
 export interface GetConversationRequest {
@@ -171,6 +181,42 @@ export class ConversationApi extends runtime.BaseAPI {
      */
     async deleteConversation(conversationId: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.deleteConversationRaw({ conversationId: conversationId }, initOverrides);
+    }
+
+    /**
+     * Get auto complete suggestions based on partial text match.
+     */
+    async getAtAutoCompleteSuggestionsRaw(requestParameters: GetAtAutoCompleteSuggestionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Suggestion>>> {
+        if (requestParameters['getAutoCompleteSuggestionsRequest'] == null) {
+            throw new runtime.RequiredError(
+                'getAutoCompleteSuggestionsRequest',
+                'Required parameter "getAutoCompleteSuggestionsRequest" was null or undefined when calling getAtAutoCompleteSuggestions().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        const response = await this.request({
+            path: `/conversations/getAutoCompleteSuggestions`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: GetAutoCompleteSuggestionsRequestToJSON(requestParameters['getAutoCompleteSuggestionsRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SuggestionFromJSON));
+    }
+
+    /**
+     * Get auto complete suggestions based on partial text match.
+     */
+    async getAtAutoCompleteSuggestions(getAutoCompleteSuggestionsRequest: GetAutoCompleteSuggestionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Suggestion>> {
+        const response = await this.getAtAutoCompleteSuggestionsRaw({ getAutoCompleteSuggestionsRequest: getAutoCompleteSuggestionsRequest }, initOverrides);
+        return await response.value();
     }
 
     /**

@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { MessageContext } from './MessageContext';
+import {
+    MessageContextFromJSON,
+    MessageContextFromJSONTyped,
+    MessageContextToJSON,
+    MessageContextToJSONTyped,
+} from './MessageContext';
+
 /**
  * 
  * @export
@@ -43,6 +51,18 @@ export interface Message {
      * @memberof Message
      */
     createdDate: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Message
+     */
+    role: string;
+    /**
+     * 
+     * @type {MessageContext}
+     * @memberof Message
+     */
+    messageContext: MessageContext | null;
 }
 
 /**
@@ -53,6 +73,8 @@ export function instanceOfMessage(value: object): value is Message {
     if (!('sentByMemberId' in value) || value['sentByMemberId'] === undefined) return false;
     if (!('messageText' in value) || value['messageText'] === undefined) return false;
     if (!('createdDate' in value) || value['createdDate'] === undefined) return false;
+    if (!('role' in value) || value['role'] === undefined) return false;
+    if (!('messageContext' in value) || value['messageContext'] === undefined) return false;
     return true;
 }
 
@@ -70,6 +92,8 @@ export function MessageFromJSONTyped(json: any, ignoreDiscriminator: boolean): M
         'sentByMemberId': json['sentByMemberId'],
         'messageText': json['messageText'],
         'createdDate': json['createdDate'],
+        'role': json['role'],
+        'messageContext': MessageContextFromJSON(json['messageContext']),
     };
 }
 
@@ -88,6 +112,8 @@ export function MessageToJSONTyped(value?: Message | null, ignoreDiscriminator: 
         'sentByMemberId': value['sentByMemberId'],
         'messageText': value['messageText'],
         'createdDate': value['createdDate'],
+        'role': value['role'],
+        'messageContext': MessageContextToJSON(value['messageContext']),
     };
 }
 

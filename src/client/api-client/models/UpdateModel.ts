@@ -55,6 +55,12 @@ export interface UpdateModel {
      * @memberof UpdateModel
      */
     modelTypeId: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateModel
+     */
+    initialMessage: string;
 }
 
 /**
@@ -67,6 +73,7 @@ export function instanceOfUpdateModel(value: object): value is UpdateModel {
     if (!('modelName' in value) || value['modelName'] === undefined) return false;
     if (!('isDefault' in value) || value['isDefault'] === undefined) return false;
     if (!('modelTypeId' in value) || value['modelTypeId'] === undefined) return false;
+    if (!('initialMessage' in value) || value['initialMessage'] === undefined) return false;
     return true;
 }
 
@@ -86,6 +93,7 @@ export function UpdateModelFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'modelName': json['modelName'],
         'isDefault': json['isDefault'],
         'modelTypeId': json['modelTypeId'],
+        'initialMessage': json['initialMessage'],
     };
 }
 
@@ -106,6 +114,7 @@ export function UpdateModelToJSONTyped(value?: UpdateModel | null, ignoreDiscrim
         'modelName': value['modelName'],
         'isDefault': value['isDefault'],
         'modelTypeId': value['modelTypeId'],
+        'initialMessage': value['initialMessage'],
     };
 }
 

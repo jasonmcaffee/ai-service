@@ -55,6 +55,12 @@ export interface CreateModel {
      * @memberof CreateModel
      */
     modelTypeId: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateModel
+     */
+    initialMessage: string;
 }
 
 /**
@@ -67,6 +73,7 @@ export function instanceOfCreateModel(value: object): value is CreateModel {
     if (!('modelName' in value) || value['modelName'] === undefined) return false;
     if (!('isDefault' in value) || value['isDefault'] === undefined) return false;
     if (!('modelTypeId' in value) || value['modelTypeId'] === undefined) return false;
+    if (!('initialMessage' in value) || value['initialMessage'] === undefined) return false;
     return true;
 }
 
@@ -86,6 +93,7 @@ export function CreateModelFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'modelName': json['modelName'],
         'isDefault': json['isDefault'],
         'modelTypeId': json['modelTypeId'],
+        'initialMessage': json['initialMessage'],
     };
 }
 
@@ -106,6 +114,7 @@ export function CreateModelToJSONTyped(value?: CreateModel | null, ignoreDiscrim
         'modelName': value['modelName'],
         'isDefault': value['isDefault'],
         'modelTypeId': value['modelTypeId'],
+        'initialMessage': value['initialMessage'],
     };
 }
 

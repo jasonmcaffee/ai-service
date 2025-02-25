@@ -24,14 +24,21 @@ export interface CreateDocument {
      * @type {string}
      * @memberof CreateDocument
      */
-    text: string;
+    base64String: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateDocument
+     */
+    fileName: string;
 }
 
 /**
  * Check if a given object implements the CreateDocument interface.
  */
 export function instanceOfCreateDocument(value: object): value is CreateDocument {
-    if (!('text' in value) || value['text'] === undefined) return false;
+    if (!('base64String' in value) || value['base64String'] === undefined) return false;
+    if (!('fileName' in value) || value['fileName'] === undefined) return false;
     return true;
 }
 
@@ -45,7 +52,8 @@ export function CreateDocumentFromJSONTyped(json: any, ignoreDiscriminator: bool
     }
     return {
         
-        'text': json['text'],
+        'base64String': json['base64String'],
+        'fileName': json['fileName'],
     };
 }
 
@@ -60,7 +68,8 @@ export function CreateDocumentToJSONTyped(value?: CreateDocument | null, ignoreD
 
     return {
         
-        'text': value['text'],
+        'base64String': value['base64String'],
+        'fileName': value['fileName'],
     };
 }
 

@@ -18,6 +18,7 @@ import type {
   CreateDatasource,
   CreateDocument,
   Datasource,
+  DatasourceType,
   Document,
 } from '../models/index';
 import {
@@ -27,9 +28,16 @@ import {
     CreateDocumentToJSON,
     DatasourceFromJSON,
     DatasourceToJSON,
+    DatasourceTypeFromJSON,
+    DatasourceTypeToJSON,
     DocumentFromJSON,
     DocumentToJSON,
 } from '../models/index';
+
+export interface AddDatasourceToConversationRequest {
+    conversationId: string;
+    datasourceId: number;
+}
 
 export interface CreateDatasourceRequest {
     createDatasource: CreateDatasource;
@@ -41,6 +49,11 @@ export interface CreateDocumentRequest {
 }
 
 export interface DeleteDatasourceRequest {
+    datasourceId: number;
+}
+
+export interface DeleteDatasourceFromConversationRequest {
+    conversationId: string;
     datasourceId: number;
 }
 
@@ -68,6 +81,45 @@ export interface GetDocumentsForDatasourceRequest {
  * 
  */
 export class DatasourcesApi extends runtime.BaseAPI {
+
+    /**
+     * add a datasource to a conversation.  all documents will be passed to the LLM as part of messages list
+     */
+    async addDatasourceToConversationRaw(requestParameters: AddDatasourceToConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['conversationId'] == null) {
+            throw new runtime.RequiredError(
+                'conversationId',
+                'Required parameter "conversationId" was null or undefined when calling addDatasourceToConversation().'
+            );
+        }
+
+        if (requestParameters['datasourceId'] == null) {
+            throw new runtime.RequiredError(
+                'datasourceId',
+                'Required parameter "datasourceId" was null or undefined when calling addDatasourceToConversation().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/datasources/conversation/{conversationId}/datasource/{datasourceId}`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))).replace(`{${"datasourceId"}}`, encodeURIComponent(String(requestParameters['datasourceId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * add a datasource to a conversation.  all documents will be passed to the LLM as part of messages list
+     */
+    async addDatasourceToConversation(conversationId: string, datasourceId: number, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.addDatasourceToConversationRaw({ conversationId: conversationId, datasourceId: datasourceId }, initOverrides);
+    }
 
     /**
      * Create a new datasource
@@ -181,6 +233,45 @@ export class DatasourcesApi extends runtime.BaseAPI {
     }
 
     /**
+     * remove a datasource from a conversation. no documents from the datasource will be passed to LLM as part of messages
+     */
+    async deleteDatasourceFromConversationRaw(requestParameters: DeleteDatasourceFromConversationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['conversationId'] == null) {
+            throw new runtime.RequiredError(
+                'conversationId',
+                'Required parameter "conversationId" was null or undefined when calling deleteDatasourceFromConversation().'
+            );
+        }
+
+        if (requestParameters['datasourceId'] == null) {
+            throw new runtime.RequiredError(
+                'datasourceId',
+                'Required parameter "datasourceId" was null or undefined when calling deleteDatasourceFromConversation().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/datasources/conversation/{conversationId}/datasource/{datasourceId}`.replace(`{${"conversationId"}}`, encodeURIComponent(String(requestParameters['conversationId']))).replace(`{${"datasourceId"}}`, encodeURIComponent(String(requestParameters['datasourceId']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * remove a datasource from a conversation. no documents from the datasource will be passed to LLM as part of messages
+     */
+    async deleteDatasourceFromConversation(conversationId: string, datasourceId: number, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteDatasourceFromConversationRaw({ conversationId: conversationId, datasourceId: datasourceId }, initOverrides);
+    }
+
+    /**
      * get all datasources for a member
      */
     async getAllDatasourcesForMemberRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Datasource>>> {
@@ -236,6 +327,32 @@ export class DatasourcesApi extends runtime.BaseAPI {
      */
     async getDatasourceById(datasourceId: number, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Datasource> {
         const response = await this.getDatasourceByIdRaw({ datasourceId: datasourceId }, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * deletes a datasource
+     */
+    async getDatasourceTypesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<DatasourceType>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/datasources/datasource-types`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(DatasourceTypeFromJSON));
+    }
+
+    /**
+     * deletes a datasource
+     */
+    async getDatasourceTypes(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<DatasourceType>> {
+        const response = await this.getDatasourceTypesRaw(initOverrides);
         return await response.value();
     }
 
