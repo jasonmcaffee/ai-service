@@ -92,9 +92,7 @@ export class ChatService {
 
     console.log(`sending messages: `, openAiMessages);
 
-    const handleOnText = (text: string) => {
-      // console.log('handle on text got: ', text);
-    };
+    const handleOnText = (text: string) => {};
 
     const handleResponseCompleted = async (completeResponse: string, model: Model) => {
       console.log('handle response completed got: ', completeResponse);
@@ -102,8 +100,7 @@ export class ChatService {
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
-    this.createInferenceObservable(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject);
-
+    this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject);
   }
 
   async streamInferenceWithoutConversation(prompt: string, memberId: string, model: Model, messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject){
@@ -113,17 +110,13 @@ export class ChatService {
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
     }
-    this.createInferenceObservable(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject);
+    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject);
 
   }
 
-  createInferenceObservable(openAiMessages: ChatCompletionMessageParam[],
-                            handleOnText: (text: string) => void,
-                            handleResponseCompleted: (text: string, model: Model) => void,
-                            model: Model,
-                            memberId: string,
-                            inferenceSSESubject: InferenceSSESubject
-  ) {
+  callOpenAiUsingModelAndSubject(openAiMessages: ChatCompletionMessageParam[], handleOnText: (text: string) => void,
+      handleResponseCompleted: (text: string, model: Model) => void, model: Model, memberId: string,
+      inferenceSSESubject: InferenceSSESubject) {
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL,});
@@ -145,10 +138,8 @@ export class ChatService {
         for await (const chunk of stream) {
           const content = chunk.choices[0]?.delta?.content || '';
           if (content) {
-            // const text = JSON.stringify({ text: content });
             completeText += content;
             await handleOnText(content);
-            // observer.next(text);
             inferenceSSESubject.sendText(content);
           }
         }
@@ -161,7 +152,6 @@ export class ChatService {
       .catch((error) => {
         console.log(`openai error: `, error);
         this.abortControllers.delete(memberId);
-        // observer.error(error);
         inferenceSSESubject.sendError(error);
       });
   }
