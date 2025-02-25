@@ -40,10 +40,12 @@ export class ChatService {
     }
     const model = await this.getModelToUseForMessage(memberId, messageContext, modelId);
     const inferenceSSESubject = new InferenceSSESubject();
+    const abortController = new AbortController();
+    this.abortControllers.set(memberId, {controller: abortController});
     if(conversationId){
-      this.streamInferenceWithConversation(prompt, memberId, conversationId, model, messageContext, inferenceSSESubject);
+      this.streamInferenceWithConversation(prompt, memberId, conversationId, model, messageContext, inferenceSSESubject, abortController);
     }else {
-      this.streamInferenceWithoutConversation(prompt, memberId, model, messageContext, inferenceSSESubject);
+      this.streamInferenceWithoutConversation(prompt, memberId, model, messageContext, inferenceSSESubject, abortController);
     }
     return inferenceSSESubject.getSubject();
   }
@@ -67,7 +69,8 @@ export class ChatService {
     return this.modelsService.getModelByIdOrGetDefault(memberId, modelIdForMessage);
   }
 
-  async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string, model:Model, messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject){
+  async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string, model:Model,
+                                        messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject, abortController: AbortController){
     //add datasources to conversation
     for (let datasourceContext of messageContext.datasources) {
       await this.conversationService.addDatasourceToConversation(memberId, parseInt(datasourceContext.id), conversationId);
@@ -100,23 +103,24 @@ export class ChatService {
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
-    this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject);
+    this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject, abortController);
   }
 
-  async streamInferenceWithoutConversation(prompt: string, memberId: string, model: Model, messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject){
+  async streamInferenceWithoutConversation(prompt: string, memberId: string, model: Model, messageContext: MessageContext,
+                                           inferenceSSESubject: InferenceSSESubject, abortController: AbortController){
     const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
     let openAiMessages = createOpenAIMessagesFromMessages([userMessage]);
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
     }
-    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject);
+    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject, abortController);
 
   }
 
   callOpenAiUsingModelAndSubject(openAiMessages: ChatCompletionMessageParam[], handleOnText: (text: string) => void,
       handleResponseCompleted: (text: string, model: Model) => void, model: Model, memberId: string,
-      inferenceSSESubject: InferenceSSESubject) {
+      inferenceSSESubject: InferenceSSESubject, abortController: AbortController) {
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL,});
@@ -124,9 +128,9 @@ export class ChatService {
     let completeText = '';
 
     //allow a mechanism to cancel the request.
-    const controller = new AbortController();
-    const signal = controller.signal;
-    this.abortControllers.set(memberId, {controller});
+    // const controller = new AbortController();
+    const signal = abortController.signal;
+    // this.abortControllers.set(memberId, {controller});
 
     openai.chat.completions
       .create({
