@@ -31,6 +31,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "shouldSearchWeb",
+            "required": true,
+            "in": "query",
+            "description": "Indicator on weather to search the web.",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {

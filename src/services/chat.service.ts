@@ -31,20 +31,20 @@ export class ChatService {
    * @param memberId
    * @param conversationId
    * @param modelId
+   * @param shouldSearchWeb
    */
-  async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string): Promise<Observable<string>> {
+  async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string, shouldSearchWeb = false): Promise<Observable<string>> {
+    console.log(`streamInference called. shouldSearchWeb: ${shouldSearchWeb}`);
     const messageContext = extractMessageContextFromMessage(prompt);
-    console.log(`streamInference messageContext: `, messageContext);
-    if(messageContext.datasources.length > 0){
-      //todo add datasource to conversation or to message
-    }
     const model = await this.getModelToUseForMessage(memberId, messageContext, modelId);
+    //use rjx subject to send SSE updates to the client.
     const inferenceSSESubject = new InferenceSSESubject();
+    //allow client to press stop button with abort controller.
     const abortController = new AbortController();
     this.abortControllers.set(memberId, {controller: abortController});
     if(conversationId){
       this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController);
-    }else {
+    }else { //eg. name the conversation?
       this.streamInferenceWithoutConversation(memberId, model, messageContext, inferenceSSESubject, abortController);
     }
     return inferenceSSESubject.getSubject();
