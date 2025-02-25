@@ -43,9 +43,9 @@ export class ChatService {
     const abortController = new AbortController();
     this.abortControllers.set(memberId, {controller: abortController});
     if(conversationId){
-      this.streamInferenceWithConversation(prompt, memberId, conversationId, model, messageContext, inferenceSSESubject, abortController);
+      this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController);
     }else {
-      this.streamInferenceWithoutConversation(prompt, memberId, model, messageContext, inferenceSSESubject, abortController);
+      this.streamInferenceWithoutConversation(memberId, model, messageContext, inferenceSSESubject, abortController);
     }
     return inferenceSSESubject.getSubject();
   }
@@ -69,7 +69,7 @@ export class ChatService {
     return this.modelsService.getModelByIdOrGetDefault(memberId, modelIdForMessage);
   }
 
-  async streamInferenceWithConversation(prompt: string, memberId: string, conversationId: string, model:Model,
+  async streamInferenceWithConversation(memberId: string, conversationId: string, model:Model,
                                         messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject, abortController: AbortController){
     //add datasources to conversation
     for (let datasourceContext of messageContext.datasources) {
@@ -106,8 +106,9 @@ export class ChatService {
     this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject, abortController);
   }
 
-  async streamInferenceWithoutConversation(prompt: string, memberId: string, model: Model, messageContext: MessageContext,
+  async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,
                                            inferenceSSESubject: InferenceSSESubject, abortController: AbortController){
+    const prompt = messageContext.textWithoutTags;
     const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
     let openAiMessages = createOpenAIMessagesFromMessages([userMessage]);
     if(model.initialMessage){
