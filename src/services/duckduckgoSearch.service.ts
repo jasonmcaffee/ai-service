@@ -9,7 +9,11 @@ const stealth = require("puppeteer-extra-plugin-stealth")();
 @Injectable()
 export class DuckduckgoSearchService {
     private browser;
-    async searchDuckDuckGo(query: string, searchResultsSubject?: Subject<string>, maxPages=3, startPage=1, ): Promise<SearchResultResponse>{
+    async searchDuckDuckGo(query: string,  maxPages=3, startPage=1,): Promise<SearchResultResponse>{
+        return this.searchDuckDuckGoStream(query, undefined, maxPages, startPage);
+    }
+
+    async searchDuckDuckGoStream(query: string, searchResultsSubject?: Subject<string>, maxPages=3, startPage=1, ): Promise<SearchResultResponse>{
         //duckduckgo has headless mode detection and throws an error.  use stealth to circumvent.
         chromium.use(stealth);
         this.browser = this.browser || await chromium.launch({
@@ -36,7 +40,7 @@ export class DuckduckgoSearchService {
                 const hasMore = await clickMoreResultsAndWaitForCurrentPageNumberResultsToShowUp(currentPage, page);
                 await wait(1000);
                 if(currentPage >= startPage){
-                    const newResults = await parseSearchResults(currentPage, page, searchResultsSubject);
+                    const newResults = await parseSearchResultsAndStreamSearchResultAsJsonString(currentPage, page, searchResultsSubject);
                     allResults.push(...newResults);
                     console.log(`got ${newResults.length} for page: ${currentPage}`);
                 }
@@ -77,7 +81,7 @@ export class DuckduckgoSearchService {
  * @param page
  * @param searchResultsSubject
  */
-async function parseSearchResults(currentPageNumber: number, page: Page, searchResultsSubject?: Subject<string>): Promise<SearchResult[]> {
+async function parseSearchResultsAndStreamSearchResultAsJsonString(currentPageNumber: number, page: Page, searchResultsSubject?: Subject<string>): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
 
     // Get all li elements within the search results list

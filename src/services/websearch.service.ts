@@ -21,12 +21,12 @@ export class WebsearchService {
 
     async streamSearch(query: string, maxPages=3, startPage=1, ): Promise<Observable<string>> {
         const searchResultsSubject = new Subject<string>();
-        this.duckduckgoSearchService.searchDuckDuckGo(query, searchResultsSubject, maxPages, startPage);
+        this.duckduckgoSearchService.searchDuckDuckGoStream(query, searchResultsSubject, maxPages, startPage);
         return searchResultsSubject.asObservable();
     }
 
     async search(query: string, maxPages=3, startPage=1, ): Promise<SearchResultResponse> {
-        return this.duckduckgoSearchService.searchDuckDuckGo(query, undefined, maxPages, startPage);
+        return this.duckduckgoSearchService.searchDuckDuckGoStream(query, undefined, maxPages, startPage);
     }
 
     async getFullHtmlPageContent(url: string){
@@ -68,16 +68,11 @@ export class WebsearchService {
         const apiKey = model.apiKey;
         const baseURL = model.url;
         const openai = new OpenAI({ apiKey, baseURL,});
-
         let completeText = '';
         const signal = abortController.signal;
-
+        //call open ai
         openai.chat.completions
-          .create({
-              model: model.modelName, //'gpt-4',
-              messages: openAiMessages,
-              stream: true,
-          }, {signal})
+          .create({ model: model.modelName, messages: openAiMessages, stream: true,}, {signal})
           .then(async (stream) => {
               for await (const chunk of stream) {
                   const content = chunk.choices[0]?.delta?.content || '';

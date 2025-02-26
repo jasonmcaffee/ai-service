@@ -15,6 +15,7 @@ import {
 import {chatPageSystemPrompt} from "../utils/prompts";
 import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
+import {LlmToolsService} from "./llmTools.service";
 
 @Injectable()
 export class ChatService {
@@ -22,7 +23,8 @@ export class ChatService {
   private abortControllers: Map<string, { controller: AbortController }> = new Map();
 
   constructor(private readonly conversationService: ConversationService,
-              private readonly modelsService: ModelsService) {}
+              private readonly modelsService: ModelsService,
+              private readonly llmToolsService: LlmToolsService) {}
 
 
   /**
@@ -43,9 +45,9 @@ export class ChatService {
     const abortController = new AbortController();
     this.abortControllers.set(memberId, {controller: abortController});
     if(conversationId){
-      this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController);
+      this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb);
     }else { //eg. name the conversation?
-      this.streamInferenceWithoutConversation(memberId, model, messageContext, inferenceSSESubject, abortController);
+      this.streamInferenceWithoutConversation(memberId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb);
     }
     return inferenceSSESubject.getSubject();
   }
@@ -70,7 +72,8 @@ export class ChatService {
   }
 
   async streamInferenceWithConversation(memberId: string, conversationId: string, model:Model,
-                                        messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject, abortController: AbortController){
+                                        messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject,
+                                        abortController: AbortController, shouldSearchWeb: boolean){
     //add datasources to conversation
     for (let datasourceContext of messageContext.datasources) {
       await this.conversationService.addDatasourceToConversation(memberId, parseInt(datasourceContext.id), conversationId);
@@ -103,11 +106,12 @@ export class ChatService {
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
-    this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject, abortController);
+    this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject, abortController, shouldSearchWeb);
   }
 
   async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,
-                                           inferenceSSESubject: InferenceSSESubject, abortController: AbortController){
+                                           inferenceSSESubject: InferenceSSESubject, abortController: AbortController,
+                                           shouldSearchWeb: boolean){
     const prompt = messageContext.textWithoutTags;
     const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
     let openAiMessages = createOpenAIMessagesFromMessages([userMessage]);
@@ -115,13 +119,13 @@ export class ChatService {
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
     }
-    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject, abortController);
+    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject, abortController, shouldSearchWeb);
 
   }
 
   callOpenAiUsingModelAndSubject(openAiMessages: ChatCompletionMessageParam[], handleOnText: (text: string) => void,
       handleResponseCompleted: (text: string, model: Model) => void, model: Model, memberId: string,
-      inferenceSSESubject: InferenceSSESubject, abortController: AbortController) {
+      inferenceSSESubject: InferenceSSESubject, abortController: AbortController, shouldSearchWeb: boolean) {
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL,});
