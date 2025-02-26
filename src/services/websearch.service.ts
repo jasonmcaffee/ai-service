@@ -123,18 +123,18 @@ export class WebsearchService {
     }
 }
 
-
-
-async function getMarkdownContentsOfPage(url: string, removeScriptsAndStyles=true, removeImages=true, shouldShortenUrl = true, browser?: Browser , context?: BrowserContext): Promise<string>{
+async function getMarkdownContentsOfPage(url: string, removeScriptsAndStyles=true, removeImages=true, shouldShortenUrl = true, removeNavElements = true,
+                                         cleanWikipedia = true, browser?: Browser , context?: BrowserContext): Promise<string>{
     const turndownService = new TurndownService({
         // linkStyle: 'inlined', //prevent uneccesary new lines
     });
-    const htmlContents = await getHtmlContentsOfUrl(url, removeScriptsAndStyles, removeImages, shouldShortenUrl, browser, context);
+    const htmlContents = await getHtmlContentsOfUrl(url, removeScriptsAndStyles, removeImages, shouldShortenUrl, removeNavElements, cleanWikipedia, browser, context);
     const markdown = turndownService.turndown(htmlContents);
     return markdown;
 }
 
-async function getHtmlContentsOfUrl(url: string, removeScriptsAndStyles=false, removeImages=false, shouldShortenUrl = false, browser?: Browser , context?: BrowserContext): Promise<string> {
+async function getHtmlContentsOfUrl(url: string, removeScriptsAndStyles=false, removeImages=false, shouldShortenUrl = false, removeNavElements = false,
+                                    cleanWikipedia = false,  browser?: Browser , context?: BrowserContext): Promise<string> {
     chromium.use(stealth);
     const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36";
     const browser2 = browser ? browser : await chromium.launch({
@@ -151,7 +151,7 @@ async function getHtmlContentsOfUrl(url: string, removeScriptsAndStyles=false, r
         waitUntil: 'domcontentloaded'
     });
     // await page.screenshot({path: "test.png"});
-    const result = await getHtmlContentsOfPage(page, removeScriptsAndStyles, removeImages, shouldShortenUrl);
+    const result = await getHtmlContentsOfPage(page, removeScriptsAndStyles, removeImages, shouldShortenUrl, removeNavElements, cleanWikipedia);
     return result.html;
 }
 
@@ -159,15 +159,19 @@ async function getHtmlContentsOfPage(
   page: Page,
   removeScriptsAndStyles = false,
   removeImages = false,
-  shouldShortenUrl = false
+  shouldShortenUrl = false,
+  removeNavElements = false,
+  cleanWikipedia = false,
 ) {
     // Add a small delay to allow for CSR (adjust timing as needed)
     await page.waitForTimeout(500);
 
+    const isWikipediaUrl = page.url().indexOf('wikipedia.org') >= 0;
+
     // Get the HTML content with optional modifications
     const result = await page.evaluate(
       (options) => {
-          const { removeScriptsAndStyles, removeImages, shouldShortenUrl } = options;
+          const { removeScriptsAndStyles, removeImages, shouldShortenUrl, removeNavElements, cleanWikipedia, isWikipediaUrl } = options;
           const shortenedUrlMap = new Map<string, string>();
           let urlCounter = 1;
           // let shortenedUrlMap = shouldShortenUrl ? new Map() : null;
@@ -218,7 +222,7 @@ async function getHtmlContentsOfPage(
               objects.forEach(obj => obj.parentNode!.removeChild(obj));
 
               // Remove embeds that might be images
-              const embeds = document.querySelectorAll('embed[src*=".svg"], embed[src*=".png"], embed[src*=".jpg"], embed[src*=".jpeg"], embed[src*=".gif"], embed[src^="data:image/"]');
+              const embeds = document.querySelectorAll('embed[src*=".svg"], embed[src*=".png"], embed[src*=".jpg"], embed[src*=".jpeg"], embed[src*=".gif"], embed[src^="data:image/"], embed[src^="data:gif/"]');
               embeds.forEach(embed => embed.parentNode!.removeChild(embed));
 
               // Remove canvas elements (which might contain images)
@@ -254,6 +258,28 @@ async function getHtmlContentsOfPage(
               });
           }
 
+          function removeByQuerySelectorAll(query){
+              const els = document.querySelectorAll(query);
+              els.forEach(el => el.parentNode?.removeChild(el));
+          }
+
+          if(removeNavElements){
+              removeByQuerySelectorAll('[role="navigation"]');
+              removeByQuerySelectorAll('nav');
+          }
+
+          if(isWikipediaUrl && cleanWikipedia){
+              removeByQuerySelectorAll('[role="navigation"]');
+              removeByQuerySelectorAll('nav');
+              removeByQuerySelectorAll('ol.references');
+              removeByQuerySelectorAll('#catlinks');
+              removeByQuerySelectorAll('.mw-footer-container');
+              removeByQuerySelectorAll('#p-lang-btn-checkbox');
+              removeByQuerySelectorAll('#p-search');
+              removeByQuerySelectorAll('.uls-language-list');
+              removeByQuerySelectorAll('.interlanguage-link');
+          }
+
           // Convert the Map to a regular object for serialization
           const shortenedUrlObject = shouldShortenUrl
             ? Object.fromEntries(shortenedUrlMap)
@@ -264,7 +290,7 @@ async function getHtmlContentsOfPage(
               shortenedUrlMap: shortenedUrlObject
           };
       },
-      { removeScriptsAndStyles, removeImages, shouldShortenUrl }
+      { removeScriptsAndStyles, removeImages, shouldShortenUrl, removeNavElements, cleanWikipedia, isWikipediaUrl }
     );
 
     // Return the formatted result
