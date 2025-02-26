@@ -12,7 +12,7 @@ const stealth = require("puppeteer-extra-plugin-stealth")();
 import { Observable, Subject, lastValueFrom } from 'rxjs';
 import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import OpenAI from 'openai';
-import { markdownWebPagePrompt } from '../utils/prompts';
+import { markdownWebPagePrompt, markdownWithoutVowelsWebPagePrompt } from '../utils/prompts';
 import { ModelsService } from './models.service';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import {DuckduckgoSearchService} from "./duckduckgoSearch.service";
@@ -65,8 +65,13 @@ export class WebsearchService {
             await streamAiSummaryOfUrlSubject.sendCompleteOnNextTick();
             return streamAiSummaryOfUrlSubject.getSubject();
         }
-        const markdownForPage = await getMarkdownContentsOfPage(url);
-        const prompt = markdownWebPagePrompt(markdownForPage, searchQueryContext);
+        const r = await this.getMarkdownAndTokenCountsForUrlForAiUse(url);
+        const {markdown} = r;
+        // const markdownWithoutVowels = removeVowelsFromMarkdown(markdown);
+
+        const prompt = markdownWebPagePrompt(markdown, searchQueryContext);
+        // const prompt = markdownWithoutVowelsWebPagePrompt(markdownWithoutVowels, searchQueryContext);
+
         if (controller.signal.aborted) {
             console.log(`2 Request aborted before processing for memberId: ${memberId}`);
             await streamAiSummaryOfUrlSubject.sendCompleteOnNextTick();
@@ -158,8 +163,6 @@ async function getHtmlContentsOfPage(
 ) {
     // Add a small delay to allow for CSR (adjust timing as needed)
     await page.waitForTimeout(500);
-
-
 
     // Get the HTML content with optional modifications
     const result = await page.evaluate(
@@ -269,6 +272,17 @@ async function getHtmlContentsOfPage(
         html: result.html,
         shortenedUrlMap: result.shortenedUrlMap
     };
+}
+
+function removeVowelsFromMarkdown(text: string): string {
+    // Find words that:
+    // 1. Start with a space, beginning of string, or punctuation
+    // 2. Followed by one or more letters (the actual word)
+    // 3. End with a space, end of string, or punctuation
+    return text.replace(/(^|\s|[^\w@:/.])(([a-zA-Z]+))(?=\s|$|[^\w@:/.])/g, (match, prefix, word) => {
+        // Keep the prefix (space/punctuation) and replace vowels in the word part
+        return prefix + word.replace(/[aeiouAEIOU]/g, '');
+    });
 }
 
 

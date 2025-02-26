@@ -44,6 +44,39 @@ export function markdownWebPagePrompt(markdown: string, searchQueryContext?: str
   `;
 }
 
+export function markdownWithoutVowelsWebPagePrompt(markdown: string, searchQueryContext?: string){
+  const contextPrompt = searchQueryContext ? `
+    The user found this webpage by searching for the below query, found inside of a query xml tag.
+    When summarizing the page, you should do so with the query in mind:
+    <query>
+      ${searchQueryContext}
+    </query>
+  ` : '';
+
+  return `
+  You are an expert in summarizing key points of interest in web pages.
+  You find the most meaningful and relavent pieces of information and succinctly summarize it.
+  
+  Summarize the below markdown by succinctly stating the key points of the page. 
+  The markdown was converted from the html retrieved by visiting a url.
+  Ignore superfluous content, such as navigation, ads, marketing, etc.
+  Find the information that is likely to be useful, interesting, or meaningful to a human reader.
+  
+  Do not use preamble such as "Key highlights".  Just provide the summary.
+  
+  Use headings such as h1, h2, etc for key sections.  Do not use lists, bullets, or numbering.
+  
+  ${contextPrompt}
+  
+  The markdown has had all vowels removed from normal words.  You are an expert in understanding words that have had vowels removed, and respond with text that has all vowels added back in.
+  The markdown is found below enclosed inside the markdown xml tags:
+  <markdown>
+  ${markdown}
+  </markdown>
+  `;
+}
+
+
 export function documentPrompt(document:Document){
   return `
   You may be asked questions related to the document below, which is found between the <document> tags.
