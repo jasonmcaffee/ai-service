@@ -1,6 +1,11 @@
 import config from '../config/config';
 import {Injectable} from "@nestjs/common";
-import { Model, SearchResult, SearchResultResponse } from '../models/api/conversationApiModels';
+import {
+    GetPageContentsResponse,
+    Model,
+    SearchResult,
+    SearchResultResponse,
+} from '../models/api/conversationApiModels';
 import {Browser, BrowserContext, Page} from 'playwright';
 const { chromium } = require("playwright-extra");
 const stealth = require("puppeteer-extra-plugin-stealth")();
@@ -11,6 +16,7 @@ import { markdownWebPagePrompt } from '../utils/prompts';
 import { ModelsService } from './models.service';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import {DuckduckgoSearchService} from "./duckduckgoSearch.service";
+import { getWordAndTokenCount } from '../utils/utils';
 const TurndownService = require('turndown');
 
 @Injectable()
@@ -29,12 +35,22 @@ export class WebsearchService {
         return this.duckduckgoSearchService.searchDuckDuckGoStream(query, undefined, maxPages, startPage);
     }
 
-    async getFullHtmlPageContent(url: string){
-        return getHtmlContentsOfUrl(url);
-    }
+    // async getFullHtmlPageContent(url: string){
+    //     return getHtmlContentsOfUrl(url);
+    // }
+    //
+    // async getMarkdownContent(url: string){
+    //     return getMarkdownContentsOfPage(url);
+    // }
 
-    async getMarkdownContent(url: string){
-        return getMarkdownContentsOfPage(url);
+    /**
+     * History of Rome wikipedia page is 55k tokens, and takes qwen2.5 8B 1million 1:40 seconds to summarize.
+     * @param url
+     */
+    async getMarkdownAndTokenCountsForUrlForAiUse(url: string): Promise<GetPageContentsResponse>{
+        const markdown = await getMarkdownContentsOfPage(url);
+        const {wordCount, tokenCount} = getWordAndTokenCount(markdown);
+        return { markdown, wordCount, tokenCount };
     }
 
     async streamAiSummaryOfUrl(memberId: string, url: string, searchQueryContext?: string){
@@ -102,6 +118,8 @@ export class WebsearchService {
     }
 }
 
+
+
 async function getMarkdownContentsOfPage(url: string, removeScriptsAndStyles=true, removeImages=true, shouldShortenUrl = true, browser?: Browser , context?: BrowserContext): Promise<string>{
     const turndownService = new TurndownService({
         // linkStyle: 'inlined', //prevent uneccesary new lines
@@ -112,12 +130,22 @@ async function getMarkdownContentsOfPage(url: string, removeScriptsAndStyles=tru
 }
 
 async function getHtmlContentsOfUrl(url: string, removeScriptsAndStyles=false, removeImages=false, shouldShortenUrl = false, browser?: Browser , context?: BrowserContext): Promise<string> {
-    const browser2 = browser ? browser : await chromium.launch();
-    const context2 = context ? context : await browser2!.newContext();
+    chromium.use(stealth);
+    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36";
+    const browser2 = browser ? browser : await chromium.launch({
+        args: ['--disable-blink-features=AutomationControlled'],
+    });
+    const context2 = context ? context : await browser2!.newContext({
+        userAgent,
+        viewport: { width: 1280, height: 720 },
+        deviceScaleFactor: 1
+    });
+
     const page = await context2!.newPage();
     await page.goto(url, {
         waitUntil: 'domcontentloaded'
     });
+    // await page.screenshot({path: "test.png"});
     const result = await getHtmlContentsOfPage(page, removeScriptsAndStyles, removeImages, shouldShortenUrl);
     return result.html;
 }

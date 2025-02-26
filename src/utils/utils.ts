@@ -2,6 +2,7 @@ import {Message, MessageContext, ModelOrDatasource} from '../models/api/conversa
 // import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { Observable } from 'rxjs';
+import { encoding_for_model } from 'tiktoken';
 
 export function createOpenAIMessagesFromMessages(messages: Message[]){
   return messages.map((m) => {
@@ -41,6 +42,23 @@ export function wait(ms: number){
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+
+function getTokenCount(text: string){
+  const tokenizer = encoding_for_model("gpt-3.5-turbo");
+  return tokenizer.encode(text).length;
+}
+
+function getWordCount(text: string){
+  return text.split(/\s+/).length;
+}
+
+export function getWordAndTokenCount(text: string){
+  return {
+    wordCount: getWordCount(text),
+    tokenCount: getTokenCount(text),
+  };
 }
 
 // export async function createObserver(){

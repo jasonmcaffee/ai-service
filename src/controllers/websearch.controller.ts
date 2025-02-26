@@ -3,7 +3,7 @@ import { ChatService } from '../services/chat.service';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { AuthenticationService } from '../services/authentication.service';
 import {WebsearchService} from "../services/websearch.service";
-import {SearchResultResponse} from "../models/api/conversationApiModels";
+import { GetPageContentsResponse, SearchResultResponse } from '../models/api/conversationApiModels';
 
 @ApiTags('WebSearch')
 @Controller('webSearch')
@@ -56,10 +56,10 @@ export class WebsearchController {
     @ApiOperation({ summary: 'fetch the contents of the page.' })
     @ApiQuery({ name: 'url', type: String, description: 'url to fetch' })
     @Get('getPageContents')
-    @ApiResponse({status: 200, description: 'Successful response', type: String})
+    @ApiResponse({status: 200, description: 'Successful response', type: GetPageContentsResponse})
     async getPageContents(@Query('url') url: string, ) {
         const memberId = this.authenticationService.getMemberId();
-        return this.websearchService.getMarkdownContent(url);
+        return this.websearchService.getMarkdownAndTokenCountsForUrlForAiUse(url);
     }
 
     @ApiOperation({ summary: 'Stream a summary based on url' })

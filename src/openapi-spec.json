@@ -1218,7 +1218,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/GetPageContentsResponse"
                 }
               }
             }
@@ -1888,6 +1888,25 @@
         "required": [
           "query",
           "searchResults"
+        ]
+      },
+      "GetPageContentsResponse": {
+        "type": "object",
+        "properties": {
+          "markdown": {
+            "type": "string"
+          },
+          "wordCount": {
+            "type": "number"
+          },
+          "tokenCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "markdown",
+          "wordCount",
+          "tokenCount"
         ]
       }
     }

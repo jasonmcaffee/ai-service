@@ -311,3 +311,12 @@ export class SearchResultResponse{
   @ApiProperty({type: [SearchResult]})
   searchResults: SearchResult[];
 }
+
+export class GetPageContentsResponse {
+  @ApiProperty()
+  markdown: string;
+  @ApiProperty()
+  wordCount: number;
+  @ApiProperty()
+  tokenCount: number;
+}
