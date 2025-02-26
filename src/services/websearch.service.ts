@@ -102,52 +102,145 @@ export class WebsearchService {
     }
 }
 
-async function getMarkdownContentsOfPage(url: string, removeScriptsAndStyles=true, browser?: Browser , context?: BrowserContext): Promise<string>{
-    const turndownService = new TurndownService();
-    const htmlContents = await getHtmlContentsOfUrl(url, removeScriptsAndStyles, browser, context);
+async function getMarkdownContentsOfPage(url: string, removeScriptsAndStyles=true, removeImages=true, shouldShortenUrl = true, browser?: Browser , context?: BrowserContext): Promise<string>{
+    const turndownService = new TurndownService({
+        // linkStyle: 'inlined', //prevent uneccesary new lines
+    });
+    const htmlContents = await getHtmlContentsOfUrl(url, removeScriptsAndStyles, removeImages, shouldShortenUrl, browser, context);
     const markdown = turndownService.turndown(htmlContents);
     return markdown;
 }
 
-async function getHtmlContentsOfUrl(url: string, removeScriptsAndStyles=false, browser?: Browser , context?: BrowserContext): Promise<string> {
+async function getHtmlContentsOfUrl(url: string, removeScriptsAndStyles=false, removeImages=false, shouldShortenUrl = false, browser?: Browser , context?: BrowserContext): Promise<string> {
     const browser2 = browser ? browser : await chromium.launch();
     const context2 = context ? context : await browser2!.newContext();
     const page = await context2!.newPage();
     await page.goto(url, {
         waitUntil: 'domcontentloaded'
     });
-    return await getHtmlContentsOfPage(page, removeScriptsAndStyles);
+    const result = await getHtmlContentsOfPage(page, removeScriptsAndStyles, removeImages, shouldShortenUrl);
+    return result.html;
 }
 
-async function getHtmlContentsOfPage(page: Page, removeScriptsAndStyles=false){
-
+async function getHtmlContentsOfPage(
+  page: Page,
+  removeScriptsAndStyles = false,
+  removeImages = false,
+  shouldShortenUrl = false
+) {
     // Add a small delay to allow for CSR (adjust timing as needed)
     await page.waitForTimeout(500);
 
-    // Remove all script and style tags using page.evaluate
-    // Remove scripts and styles, then get only body content
-    let bodyContent = '';
-    if(removeScriptsAndStyles){
-        bodyContent = await page.evaluate(() => {
-            // Remove script tags
-            const scripts = document.getElementsByTagName('script');
-            while (scripts[0]) scripts[0].parentNode!.removeChild(scripts[0]);
-            // Remove style tags
-            const styles = document.getElementsByTagName('style');
-            while (styles[0]) styles[0].parentNode!.removeChild(styles[0]);
-            // Remove link tags with rel="stylesheet"
-            const styleLinks = document.querySelectorAll('link[rel="stylesheet"]');
-            styleLinks.forEach(link => link.parentNode!.removeChild(link));
-            return document.body.innerHTML;
-        });
-    }else{
-        bodyContent = await page.evaluate(() => {return  document.documentElement.outerHTML;});
-    }
 
-    // Get the entire HTML content
-    // const htmlContent = await page.content();
-    const htmlContent = bodyContent;
-    return htmlContent;
+
+    // Get the HTML content with optional modifications
+    const result = await page.evaluate(
+      (options) => {
+          const { removeScriptsAndStyles, removeImages, shouldShortenUrl } = options;
+          const shortenedUrlMap = new Map<string, string>();
+          let urlCounter = 1;
+          // let shortenedUrlMap = shouldShortenUrl ? new Map() : null;
+
+          if (removeScriptsAndStyles) {
+              // Remove script tags
+              const scripts = document.getElementsByTagName('script');
+              while (scripts[0]) scripts[0].parentNode!.removeChild(scripts[0]);
+
+              // Remove style tags
+              const styles = document.getElementsByTagName('style');
+              while (styles[0]) styles[0].parentNode!.removeChild(styles[0]);
+
+              // Remove link tags with rel="stylesheet"
+              const styleLinks = document.querySelectorAll('link[rel="stylesheet"]');
+              styleLinks.forEach(link => link.parentNode!.removeChild(link));
+          }
+
+          if (removeImages) {
+              // Remove standard img tags
+              const images = document.getElementsByTagName('img');
+              while (images[0]) images[0].parentNode!.removeChild(images[0]);
+
+              // Remove svg tags
+              const svgs = document.getElementsByTagName('svg');
+              while (svgs[0]) svgs[0].parentNode!.removeChild(svgs[0]);
+
+              // Remove picture tags
+              const pictures = document.getElementsByTagName('picture');
+              while (pictures[0]) pictures[0].parentNode!.removeChild(pictures[0]);
+
+              // Remove inline background images in style attributes
+              const elementsWithStyle = document.querySelectorAll('[style*="background"]');
+              elementsWithStyle.forEach(el => {
+                  //@ts-ignore
+                  if (el.style.backgroundImage) {
+                      //@ts-ignore
+                      el.style.backgroundImage = 'none';
+                  }
+              });
+
+              // Remove image inputs
+              const imageInputs = document.querySelectorAll('input[type="image"]');
+              imageInputs.forEach(input => input.parentNode!.removeChild(input));
+
+              // Remove objects with image/svg content
+              const objects = document.querySelectorAll('object[type^="image/"], object[data^="data:image/"]');
+              objects.forEach(obj => obj.parentNode!.removeChild(obj));
+
+              // Remove embeds that might be images
+              const embeds = document.querySelectorAll('embed[src*=".svg"], embed[src*=".png"], embed[src*=".jpg"], embed[src*=".jpeg"], embed[src*=".gif"], embed[src^="data:image/"]');
+              embeds.forEach(embed => embed.parentNode!.removeChild(embed));
+
+              // Remove canvas elements (which might contain images)
+              const canvases = document.getElementsByTagName('canvas');
+              while (canvases[0]) canvases[0].parentNode!.removeChild(canvases[0]);
+          }
+
+          if (shouldShortenUrl) {
+              // Process all anchor tags with href attributes
+              const links = document.querySelectorAll('a[href]');
+              links.forEach(link => {
+                  const originalUrl = link.getAttribute('href');
+
+                  // Skip empty URLs, javascript: URLs, and already shortened URLs
+                  if (!originalUrl ||
+                    originalUrl.startsWith('javascript:') ||
+                    originalUrl.startsWith('#') ||
+                    /^\d+\.ai$/.test(originalUrl)) {
+                      return;
+                  }
+
+                  // Create shortened URL
+                  const shortenedUrl = `${urlCounter}.ai`;
+
+                  // Store in map
+                  shortenedUrlMap.set(shortenedUrl, originalUrl);
+
+                  // Replace the URL in the HTML
+                  link.setAttribute('href', shortenedUrl);
+
+                  // Increment counter
+                  urlCounter++;
+              });
+          }
+
+          // Convert the Map to a regular object for serialization
+          const shortenedUrlObject = shouldShortenUrl
+            ? Object.fromEntries(shortenedUrlMap)
+            : null;
+
+          return {
+              html: document.documentElement.outerHTML,
+              shortenedUrlMap: shortenedUrlObject
+          };
+      },
+      { removeScriptsAndStyles, removeImages, shouldShortenUrl }
+    );
+
+    // Return the formatted result
+    return {
+        html: result.html,
+        shortenedUrlMap: result.shortenedUrlMap
+    };
 }
 
 
