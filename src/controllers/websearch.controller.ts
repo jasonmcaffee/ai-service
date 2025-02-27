@@ -59,7 +59,7 @@ export class WebsearchController {
     @ApiResponse({status: 200, description: 'Successful response', type: GetPageContentsResponse})
     async getPageContents(@Query('url') url: string, ) {
         const memberId = this.authenticationService.getMemberId();
-        return this.websearchService.getMarkdownAndTokenCountsForUrlForAiUse(url);
+        return this.websearchService.getMarkdownAndTokenCountsForUrlForWebSummaryUse(url);
     }
 
     @ApiOperation({ summary: 'Stream a summary based on url' })

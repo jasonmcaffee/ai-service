@@ -17,12 +17,15 @@ import { ModelsService } from './models.service';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import {DuckduckgoSearchService} from "./duckduckgoSearch.service";
 import { getWordAndTokenCount } from '../utils/utils';
+import { PageScraperService } from './pageScraper.service';
 const TurndownService = require('turndown');
 
 @Injectable()
 export class WebsearchService {
     private abortControllers: Map<string, { controller: AbortController }> = new Map();
-    constructor(private readonly modelsService: ModelsService, private readonly duckduckgoSearchService: DuckduckgoSearchService) {
+    constructor(private readonly modelsService: ModelsService,
+                private readonly duckduckgoSearchService: DuckduckgoSearchService,
+                private readonly pageScraperService: PageScraperService) {
     }
 
     async streamSearch(query: string, maxPages=3, startPage=1, ): Promise<Observable<string>> {
@@ -33,24 +36,6 @@ export class WebsearchService {
 
     async search(query: string, maxPages=3, startPage=1, ): Promise<SearchResultResponse> {
         return this.duckduckgoSearchService.searchDuckDuckGoStream(query, undefined, maxPages, startPage);
-    }
-
-    // async getFullHtmlPageContent(url: string){
-    //     return getHtmlContentsOfUrl(url);
-    // }
-    //
-    // async getMarkdownContent(url: string){
-    //     return getMarkdownContentsOfPage(url);
-    // }
-
-    /**
-     * History of Rome wikipedia page is 55k tokens, and takes qwen2.5 8B 1million 1:40 seconds to summarize.
-     * @param url
-     */
-    async getMarkdownAndTokenCountsForUrlForAiUse(url: string): Promise<GetPageContentsResponse>{
-        const markdown = await getMarkdownContentsOfPage(url);
-        const {wordCount, tokenCount} = getWordAndTokenCount(markdown);
-        return { markdown, wordCount, tokenCount };
     }
 
     async streamAiSummaryOfUrl(memberId: string, url: string, searchQueryContext?: string){
@@ -65,9 +50,8 @@ export class WebsearchService {
             await streamAiSummaryOfUrlSubject.sendCompleteOnNextTick();
             return streamAiSummaryOfUrlSubject.getSubject();
         }
-        const r = await this.getMarkdownAndTokenCountsForUrlForAiUse(url);
+        const r = await this.getMarkdownAndTokenCountsForUrlForWebSummaryUse(url);
         const {markdown} = r;
-        // const markdownWithoutVowels = removeVowelsFromMarkdown(markdown);
 
         const prompt = markdownWebPagePrompt(markdown, searchQueryContext);
         // const prompt = markdownWithoutVowelsWebPagePrompt(markdownWithoutVowels, searchQueryContext);
@@ -121,194 +105,15 @@ export class WebsearchService {
         associatedAbortController.controller.abort();
         this.abortControllers.delete(memberId);
     }
+
+    /**
+     * History of Rome wikipedia page is 55k tokens, and takes qwen2.5 8B 1million 1:40 seconds to summarize.
+     * @param url
+     */
+    async getMarkdownAndTokenCountsForUrlForWebSummaryUse(url: string): Promise<GetPageContentsResponse>{
+        const markdown = await this.pageScraperService.getContentsOfWebpageAsMarkdown({url, removeScriptsAndStyles: true,
+            shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true});
+        const {wordCount, tokenCount} = getWordAndTokenCount(markdown);
+        return { markdown, wordCount, tokenCount };
+    }
 }
-
-async function getMarkdownContentsOfPage(url: string, removeScriptsAndStyles=true, removeImages=true, shouldShortenUrl = true, removeNavElements = true,
-                                         cleanWikipedia = true, browser?: Browser , context?: BrowserContext): Promise<string>{
-    const turndownService = new TurndownService({
-        // linkStyle: 'inlined', //prevent uneccesary new lines
-    });
-    const htmlContents = await getHtmlContentsOfUrl(url, removeScriptsAndStyles, removeImages, shouldShortenUrl, removeNavElements, cleanWikipedia, browser, context);
-    const markdown = turndownService.turndown(htmlContents);
-    return markdown;
-}
-
-async function getHtmlContentsOfUrl(url: string, removeScriptsAndStyles=false, removeImages=false, shouldShortenUrl = false, removeNavElements = false,
-                                    cleanWikipedia = false,  browser?: Browser , context?: BrowserContext): Promise<string> {
-    chromium.use(stealth);
-    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36";
-    const browser2 = browser ? browser : await chromium.launch({
-        args: ['--disable-blink-features=AutomationControlled'],
-    });
-    const context2 = context ? context : await browser2!.newContext({
-        userAgent,
-        viewport: { width: 1280, height: 720 },
-        deviceScaleFactor: 1
-    });
-
-    const page = await context2!.newPage();
-    await page.goto(url, {
-        waitUntil: 'domcontentloaded'
-    });
-    // await page.screenshot({path: "test.png"});
-    const result = await getHtmlContentsOfPage(page, removeScriptsAndStyles, removeImages, shouldShortenUrl, removeNavElements, cleanWikipedia);
-    return result.html;
-}
-
-async function getHtmlContentsOfPage(
-  page: Page,
-  removeScriptsAndStyles = false,
-  removeImages = false,
-  shouldShortenUrl = false,
-  removeNavElements = false,
-  cleanWikipedia = false,
-) {
-    // Add a small delay to allow for CSR (adjust timing as needed)
-    await page.waitForTimeout(500);
-
-    const isWikipediaUrl = page.url().indexOf('wikipedia.org') >= 0;
-
-    // Get the HTML content with optional modifications
-    const result = await page.evaluate(
-      (options) => {
-          const { removeScriptsAndStyles, removeImages, shouldShortenUrl, removeNavElements, cleanWikipedia, isWikipediaUrl } = options;
-          const shortenedUrlMap = new Map<string, string>();
-          let urlCounter = 1;
-          // let shortenedUrlMap = shouldShortenUrl ? new Map() : null;
-
-          if (removeScriptsAndStyles) {
-              // Remove script tags
-              const scripts = document.getElementsByTagName('script');
-              while (scripts[0]) scripts[0].parentNode!.removeChild(scripts[0]);
-
-              // Remove style tags
-              const styles = document.getElementsByTagName('style');
-              while (styles[0]) styles[0].parentNode!.removeChild(styles[0]);
-
-              // Remove link tags with rel="stylesheet"
-              const styleLinks = document.querySelectorAll('link[rel="stylesheet"]');
-              styleLinks.forEach(link => link.parentNode!.removeChild(link));
-          }
-
-          if (removeImages) {
-              // Remove standard img tags
-              const images = document.getElementsByTagName('img');
-              while (images[0]) images[0].parentNode!.removeChild(images[0]);
-
-              // Remove svg tags
-              const svgs = document.getElementsByTagName('svg');
-              while (svgs[0]) svgs[0].parentNode!.removeChild(svgs[0]);
-
-              // Remove picture tags
-              const pictures = document.getElementsByTagName('picture');
-              while (pictures[0]) pictures[0].parentNode!.removeChild(pictures[0]);
-
-              // Remove inline background images in style attributes
-              const elementsWithStyle = document.querySelectorAll('[style*="background"]');
-              elementsWithStyle.forEach(el => {
-                  //@ts-ignore
-                  if (el.style.backgroundImage) {
-                      //@ts-ignore
-                      el.style.backgroundImage = 'none';
-                  }
-              });
-
-              // Remove image inputs
-              const imageInputs = document.querySelectorAll('input[type="image"]');
-              imageInputs.forEach(input => input.parentNode!.removeChild(input));
-
-              // Remove objects with image/svg content
-              const objects = document.querySelectorAll('object[type^="image/"], object[data^="data:image/"]');
-              objects.forEach(obj => obj.parentNode!.removeChild(obj));
-
-              // Remove embeds that might be images
-              const embeds = document.querySelectorAll('embed[src*=".svg"], embed[src*=".png"], embed[src*=".jpg"], embed[src*=".jpeg"], embed[src*=".gif"], embed[src^="data:image/"], embed[src^="data:gif/"]');
-              embeds.forEach(embed => embed.parentNode!.removeChild(embed));
-
-              // Remove canvas elements (which might contain images)
-              const canvases = document.getElementsByTagName('canvas');
-              while (canvases[0]) canvases[0].parentNode!.removeChild(canvases[0]);
-          }
-
-          if (shouldShortenUrl) {
-              // Process all anchor tags with href attributes
-              const links = document.querySelectorAll('a[href]');
-              links.forEach(link => {
-                  const originalUrl = link.getAttribute('href');
-
-                  // Skip empty URLs, javascript: URLs, and already shortened URLs
-                  if (!originalUrl ||
-                    originalUrl.startsWith('javascript:') ||
-                    originalUrl.startsWith('#') ||
-                    /^\d+\.ai$/.test(originalUrl)) {
-                      return;
-                  }
-
-                  // Create shortened URL
-                  const shortenedUrl = `${urlCounter}.ai`;
-
-                  // Store in map
-                  shortenedUrlMap.set(shortenedUrl, originalUrl);
-
-                  // Replace the URL in the HTML
-                  link.setAttribute('href', shortenedUrl);
-
-                  // Increment counter
-                  urlCounter++;
-              });
-          }
-
-          function removeByQuerySelectorAll(query){
-              const els = document.querySelectorAll(query);
-              els.forEach(el => el.parentNode?.removeChild(el));
-          }
-
-          if(removeNavElements){
-              removeByQuerySelectorAll('[role="navigation"]');
-              removeByQuerySelectorAll('nav');
-          }
-
-          if(isWikipediaUrl && cleanWikipedia){
-              removeByQuerySelectorAll('[role="navigation"]');
-              removeByQuerySelectorAll('nav');
-              removeByQuerySelectorAll('ol.references');
-              removeByQuerySelectorAll('#catlinks');
-              removeByQuerySelectorAll('.mw-footer-container');
-              removeByQuerySelectorAll('#p-lang-btn-checkbox');
-              removeByQuerySelectorAll('#p-search');
-              removeByQuerySelectorAll('.uls-language-list');
-              removeByQuerySelectorAll('.interlanguage-link');
-          }
-
-          // Convert the Map to a regular object for serialization
-          const shortenedUrlObject = shouldShortenUrl
-            ? Object.fromEntries(shortenedUrlMap)
-            : null;
-
-          return {
-              html: document.documentElement.outerHTML,
-              shortenedUrlMap: shortenedUrlObject
-          };
-      },
-      { removeScriptsAndStyles, removeImages, shouldShortenUrl, removeNavElements, cleanWikipedia, isWikipediaUrl }
-    );
-
-    // Return the formatted result
-    return {
-        html: result.html,
-        shortenedUrlMap: result.shortenedUrlMap
-    };
-}
-
-function removeVowelsFromMarkdown(text: string): string {
-    // Find words that:
-    // 1. Start with a space, beginning of string, or punctuation
-    // 2. Followed by one or more letters (the actual word)
-    // 3. End with a space, end of string, or punctuation
-    return text.replace(/(^|\s|[^\w@:/.])(([a-zA-Z]+))(?=\s|$|[^\w@:/.])/g, (match, prefix, word) => {
-        // Keep the prefix (space/punctuation) and replace vowels in the word part
-        return prefix + word.replace(/[aeiouAEIOU]/g, '');
-    });
-}
-
-
