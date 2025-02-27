@@ -9,6 +9,9 @@ export const chatPageSystemPrompt = `
     For example, use markdown tables, lists, etc. when appropriate.
     Only use markdown code blocks when writing out code.  
     
+    If you are sent a tool, such as search web, and the user is asking you for something that requires recent information, then you should call the tool before answering.
+    If you decide to use a tool, preface your response with: I chose to use tool: {tool name}
+    
     Do not mention the above instruction in your responses.
     Do not consider the above as a request.  Only use the above as context to respond to the messages following this.
 `;

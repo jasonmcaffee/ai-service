@@ -42,12 +42,10 @@ export class LlmToolsService{
         const markdownContentsForAllPagesInTheSearchResults = await this.pageScraperService.getContentsOfWebpagesAsMarkdown(
           {urls, removeScriptsAndStyles: true, shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true, });
 
-
         //build a new result
         const result = new SearchResultWithMarkdownContentResponse();
         result.query = query;
         result.searchResults = [];
-        //todo check max tokens.
         let totalTokens = 0;
         for (let markdownResponse of markdownContentsForAllPagesInTheSearchResults){
             const {url, markdown} = markdownResponse;
@@ -57,7 +55,7 @@ export class LlmToolsService{
                 continue; //try to get more if we can..?
             }
             totalTokens += tokenCount;
-            const correspondingSearchResultForUrl = searchResultResponse.searchResults.find(s => s.url == markdownResponse.url)!; //todo: could be the same url twice?  probably not...
+            const correspondingSearchResultForUrl = searchResultResponse.searchResults.find(s => s.url == url)!; //todo: could be the same url twice?  probably not...
             result.searchResults.push({...correspondingSearchResultForUrl, markdown});
         }
         //set a maximum token length.
