@@ -153,15 +153,12 @@ export class ChatService {
     const accumulatedToolCalls: Record<string, ToolCall> = {};
 
     try {
-      const stream = await openai.chat.completions.create(
-        {
+      const stream = await openai.chat.completions.create({
           model: model.modelName,
           messages: [{ role: 'system', content: chatPageSystemPrompt }, ...openAiMessages],
           tools,
           stream: true,
-        },
-        { signal }
-      );
+        }, { signal });
 
       // Track if we need to make a recursive call
       let needsRecursiveCall = false;
@@ -176,9 +173,7 @@ export class ChatService {
           needsRecursiveCall = true;
 
           // Initialize assistant message if needed
-          if (!assistantResponse) {
-            assistantResponse = { role: 'assistant', content: null, tool_calls: [] };
-          }
+          assistantResponse = assistantResponse || { role: 'assistant', content: null, tool_calls: [] };
 
           for (const toolCall of choice.delta.tool_calls) {
             if (!toolCall.index && toolCall.index !== 0) continue;
@@ -189,8 +184,8 @@ export class ChatService {
             if (!accumulatedToolCalls[index]) {
               accumulatedToolCalls[index] = {
                 index: toolCall.index,
-                id: toolCall.id || '',
-                type: toolCall.type || undefined,
+                id: toolCall.id,
+                type: toolCall.type,
                 function: {
                   name: '',
                   arguments: ''

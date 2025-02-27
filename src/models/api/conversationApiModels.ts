@@ -304,12 +304,31 @@ export class SearchResult {
   blurb: string;
 }
 
+export class SearchResultWithMarkdownOfPage {
+  @ApiProperty()
+  title: string;
+  @ApiProperty()
+  url: string;
+  @ApiProperty()
+  blurb: string;
+  @ApiProperty()
+  markdown: string;
+}
+
+
 
 export class SearchResultResponse{
   @ApiProperty()
   query: string;
   @ApiProperty({type: [SearchResult]})
   searchResults: SearchResult[];
+}
+
+export class SearchResultWithMarkdownContentResponse{
+  @ApiProperty()
+  query: string;
+  @ApiProperty({type: [SearchResultWithMarkdownOfPage]})
+  searchResults: SearchResultWithMarkdownOfPage[];
 }
 
 export class GetPageContentsResponse {

@@ -126,8 +126,9 @@ export class WebsearchService {
      * @param url
      */
     async getMarkdownAndTokenCountsForUrlForAiWebSummaryUse(url: string): Promise<GetPageContentsResponse>{
-        const markdown = await this.pageScraperService.getContentsOfWebpageAsMarkdown({url, removeScriptsAndStyles: true,
+        const markdownResponse = await this.pageScraperService.getContentsOfWebpageAsMarkdown({url, removeScriptsAndStyles: true,
             shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true});
+        const {markdown} = markdownResponse;
         const {wordCount, tokenCount} = getWordAndTokenCount(markdown);
         return { markdown, wordCount, tokenCount };
     }

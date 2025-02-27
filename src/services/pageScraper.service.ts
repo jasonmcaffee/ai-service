@@ -8,10 +8,13 @@ export class PageScraperService{
   constructor() {}
 
   async getContentsOfWebpagesAsMarkdown({urls, removeScriptsAndStyles, removeImages, shortenUrls, removeNavElements, cleanWikipedia}:
-                                          {urls: string[], removeScriptsAndStyles: boolean, removeImages: boolean, shortenUrls: boolean, removeNavElements: boolean, cleanWikipedia: boolean}): Promise<Promise<string>[]>{
+                                          {urls: string[], removeScriptsAndStyles: boolean, removeImages: boolean, shortenUrls: boolean, removeNavElements: boolean, cleanWikipedia: boolean})
+    : Promise<{url: string, markdown: string}[]>{
     //run in parallel
-    const markdownPromises = urls.map(url => this.getContentsOfWebpageAsMarkdown({url, removeImages, removeNavElements, cleanWikipedia, shortenUrls, removeScriptsAndStyles}))
-    return markdownPromises;
+    const markdownPromises = urls.map(url => this.getContentsOfWebpageAsMarkdown({url, removeImages, removeNavElements, cleanWikipedia, shortenUrls, removeScriptsAndStyles}));
+    const markdownResults = await Promise.all(markdownPromises);
+
+    return markdownResults;
   }
 
   /**
@@ -25,18 +28,23 @@ export class PageScraperService{
    * @param cleanWikipedia
    */
   async getContentsOfWebpageAsMarkdown({url, removeScriptsAndStyles, removeImages, shortenUrls, removeNavElements, cleanWikipedia}:
-                                         {url: string, removeScriptsAndStyles: boolean, removeImages: boolean, shortenUrls: boolean, removeNavElements: boolean, cleanWikipedia: boolean} ): Promise<string>{
+                                         {url: string, removeScriptsAndStyles: boolean, removeImages: boolean, shortenUrls: boolean, removeNavElements: boolean, cleanWikipedia: boolean} ): Promise<{url: string, markdown: string}>{
     chromium.use(stealth);
     console.log(`browser isConnected: ${this.browser?.isConnected()}`);
-    this.browser = this.browser || await chromium.launch({
-      args: ['--disable-blink-features=AutomationControlled'],
-    });
+    // this.browser = this.browser || await chromium.launch({
+    //   args: ['--disable-blink-features=AutomationControlled'],
+    // });
+    if(!this.browser || !this.browser.isConnected()){
+      this.browser = await chromium.launch({
+        args: ['--disable-blink-features=AutomationControlled'],
+      });
+    }
     const context = await this.createStealthContext(this.browser);
     const turndownService = new TurndownService();
     const htmlContents = await getHtmlContentsOfUrl(url, removeScriptsAndStyles, removeImages, shortenUrls, removeNavElements, cleanWikipedia, context);
     await context.close();
     const markdown = turndownService.turndown(htmlContents);
-    return markdown;
+    return { url, markdown };
   }
 
   private async createStealthContext(browser: Browser){
