@@ -4,7 +4,12 @@ import OpenAI from 'openai';
 import { ConversationService } from './conversation.service';
 import {Message, MessageContext, Model} from '../models/api/conversationApiModels';
 // import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
-import { ChatCompletionChunk, ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
+import {
+  ChatCompletionAssistantMessageParam,
+  ChatCompletionChunk,
+  ChatCompletionMessageParam,
+  ChatCompletionTool,
+} from 'openai/resources/chat/completions';
 
 import config from '../config/config';
 import {
@@ -126,6 +131,7 @@ export class ChatService {
     this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject, abortController, tools);
 
   }
+
   async callOpenAiUsingModelAndSubject(
     openAiMessages: ChatCompletionMessageParam[],
     handleOnText: (text: string) => void,
@@ -160,7 +166,7 @@ export class ChatService {
       // Track if we need to make a recursive call
       let needsRecursiveCall = false;
       // Store assistant's response for the recursive call
-      let assistantResponse: ChatCompletionMessageParam | null = null;
+      let assistantResponse: ChatCompletionAssistantMessageParam | null = null;
 
       for await (const chunk of stream) {
         const choice = chunk.choices[0];
@@ -220,69 +226,28 @@ export class ChatService {
           const content = choice.delta.content;
           streamedText += content;
 
-          // Check for llama.cpp tool calls in the content
-          const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs;
-          let match;
-          let lastIndex = 0;
-          let newTextToDisplay = '';
+          const result = this.parseLlamaCppToolCalls(
+            streamedText,
+            completeText,
+            accumulatedToolCalls,
+            assistantResponse
+          );
 
-          // Reset the regex to start from the beginning
-          toolCallRegex.lastIndex = 0;
+          // Get updated values from parsing result
+          completeText = result.newTextToDisplay;
 
-          // Find all tool calls in the accumulated streamed text
-          while ((match = toolCallRegex.exec(streamedText)) !== null) {
-            // Add text before the tool call to the display text
-            newTextToDisplay += streamedText.substring(lastIndex, match.index);
-            lastIndex = match.index + match[0].length;
+          // If we found tool calls, update our tracking variables
+          if (result.foundToolCalls) {
+            needsRecursiveCall = true;
+            assistantResponse = result.assistantResponse;
 
-            // Process the tool call
-            try {
-              const toolCallContent = match[1].trim();
-              needsRecursiveCall = true;
-
-              // Create unique ID for this tool call
-              const toolId = `tool-${Date.now()}-${Object.keys(accumulatedToolCalls).length}`;
-
-              // Initialize assistant message if needed
-              if (!assistantResponse) {
-                assistantResponse = {
-                  role: 'assistant',
-                  content: null,
-                  tool_calls: []
-                };
-              }
-
-              try {
-                const parsedContent = JSON.parse(toolCallContent);
-
-                // Add to accumulated tool calls
-                const index = Object.keys(accumulatedToolCalls).length.toString();
-                accumulatedToolCalls[index] = {
-                  index: parseInt(index),
-                  id: toolId,
-                  type: 'function',
-                  function: {
-                    name: parsedContent.name || '',
-                    arguments: typeof parsedContent.arguments === 'string'
-                      ? parsedContent.arguments
-                      : JSON.stringify(parsedContent.arguments)
-                  }
-                };
-              } catch (parseError) {
-                console.error(`Error parsing tool call JSON: ${parseError}`);
-              }
-            } catch (error) {
-              console.error(`Error processing tool call: ${error}`);
-            }
+            // Merge new tool calls into accumulated ones
+            Object.assign(accumulatedToolCalls, result.newToolCalls);
           }
 
-          // Add any remaining text after the last tool call to the display text
-          newTextToDisplay += streamedText.substring(lastIndex);
-
-          // Update the complete text with text that excludes tool calls
-          if (newTextToDisplay !== completeText) {
-            const newContent = newTextToDisplay.substring(completeText.length);
-            completeText = newTextToDisplay;
+          // Stream any new content
+          if (completeText !== result.previousCompleteText) {
+            const newContent = completeText.substring(result.previousCompleteText.length);
             if (newContent) {
               await handleOnText(newContent);
               inferenceSSESubject.sendText(newContent);
@@ -371,6 +336,101 @@ export class ChatService {
     }
   }
 
+  /**
+   * Parse llama.cpp style tool calls from streamed content
+   * @param streamedText The accumulated streamed text
+   * @param completeText The existing complete text without tool calls
+   * @param accumulatedToolCalls The currently accumulated tool calls
+   * @param assistantResponse The current assistant response object
+   * @returns Object containing parsing results and updated values
+   */
+  private parseLlamaCppToolCalls(
+    streamedText: string,
+    completeText: string,
+    accumulatedToolCalls: Record<string, ToolCall>,
+    assistantResponse: ChatCompletionAssistantMessageParam | null
+  ): {
+    newTextToDisplay: string;
+    previousCompleteText: string;
+    foundToolCalls: boolean;
+    assistantResponse: ChatCompletionAssistantMessageParam | null;
+    newToolCalls: Record<string, ToolCall>;
+  } {
+    // Copy the completeText to return as previous value
+    const previousCompleteText = completeText;
+    let newTextToDisplay = '';
+    let foundToolCalls = false;
+    const newToolCalls: Record<string, ToolCall> = {};
+
+    // Initialize assistant response if needed
+    let updatedAssistantResponse = assistantResponse;
+
+    // Check for llama.cpp tool calls in the content
+    const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs;
+    let match;
+    let lastIndex = 0;
+
+    // Reset the regex to start from the beginning
+    toolCallRegex.lastIndex = 0;
+
+    // Find all tool calls in the accumulated streamed text
+    while ((match = toolCallRegex.exec(streamedText)) !== null) {
+      // Add text before the tool call to the display text
+      newTextToDisplay += streamedText.substring(lastIndex, match.index);
+      lastIndex = match.index + match[0].length;
+
+      // Process the tool call
+      try {
+        const toolCallContent = match[1].trim();
+        foundToolCalls = true;
+
+        // Create unique ID for this tool call
+        const toolId = `tool-${Date.now()}-${Object.keys(accumulatedToolCalls).length}`;
+
+        // Initialize assistant message if needed
+        if (!updatedAssistantResponse) {
+          updatedAssistantResponse = {
+            role: 'assistant',
+            content: null,
+            tool_calls: []
+          };
+        }
+
+        try {
+          const parsedContent = JSON.parse(toolCallContent);
+
+          // Add to new tool calls
+          const index = Object.keys(accumulatedToolCalls).length.toString();
+          newToolCalls[index] = {
+            index: parseInt(index),
+            id: toolId,
+            type: 'function',
+            function: {
+              name: parsedContent.name || '',
+              arguments: typeof parsedContent.arguments === 'string'
+                ? parsedContent.arguments
+                : JSON.stringify(parsedContent.arguments)
+            }
+          };
+        } catch (parseError) {
+          console.error(`Error parsing tool call JSON: ${parseError}`);
+        }
+      } catch (error) {
+        console.error(`Error processing tool call: ${error}`);
+      }
+    }
+
+    // Add any remaining text after the last tool call to the display text
+    newTextToDisplay += streamedText.substring(lastIndex);
+
+    return {
+      newTextToDisplay,
+      previousCompleteText,
+      foundToolCalls,
+      assistantResponse: updatedAssistantResponse,
+      newToolCalls
+    };
+  }
 
 }
 
