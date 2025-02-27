@@ -144,14 +144,6 @@ export class ChatService {
     let streamedText = '';
 
     // Track accumulated tool calls
-    // const accumulatedToolCalls: Record<string, {
-    //   id: string;
-    //   type: string;
-    //   function: {
-    //     name: string;
-    //     arguments: string;
-    //   }
-    // }> = {};
     const accumulatedToolCalls: Record<string, ToolCall> = {};
 
     try {
