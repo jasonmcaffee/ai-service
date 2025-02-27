@@ -126,7 +126,6 @@ export class ChatService {
     this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject, abortController, tools);
 
   }
-
   async callOpenAiUsingModelAndSubject(
     openAiMessages: ChatCompletionMessageParam[],
     handleOnText: (text: string) => void,
@@ -142,6 +141,7 @@ export class ChatService {
     const openai = new OpenAI({ apiKey, baseURL });
     const signal = abortController.signal;
     let completeText = '';
+    let streamedText = '';
 
     // Track accumulated tool calls
     const accumulatedToolCalls: Record<string, {
@@ -172,15 +172,7 @@ export class ChatService {
       for await (const chunk of stream) {
         const choice = chunk.choices[0];
 
-        // Handle standard streaming content
-        if (choice?.delta?.content) {
-          const content = choice.delta.content;
-          completeText += content;
-          await handleOnText(content);
-          inferenceSSESubject.sendText(content);
-        }
-
-        // Handle tool calls - accumulate them until complete
+        // Handle standard OpenAI tool calls
         if (choice?.delta?.tool_calls) {
           needsRecursiveCall = true;
 
@@ -232,61 +224,136 @@ export class ChatService {
           }
         }
 
+        // Handle streaming content, which might contain llama.cpp-style tool calls
+        if (choice?.delta?.content) {
+          const content = choice.delta.content;
+          streamedText += content;
+
+          // Check for llama.cpp tool calls in the content
+          const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs;
+          let match;
+          let lastIndex = 0;
+          let newTextToDisplay = '';
+
+          // Reset the regex to start from the beginning
+          toolCallRegex.lastIndex = 0;
+
+          // Find all tool calls in the accumulated streamed text
+          while ((match = toolCallRegex.exec(streamedText)) !== null) {
+            // Add text before the tool call to the display text
+            newTextToDisplay += streamedText.substring(lastIndex, match.index);
+            lastIndex = match.index + match[0].length;
+
+            // Process the tool call
+            try {
+              const toolCallContent = match[1].trim();
+              needsRecursiveCall = true;
+
+              // Create unique ID for this tool call
+              const toolId = `tool-${Date.now()}-${Object.keys(accumulatedToolCalls).length}`;
+
+              // Initialize assistant message if needed
+              if (!assistantResponse) {
+                assistantResponse = {
+                  role: 'assistant',
+                  content: null,
+                  tool_calls: []
+                };
+              }
+
+              try {
+                const parsedContent = JSON.parse(toolCallContent);
+
+                // Add to accumulated tool calls
+                const index = Object.keys(accumulatedToolCalls).length.toString();
+                accumulatedToolCalls[index] = {
+                  id: toolId,
+                  type: 'function',
+                  function: {
+                    name: parsedContent.name || '',
+                    arguments: typeof parsedContent.arguments === 'string'
+                      ? parsedContent.arguments
+                      : JSON.stringify(parsedContent.arguments)
+                  }
+                };
+              } catch (parseError) {
+                console.error(`Error parsing tool call JSON: ${parseError}`);
+              }
+            } catch (error) {
+              console.error(`Error processing tool call: ${error}`);
+            }
+          }
+
+          // Add any remaining text after the last tool call to the display text
+          newTextToDisplay += streamedText.substring(lastIndex);
+
+          // Update the complete text with text that excludes tool calls
+          if (newTextToDisplay !== completeText) {
+            const newContent = newTextToDisplay.substring(completeText.length);
+            completeText = newTextToDisplay;
+            if (newContent) {
+              await handleOnText(newContent);
+              inferenceSSESubject.sendText(newContent);
+            }
+          }
+        }
+
         // Check if we've reached the end of the stream
-        if (choice?.finish_reason === 'tool_calls') {
-          // If we have accumulated tool calls, format them for the assistant message
-          if (assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
-            // Add tool calls to the assistant message
-            (assistantResponse.tool_calls as any[]) = Object.values(accumulatedToolCalls).map(toolCall => ({
-              id: toolCall.id,
-              type: toolCall.type,
+        if (choice?.finish_reason === 'tool_calls' || choice?.finish_reason === 'stop') {
+          // If we have accumulated tool calls, proceed with handling them
+          if (needsRecursiveCall && assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
+            // Break out of the loop, we'll process tool calls
+            break;
+          }
+        }
+      }
+
+      // Process tool calls if needed
+      if (needsRecursiveCall && assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
+        // Add tool calls to the assistant message
+        (assistantResponse.tool_calls as any[]) = Object.values(accumulatedToolCalls).map(toolCall => ({
+          id: toolCall.id,
+          type: toolCall.type,
+          function: {
+            name: toolCall.function.name,
+            arguments: toolCall.function.arguments
+          }
+        }));
+
+        // Add the assistant message to the conversation history
+        openAiMessages.push(assistantResponse);
+
+        // Process each tool call
+        let index = 0;
+        for (const toolCall of Object.values(accumulatedToolCalls)) {
+          try {
+            const formattedToolCall = {
+              index,
               function: {
                 name: toolCall.function.name,
                 arguments: toolCall.function.arguments
               }
-            }));
+            };
 
-            // Add the assistant message to the conversation history
-            openAiMessages.push(assistantResponse);
+            const toolResponse = await handleOpenAiResponse(formattedToolCall, this.llmToolsService);
 
-            // Process each tool call
-            let index = 0;
-            for (const toolCall of Object.values(accumulatedToolCalls)) {
-              try {
-                const formattedToolCall = {
-                  index,
-                  function: {
-                    name: toolCall.function.name,
-                    arguments: toolCall.function.arguments
-                  }
-                };
-
-                const toolResponse = await handleOpenAiResponse(formattedToolCall, this.llmToolsService);
-
-                if (toolResponse) {
-                  // Add the tool response to messages - with correct structure
-                  openAiMessages.push({
-                    role: 'tool',
-                    tool_call_id: toolCall.id,
-                    //@ts-ignore
-                    name: toolResponse.tool_response.name,
-                    content: JSON.stringify(toolResponse.tool_response.content)
-                  });
-                }
-              } catch (error) {
-                console.error(`Error processing tool call: ${error}`);
-              }
-              index++;
+            if (toolResponse) {
+              // Add the tool response to messages - with correct structure
+              openAiMessages.push({
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                //@ts-ignore
+                name: toolResponse.tool_response.name,
+                content: JSON.stringify(toolResponse.tool_response.content)
+              });
             }
+          } catch (error) {
+            console.error(`Error processing tool call: ${error}`);
           }
-
-          // Break out of the loop, we'll make a recursive call
-          break;
+          index++;
         }
-      }
 
-      // Make a recursive call if we processed any tool calls
-      if (needsRecursiveCall) {
+        // Make a recursive call to continue the conversation
         return this.callOpenAiUsingModelAndSubject(
           openAiMessages,
           handleOnText,
@@ -299,14 +366,14 @@ export class ChatService {
         );
       }
 
-      // No tool calls, complete the response
+      // No tool calls or all tool calls processed, complete the response
       const endSignal = JSON.stringify({ end: 'true' });
       await handleResponseCompleted(completeText, model);
       this.abortControllers.delete(memberId);
       handleOnText(endSignal);
       inferenceSSESubject.sendComplete();
     } catch (error) {
-      console.error(`OpenAI error: `, error);
+      console.error(`LLM error: `, error);
       this.abortControllers.delete(memberId);
       inferenceSSESubject.sendError(error);
     }
