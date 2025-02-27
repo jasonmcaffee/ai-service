@@ -1,24 +1,15 @@
-import config from '../config/config';
 import {Injectable} from "@nestjs/common";
-import {
-    GetPageContentsResponse,
-    Model,
-    SearchResult,
-    SearchResultResponse,
-} from '../models/api/conversationApiModels';
-import {Browser, BrowserContext, Page} from 'playwright';
-const { chromium } = require("playwright-extra");
-const stealth = require("puppeteer-extra-plugin-stealth")();
-import { Observable, Subject, lastValueFrom } from 'rxjs';
+import { GetPageContentsResponse, Model, SearchResultResponse, } from '../models/api/conversationApiModels';
+import { Observable, Subject } from 'rxjs';
 import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import OpenAI from 'openai';
-import { markdownWebPagePrompt, markdownWithoutVowelsWebPagePrompt } from '../utils/prompts';
+import { markdownWebPagePrompt } from '../utils/prompts';
 import { ModelsService } from './models.service';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import {DuckduckgoSearchService} from "./duckduckgoSearch.service";
 import { getWordAndTokenCount } from '../utils/utils';
 import { PageScraperService } from './pageScraper.service';
-const TurndownService = require('turndown');
+import { ClientAbortedError } from '../models/Exceptions';
 
 @Injectable()
 export class WebsearchService {
@@ -28,43 +19,66 @@ export class WebsearchService {
                 private readonly pageScraperService: PageScraperService) {
     }
 
+    /**
+     * Search the web using duckduckgo.
+     * Stream results back via rxjs subject so that it's streamed to the client via SSE
+     * @param query - search query
+     * @param maxPages - the number of pages to fetch from duckduckgo
+     * @param startPage - starting page in duckduckgo's search results.
+     */
     async streamSearch(query: string, maxPages=3, startPage=1, ): Promise<Observable<string>> {
         const searchResultsSubject = new Subject<string>();
         this.duckduckgoSearchService.searchDuckDuckGoStream(query, searchResultsSubject, maxPages, startPage);
         return searchResultsSubject.asObservable();
     }
 
+    /**
+     * Search without streaming results back.
+     * @param query - search query
+     * @param maxPages - the number of pages to fetch from duckduckgo
+     * @param startPage - starting page in duckduckgo's search results.
+     */
     async search(query: string, maxPages=3, startPage=1, ): Promise<SearchResultResponse> {
         return this.duckduckgoSearchService.searchDuckDuckGoStream(query, undefined, maxPages, startPage);
     }
 
+    /**
+     * Have AI summarize a url.
+     * @param memberId
+     * @param url
+     * @param searchQueryContext - useful for telling AI what the initial search was, so that it can summarize with that query in mind.
+     */
     async streamAiSummaryOfUrl(memberId: string, url: string, searchQueryContext?: string){
         console.log(`streamAiSummaryOfUrl called for url:${url}`);
         const streamAiSummaryOfUrlSubject = new InferenceSSESubject();
-        //allow a mechanism to cancel the request.
-        const controller = new AbortController();
-        this.abortControllers.set(memberId, {controller});
-        const model = await this.modelsService.getModelByIdOrGetDefault(memberId);
-        if (controller.signal.aborted) {
-            console.log(`1 Request aborted before processing for memberId: ${memberId}`);
-            await streamAiSummaryOfUrlSubject.sendCompleteOnNextTick();
-            return streamAiSummaryOfUrlSubject.getSubject();
+
+        try{
+            //allow a mechanism to cancel the request.
+            //check the status of the signal throughout the request and stop processing by throwing a ClientAbortedError, if applicable.
+            const controller = new AbortController();
+            this.abortControllers.set(memberId, {controller});
+
+            //get the model
+            const model = await this.modelsService.getModelByIdOrGetDefault(memberId);
+            ensureSignalIsNotAborted(controller);
+
+            const r = await this.getMarkdownAndTokenCountsForUrlForWebSummaryUse(url);
+            const {markdown} = r;
+
+            const prompt = markdownWebPagePrompt(markdown, searchQueryContext);
+            ensureSignalIsNotAborted(controller);
+
+            this.callOpenAiUsingModelAndSubject([{role: 'system', content: prompt}],
+              model, memberId, controller, streamAiSummaryOfUrlSubject);
+        }catch(e){
+            //since this is initiated by the user, swallow the exception.
+            if(e instanceof ClientAbortedError){
+                console.log(`1 Request aborted before processing for memberId: ${memberId}`);
+                streamAiSummaryOfUrlSubject.sendCompleteOnNextTick();
+            }else{
+                streamAiSummaryOfUrlSubject.sendError(e);
+            }
         }
-        const r = await this.getMarkdownAndTokenCountsForUrlForWebSummaryUse(url);
-        const {markdown} = r;
-
-        const prompt = markdownWebPagePrompt(markdown, searchQueryContext);
-        // const prompt = markdownWithoutVowelsWebPagePrompt(markdownWithoutVowels, searchQueryContext);
-
-        if (controller.signal.aborted) {
-            console.log(`2 Request aborted before processing for memberId: ${memberId}`);
-            await streamAiSummaryOfUrlSubject.sendCompleteOnNextTick();
-            return streamAiSummaryOfUrlSubject.getSubject();
-        }
-        // console.log(`prompt: `, prompt);
-        this.callOpenAiUsingModelAndSubject([{role: 'system', content: prompt}],
-          model, memberId, controller, streamAiSummaryOfUrlSubject);
-
         return streamAiSummaryOfUrlSubject.getSubject();
     }
 
@@ -115,5 +129,11 @@ export class WebsearchService {
             shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true});
         const {wordCount, tokenCount} = getWordAndTokenCount(markdown);
         return { markdown, wordCount, tokenCount };
+    }
+}
+
+function ensureSignalIsNotAborted(controller: AbortController){
+    if(controller.signal.aborted){
+        throw new ClientAbortedError('User initiated stop request so discontinuing processing');
     }
 }
