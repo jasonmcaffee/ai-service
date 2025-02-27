@@ -144,14 +144,15 @@ export class ChatService {
     let streamedText = '';
 
     // Track accumulated tool calls
-    const accumulatedToolCalls: Record<string, {
-      id: string;
-      type: string;
-      function: {
-        name: string;
-        arguments: string;
-      }
-    }> = {};
+    // const accumulatedToolCalls: Record<string, {
+    //   id: string;
+    //   type: string;
+    //   function: {
+    //     name: string;
+    //     arguments: string;
+    //   }
+    // }> = {};
+    const accumulatedToolCalls: Record<string, ToolCall> = {};
 
     try {
       const stream = await openai.chat.completions.create(
@@ -178,11 +179,7 @@ export class ChatService {
 
           // Initialize assistant message if needed
           if (!assistantResponse) {
-            assistantResponse = {
-              role: 'assistant',
-              content: null,
-              tool_calls: []
-            };
+            assistantResponse = { role: 'assistant', content: null, tool_calls: [] };
           }
 
           for (const toolCall of choice.delta.tool_calls) {
@@ -193,8 +190,9 @@ export class ChatService {
             // Initialize if this is the first chunk for this tool call
             if (!accumulatedToolCalls[index]) {
               accumulatedToolCalls[index] = {
+                index: toolCall.index,
                 id: toolCall.id || '',
-                type: toolCall.type || '',
+                type: toolCall.type || undefined,
                 function: {
                   name: '',
                   arguments: ''
@@ -202,24 +200,25 @@ export class ChatService {
               };
             }
 
+            const accumulatedToolCall = accumulatedToolCalls[index]!;
             // Update the function info with new chunks
             if (toolCall.function) {
               if (toolCall.function.name) {
-                accumulatedToolCalls[index].function.name = toolCall.function.name;
+                accumulatedToolCall.function!.name = toolCall.function.name;
               }
 
               if (toolCall.function.arguments) {
-                accumulatedToolCalls[index].function.arguments += toolCall.function.arguments;
+                accumulatedToolCall.function!.arguments += toolCall.function.arguments;
               }
             }
 
             // Update ID and type if provided
             if (toolCall.id) {
-              accumulatedToolCalls[index].id = toolCall.id;
+              accumulatedToolCall.id = toolCall.id;
             }
 
             if (toolCall.type) {
-              accumulatedToolCalls[index].type = toolCall.type;
+              accumulatedToolCall.type = toolCall.type;
             }
           }
         }
@@ -267,6 +266,7 @@ export class ChatService {
                 // Add to accumulated tool calls
                 const index = Object.keys(accumulatedToolCalls).length.toString();
                 accumulatedToolCalls[index] = {
+                  index: parseInt(index),
                   id: toolId,
                   type: 'function',
                   function: {
@@ -315,8 +315,8 @@ export class ChatService {
           id: toolCall.id,
           type: toolCall.type,
           function: {
-            name: toolCall.function.name,
-            arguments: toolCall.function.arguments
+            name: toolCall.function!.name,
+            arguments: toolCall.function!.arguments
           }
         }));
 
@@ -330,8 +330,8 @@ export class ChatService {
             const formattedToolCall = {
               index,
               function: {
-                name: toolCall.function.name,
-                arguments: toolCall.function.arguments
+                name: toolCall.function!.name,
+                arguments: toolCall.function!.arguments
               }
             };
 
@@ -341,7 +341,7 @@ export class ChatService {
               // Add the tool response to messages - with correct structure
               openAiMessages.push({
                 role: 'tool',
-                tool_call_id: toolCall.id,
+                tool_call_id: toolCall.id!,
                 //@ts-ignore
                 name: toolResponse.tool_response.name,
                 content: JSON.stringify(toolResponse.tool_response.content)

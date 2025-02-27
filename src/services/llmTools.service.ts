@@ -19,23 +19,16 @@ export class LlmToolsService{
                         type: "string",
                         description: "The search query string.",
                     },
-                    // maxPages: {
-                    //     type: "integer",
-                    //     description: "The maximum number of pages to fetch.",
-                    //     default: 1,
-                    // },
-                    // startPage: {
-                    //     type: "integer",
-                    //     description: "The page number to start the search from.",
-                    //     default: 1,
-                    // },
                 },
                 required: ["query"],
             },
         };
     }
-    async searchWeb(query: string, maxPages=1, startPage=1): Promise<SearchResultResponse>{
+    async searchWeb(query: string, ): Promise<SearchResultResponse>{
+        const maxPages=1, startPage=1;
         const searchResultResponse = await this.duckduckgoSearchService.searchDuckDuckGo(query, maxPages, startPage);
+
+        //set a maximum token length.
         return searchResultResponse;
     }
 
