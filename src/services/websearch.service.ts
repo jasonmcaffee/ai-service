@@ -39,7 +39,7 @@ export class WebsearchService {
      * @param startPage - starting page in duckduckgo's search results.
      */
     async search(query: string, maxPages=3, startPage=1, ): Promise<SearchResultResponse> {
-        return this.duckduckgoSearchService.searchDuckDuckGoStream(query, undefined, maxPages, startPage);
+        return this.duckduckgoSearchService.searchDuckDuckGo(query, maxPages, startPage);
     }
 
     /**
@@ -62,7 +62,7 @@ export class WebsearchService {
             const model = await this.modelsService.getModelByIdOrGetDefault(memberId);
             ensureSignalIsNotAborted(controller);
 
-            const r = await this.getMarkdownAndTokenCountsForUrlForWebSummaryUse(url);
+            const r = await this.getMarkdownAndTokenCountsForUrlForAiWebSummaryUse(url);
             const {markdown} = r;
 
             const prompt = markdownWebPagePrompt(markdown, searchQueryContext);
@@ -121,15 +121,17 @@ export class WebsearchService {
     }
 
     /**
+     * gets markdown content for given url, stripping superflous content (nav, images, etc) not needed by AI.
      * History of Rome wikipedia page is 55k tokens, and takes qwen2.5 8B 1million 1:40 seconds to summarize.
      * @param url
      */
-    async getMarkdownAndTokenCountsForUrlForWebSummaryUse(url: string): Promise<GetPageContentsResponse>{
+    async getMarkdownAndTokenCountsForUrlForAiWebSummaryUse(url: string): Promise<GetPageContentsResponse>{
         const markdown = await this.pageScraperService.getContentsOfWebpageAsMarkdown({url, removeScriptsAndStyles: true,
             shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true});
         const {wordCount, tokenCount} = getWordAndTokenCount(markdown);
         return { markdown, wordCount, tokenCount };
     }
+
 }
 
 function ensureSignalIsNotAborted(controller: AbortController){

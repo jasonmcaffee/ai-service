@@ -38,4 +38,17 @@ export class LlmToolsService{
         const searchResultResponse = await this.duckduckgoSearchService.searchDuckDuckGo(query, maxPages, startPage);
         return searchResultResponse;
     }
+
+    async searchWebStub(query: string): Promise<SearchResultResponse>{
+        return {
+            query,
+            searchResults: [
+                {
+                    url: 'http://jasonnews.com',
+                    title: 'Latest news',
+                    blurb: 'A cat ran over a hamster on his way to visit his grandmother.'
+                }
+            ]
+        }
+    }
 }

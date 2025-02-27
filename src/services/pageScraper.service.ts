@@ -7,6 +7,13 @@ export class PageScraperService{
   private browser: Browser;
   constructor() {}
 
+  async getContentsOfWebpagesAsMarkdown({urls, removeScriptsAndStyles, removeImages, shortenUrls, removeNavElements, cleanWikipedia}:
+                                          {urls: string[], removeScriptsAndStyles: boolean, removeImages: boolean, shortenUrls: boolean, removeNavElements: boolean, cleanWikipedia: boolean}): Promise<Promise<string>[]>{
+    //run in parallel
+    const markdownPromises = urls.map(url => this.getContentsOfWebpageAsMarkdown({url, removeImages, removeNavElements, cleanWikipedia, shortenUrls, removeScriptsAndStyles}))
+    return markdownPromises;
+  }
+
   /**
    * Uses a headless browser to fetch the html for a given url, optionally removes excess (styles, scripts, images, etc),
    * then converts the html to markdown.
@@ -17,7 +24,8 @@ export class PageScraperService{
    * @param removeNavElements
    * @param cleanWikipedia
    */
-  async getContentsOfWebpageAsMarkdown({url, removeScriptsAndStyles, removeImages, shortenUrls, removeNavElements, cleanWikipedia}: {url: string, removeScriptsAndStyles: boolean, removeImages: boolean, shortenUrls: boolean, removeNavElements: boolean, cleanWikipedia: boolean} ): Promise<string>{
+  async getContentsOfWebpageAsMarkdown({url, removeScriptsAndStyles, removeImages, shortenUrls, removeNavElements, cleanWikipedia}:
+                                         {url: string, removeScriptsAndStyles: boolean, removeImages: boolean, shortenUrls: boolean, removeNavElements: boolean, cleanWikipedia: boolean} ): Promise<string>{
     chromium.use(stealth);
     console.log(`browser isConnected: ${this.browser?.isConnected()}`);
     this.browser = this.browser || await chromium.launch({

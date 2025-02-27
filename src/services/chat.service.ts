@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 import { ConversationService } from './conversation.service';
 import {Message, MessageContext, Model} from '../models/api/conversationApiModels';
 // import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import { ChatCompletionChunk, ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 
 import config from '../config/config';
 import {
@@ -16,6 +16,8 @@ import {chatPageSystemPrompt} from "../utils/prompts";
 import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
 import {LlmToolsService} from "./llmTools.service";
+import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
+
 
 @Injectable()
 export class ChatService {
@@ -96,8 +98,6 @@ export class ChatService {
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages]
     }
 
-    console.log(`sending messages: `, openAiMessages);
-
     const handleOnText = (text: string) => {};
 
     const handleResponseCompleted = async (completeResponse: string, model: Model) => {
@@ -105,8 +105,11 @@ export class ChatService {
       const formattedResponse = formatDeepSeekResponse(completeResponse);
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
+    const tools = shouldSearchWeb ? getWebSearchTools() : [];
 
-    this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject, abortController, shouldSearchWeb);
+    console.log(`sending messages: `, openAiMessages);
+    console.log(`sending tools: `, tools);
+    this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject, abortController, tools);
   }
 
   async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,
@@ -119,52 +122,237 @@ export class ChatService {
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
     }
-    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject, abortController, shouldSearchWeb);
+    const tools = shouldSearchWeb ? getWebSearchTools() : [];
+    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject, abortController, tools);
 
   }
 
-  callOpenAiUsingModelAndSubject(openAiMessages: ChatCompletionMessageParam[], handleOnText: (text: string) => void,
-      handleResponseCompleted: (text: string, model: Model) => void, model: Model, memberId: string,
-      inferenceSSESubject: InferenceSSESubject, abortController: AbortController, shouldSearchWeb: boolean) {
+  async callOpenAiUsingModelAndSubject(
+    openAiMessages: ChatCompletionMessageParam[],
+    handleOnText: (text: string) => void,
+    handleResponseCompleted: (text: string, model: Model) => void,
+    model: Model,
+    memberId: string,
+    inferenceSSESubject: InferenceSSESubject,
+    abortController: AbortController,
+    tools?: ChatCompletionTool[]
+  ) {
     const apiKey = model.apiKey;
     const baseURL = model.url;
-    const openai = new OpenAI({ apiKey, baseURL,});
-
+    const openai = new OpenAI({ apiKey, baseURL });
+    const signal = abortController.signal;
     let completeText = '';
 
-    //allow a mechanism to cancel the request.
-    // const controller = new AbortController();
-    const signal = abortController.signal;
-    // this.abortControllers.set(memberId, {controller});
+    // Track accumulated tool calls
+    const accumulatedToolCalls: Record<string, {
+      id: string;
+      type: string;
+      function: {
+        name: string;
+        arguments: string;
+      }
+    }> = {};
 
-    openai.chat.completions
-      .create({
-        model: model.modelName, //'gpt-4',
-        messages: [{role: 'system', content: chatPageSystemPrompt}, ...openAiMessages],
-        stream: true,
-      }, {signal})
-      .then(async (stream) => {
-        for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content || '';
-          if (content) {
-            completeText += content;
-            await handleOnText(content);
-            inferenceSSESubject.sendText(content);
+    try {
+      const stream = await openai.chat.completions.create(
+        {
+          model: model.modelName,
+          messages: [{ role: 'system', content: chatPageSystemPrompt }, ...openAiMessages],
+          tools,
+          stream: true,
+        },
+        { signal }
+      );
+
+      // Track if we need to make a recursive call
+      let needsRecursiveCall = false;
+      // Store assistant's response for the recursive call
+      let assistantResponse: ChatCompletionMessageParam | null = null;
+
+      for await (const chunk of stream) {
+        const choice = chunk.choices[0];
+
+        // Handle standard streaming content
+        if (choice?.delta?.content) {
+          const content = choice.delta.content;
+          completeText += content;
+          await handleOnText(content);
+          inferenceSSESubject.sendText(content);
+        }
+
+        // Handle tool calls - accumulate them until complete
+        if (choice?.delta?.tool_calls) {
+          needsRecursiveCall = true;
+
+          // Initialize assistant message if needed
+          if (!assistantResponse) {
+            assistantResponse = {
+              role: 'assistant',
+              content: null,
+              tool_calls: []
+            };
+          }
+
+          for (const toolCall of choice.delta.tool_calls) {
+            if (!toolCall.index && toolCall.index !== 0) continue;
+
+            const index = toolCall.index.toString();
+
+            // Initialize if this is the first chunk for this tool call
+            if (!accumulatedToolCalls[index]) {
+              accumulatedToolCalls[index] = {
+                id: toolCall.id || '',
+                type: toolCall.type || '',
+                function: {
+                  name: '',
+                  arguments: ''
+                }
+              };
+            }
+
+            // Update the function info with new chunks
+            if (toolCall.function) {
+              if (toolCall.function.name) {
+                accumulatedToolCalls[index].function.name = toolCall.function.name;
+              }
+
+              if (toolCall.function.arguments) {
+                accumulatedToolCalls[index].function.arguments += toolCall.function.arguments;
+              }
+            }
+
+            // Update ID and type if provided
+            if (toolCall.id) {
+              accumulatedToolCalls[index].id = toolCall.id;
+            }
+
+            if (toolCall.type) {
+              accumulatedToolCalls[index].type = toolCall.type;
+            }
           }
         }
-        const endSignal = JSON.stringify({ end: 'true' });
-        await handleResponseCompleted(completeText, model);
-        this.abortControllers.delete(memberId);
-        handleOnText(endSignal);
-        inferenceSSESubject.sendComplete();
-      })
-      .catch((error) => {
-        console.log(`openai error: `, error);
-        this.abortControllers.delete(memberId);
-        inferenceSSESubject.sendError(error);
-      });
+
+        // Check if we've reached the end of the stream
+        if (choice?.finish_reason === 'tool_calls') {
+          // If we have accumulated tool calls, format them for the assistant message
+          if (assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
+            // Add tool calls to the assistant message
+            (assistantResponse.tool_calls as any[]) = Object.values(accumulatedToolCalls).map(toolCall => ({
+              id: toolCall.id,
+              type: toolCall.type,
+              function: {
+                name: toolCall.function.name,
+                arguments: toolCall.function.arguments
+              }
+            }));
+
+            // Add the assistant message to the conversation history
+            openAiMessages.push(assistantResponse);
+
+            // Process each tool call
+            let index = 0;
+            for (const toolCall of Object.values(accumulatedToolCalls)) {
+              try {
+                const formattedToolCall = {
+                  index,
+                  function: {
+                    name: toolCall.function.name,
+                    arguments: toolCall.function.arguments
+                  }
+                };
+
+                const toolResponse = await handleOpenAiResponse(formattedToolCall, this.llmToolsService);
+
+                if (toolResponse) {
+                  // Add the tool response to messages - with correct structure
+                  openAiMessages.push({
+                    role: 'tool',
+                    tool_call_id: toolCall.id,
+                    //@ts-ignore
+                    name: toolResponse.tool_response.name,
+                    content: JSON.stringify(toolResponse.tool_response.content)
+                  });
+                }
+              } catch (error) {
+                console.error(`Error processing tool call: ${error}`);
+              }
+              index++;
+            }
+          }
+
+          // Break out of the loop, we'll make a recursive call
+          break;
+        }
+      }
+
+      // Make a recursive call if we processed any tool calls
+      if (needsRecursiveCall) {
+        return this.callOpenAiUsingModelAndSubject(
+          openAiMessages,
+          handleOnText,
+          handleResponseCompleted,
+          model,
+          memberId,
+          inferenceSSESubject,
+          abortController,
+          tools
+        );
+      }
+
+      // No tool calls, complete the response
+      const endSignal = JSON.stringify({ end: 'true' });
+      await handleResponseCompleted(completeText, model);
+      this.abortControllers.delete(memberId);
+      handleOnText(endSignal);
+      inferenceSSESubject.sendComplete();
+    } catch (error) {
+      console.error(`OpenAI error: `, error);
+      this.abortControllers.delete(memberId);
+      inferenceSSESubject.sendError(error);
+    }
   }
+
+
 }
+
+function getWebSearchTools(): ChatCompletionTool[]{
+  return [{
+    type: "function",
+    function: LlmToolsService.getSearchWebOpenAIMetadata(),
+  }]
+}
+
+async function handleOpenAiResponse(toolCall: ToolCall, llmToolsService: LlmToolsService): Promise<{ tool_response: { name: string; content: any } } | null> {
+  try {
+    const toolName = toolCall.function?.name;
+    const toolArgs = JSON.parse(toolCall.function?.arguments || '{}');
+
+    console.log(`Handling tool call: ${toolName} with args:`, toolArgs);
+
+    if (toolName === 'searchWeb') {
+      if(!toolArgs.query){
+        throw new Error('SearchWeb was called without supplying a query argument');
+      }
+      const result = await llmToolsService.searchWebStub(toolArgs.query);
+      return {
+        tool_response: {
+          name: "searchWeb",
+          content: result,
+        }
+      }
+    }
+    // Add more tool functions here if needed
+    else {
+      console.warn(`No matching tool function found for: ${toolName}`);
+      return null;
+    }
+
+  } catch (error) {
+    console.error('Error handling tool call:', error);
+  }
+  return null;
+}
+
 
 //from chatgpt
 //data: 429 You exceeded your current quota
