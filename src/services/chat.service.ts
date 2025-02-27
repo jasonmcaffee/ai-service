@@ -391,29 +391,24 @@ function getWebSearchTools(): ChatCompletionTool[]{
 
 async function handleOpenAiResponse(toolCall: ToolCall, llmToolsService: LlmToolsService): Promise<{ tool_response: { name: string; content: any } } | null> {
   try {
-    const toolName = toolCall.function?.name;
+    const toolName = toolCall.function?.name!;
     const toolArgs = JSON.parse(toolCall.function?.arguments || '{}');
 
     console.log(`Handling tool call: ${toolName} with args:`, toolArgs);
 
-    if (toolName === 'searchWeb') {
-      if(!toolArgs.query){
-        throw new Error('SearchWeb was called without supplying a query argument');
-      }
-      const result = await llmToolsService.searchWebStub(toolArgs.query);
+    if (typeof llmToolsService[toolName] == 'function') {
+      const result = await llmToolsService[toolName](toolArgs);
       return {
         tool_response: {
-          name: "searchWeb",
+          name: toolName,
           content: result,
         }
       }
     }
-    // Add more tool functions here if needed
     else {
       console.warn(`No matching tool function found for: ${toolName}`);
       return null;
     }
-
   } catch (error) {
     console.error('Error handling tool call:', error);
   }

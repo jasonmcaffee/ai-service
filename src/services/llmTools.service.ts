@@ -24,7 +24,10 @@ export class LlmToolsService{
             },
         };
     }
-    async searchWeb(query: string, ): Promise<SearchResultResponse>{
+    async searchWeb({query}: {query?: string} = {query: undefined}): Promise<SearchResultResponse>{
+        if(!query){
+            throw new Error('searchWeb called without a query');
+        }
         const maxPages=1, startPage=1;
         const searchResultResponse = await this.duckduckgoSearchService.searchDuckDuckGo(query, maxPages, startPage);
 
@@ -33,6 +36,9 @@ export class LlmToolsService{
     }
 
     async searchWebStub(query: string): Promise<SearchResultResponse>{
+        if(!query){
+            throw new Error('searchWeb called without a query');
+        }
         return {
             query,
             searchResults: [
