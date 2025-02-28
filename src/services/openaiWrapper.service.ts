@@ -11,21 +11,34 @@ import { chatPageSystemPrompt } from '../utils/prompts';
 import { LlmToolsService } from './llmTools.service';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 
+interface CallOpenAiParams {
+  openAiMessages: ChatCompletionMessageParam[];
+  handleOnText: (text: string) => void;
+  handleResponseCompleted: (text: string, model: Model) => void;
+  handleError: (error: any) => void;
+  model: Model;
+  memberId: string;
+  inferenceSSESubject: InferenceSSESubject;
+  abortController: AbortController;
+  toolService: any; // service with tool functions.
+  tools?: ChatCompletionTool[];
+}
+
 @Injectable()
 export class OpenaiWrapperService{
 
-  async callOpenAiUsingModelAndSubject(
-    openAiMessages: ChatCompletionMessageParam[],
-    handleOnText: (text: string) => void,
-    handleResponseCompleted: (text: string, model: Model) => void,
-    handleError: (error: any) => void,
-    model: Model,
-    memberId: string,
-    inferenceSSESubject: InferenceSSESubject,
-    abortController: AbortController,
-    toolService: any, //service with tool functions.
-    tools?: ChatCompletionTool[]
-  ) {
+  async callOpenAiUsingModelAndSubject({
+       openAiMessages,
+       handleOnText,
+       handleResponseCompleted,
+       handleError,
+       model,
+       memberId,
+       inferenceSSESubject,
+       abortController,
+       toolService,
+       tools,
+     }: CallOpenAiParams) {
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL });
@@ -171,7 +184,7 @@ export class OpenaiWrapperService{
               }
             };
 
-            const toolResponse = await this.handleOpenAiResponse(formattedToolCall, toolService, inferenceSSESubject);
+            const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(formattedToolCall, toolService, inferenceSSESubject);
 
             if (toolResponse) {
               // Add the tool response to messages - with correct structure
@@ -190,8 +203,18 @@ export class OpenaiWrapperService{
         }
 
         // Make a recursive call to continue the conversation
-        return this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError,
-          model, memberId, inferenceSSESubject, abortController, toolService, tools);
+        return this.callOpenAiUsingModelAndSubject({
+          openAiMessages,
+          handleOnText,
+          handleResponseCompleted,
+          handleError,
+          model,
+          memberId,
+          inferenceSSESubject,
+          abortController,
+          toolService,
+          tools,
+        });
       }
 
       // No tool calls or all tool calls processed, complete the response
@@ -295,41 +318,36 @@ export class OpenaiWrapperService{
       newToolCalls
     };
   }
-
-  async handleOpenAiResponse(toolCall: ToolCall, llmToolsService: LlmToolsService, subject: InferenceSSESubject): Promise<{ tool_response: { name: string; content: any } } | null> {
-    try {
-      const toolName = toolCall.function?.name!;
-      const toolArgs = JSON.parse(toolCall.function?.arguments || '{}');
-
-      console.log(`Handling tool call: ${toolName} with args:`, toolArgs);
-
-      if (typeof llmToolsService[toolName] == 'function') {
-        const result = await llmToolsService[toolName](toolArgs, subject);
-        return {
-          tool_response: {
-            name: toolName,
-            content: result,
-          }
-        }
-      }
-      else {
-        console.warn(`No matching tool function found for: ${toolName}`);
-        subject.sendError(new Error(`No matching tool function found for: ${toolName}`));
-        return null;
-      }
-    } catch (error) {
-      console.error('Error handling tool call:', error);
-      subject.sendError(error);
-      throw error;
-    }
-    return null;
-  }
-
 }
 
-function getWebSearchTools(): ChatCompletionTool[]{
-  return [{
-    type: "function",
-    function: LlmToolsService.getSearchWebOpenAIMetadata(),
-  }]
+async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ToolCall, llmToolsService: LlmToolsService, subject: InferenceSSESubject): Promise<{ tool_response: { name: string; content: any } } | null> {
+  try {
+    const { toolName, toolArgs } = parseToolNameAndArgumentsFromToolCall(toolCall);
+    console.log(`Handling tool call: ${toolName} with args:`, toolArgs);
+
+    if (typeof llmToolsService[toolName] == 'function') {
+      const result = await llmToolsService[toolName](toolArgs, subject);
+      return {
+        tool_response: {
+          name: toolName,
+          content: result,
+        }
+      }
+    } else {
+      throw new Error(`No matching tool function found for: ${toolName}`);
+    }
+  } catch (error) {
+    console.error('Error handling tool call:', error);
+    subject.sendError(error);
+    throw error;
+  }
+  return null;
+}
+
+function parseToolNameAndArgumentsFromToolCall(toolCall: ToolCall){
+  const toolName = toolCall.function?.name!;
+  const toolArgs = JSON.parse(toolCall.function?.arguments || '{}');
+  return {
+    toolName, toolArgs,
+  };
 }

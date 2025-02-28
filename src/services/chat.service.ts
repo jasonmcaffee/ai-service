@@ -120,7 +120,19 @@ export class ChatService {
     const handleError = (error: any) =>{
       this.abortControllers.delete(memberId);
     };
-    this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
+    this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+      openAiMessages,
+      handleOnText,
+      handleResponseCompleted,
+      handleError,
+      model,
+      memberId,
+      inferenceSSESubject,
+      abortController,
+      toolService: this.llmToolsService,
+      tools,
+    });
+    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
   }
 
   async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,
@@ -140,7 +152,19 @@ export class ChatService {
     const handleOnComplete = () => {
       this.abortControllers.delete(memberId);
     }
-    this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, handleOnComplete, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
+    this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+      openAiMessages,
+      handleOnText: () => {},
+      handleResponseCompleted: handleOnComplete,
+      handleError,
+      model,
+      memberId,
+      inferenceSSESubject,
+      abortController,
+      toolService: this.llmToolsService,
+      tools,
+    });
+    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, handleOnComplete, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
   }
 
 }
