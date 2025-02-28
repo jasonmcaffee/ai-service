@@ -287,7 +287,7 @@ export class ChatService {
               }
             };
 
-            const toolResponse = await handleOpenAiResponse(formattedToolCall, this.llmToolsService);
+            const toolResponse = await handleOpenAiResponse(formattedToolCall, this.llmToolsService, inferenceSSESubject);
 
             if (toolResponse) {
               // Add the tool response to messages - with correct structure
@@ -306,16 +306,8 @@ export class ChatService {
         }
 
         // Make a recursive call to continue the conversation
-        return this.callOpenAiUsingModelAndSubject(
-          openAiMessages,
-          handleOnText,
-          handleResponseCompleted,
-          model,
-          memberId,
-          inferenceSSESubject,
-          abortController,
-          tools
-        );
+        return this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted,
+          model, memberId, inferenceSSESubject, abortController, tools);
       }
 
       // No tool calls or all tool calls processed, complete the response
@@ -436,7 +428,7 @@ function getWebSearchTools(): ChatCompletionTool[]{
   }]
 }
 
-async function handleOpenAiResponse(toolCall: ToolCall, llmToolsService: LlmToolsService): Promise<{ tool_response: { name: string; content: any } } | null> {
+async function handleOpenAiResponse(toolCall: ToolCall, llmToolsService: LlmToolsService, subject: InferenceSSESubject): Promise<{ tool_response: { name: string; content: any } } | null> {
   try {
     const toolName = toolCall.function?.name!;
     const toolArgs = JSON.parse(toolCall.function?.arguments || '{}');
@@ -444,7 +436,7 @@ async function handleOpenAiResponse(toolCall: ToolCall, llmToolsService: LlmTool
     console.log(`Handling tool call: ${toolName} with args:`, toolArgs);
 
     if (typeof llmToolsService[toolName] == 'function') {
-      const result = await llmToolsService[toolName](toolArgs);
+      const result = await llmToolsService[toolName](toolArgs, subject);
       return {
         tool_response: {
           name: toolName,
@@ -454,10 +446,12 @@ async function handleOpenAiResponse(toolCall: ToolCall, llmToolsService: LlmTool
     }
     else {
       console.warn(`No matching tool function found for: ${toolName}`);
+      subject.sendError(new Error(`No matching tool function found for: ${toolName}`));
       return null;
     }
   } catch (error) {
     console.error('Error handling tool call:', error);
+    subject.sendError(error);
   }
   return null;
 }

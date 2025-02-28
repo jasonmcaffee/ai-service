@@ -22,7 +22,7 @@ export class ChatController {
       'text/event-stream': {
         schema: {
           type: 'string',
-          example: 'data: { "text": "response", "end": "true" }', //end is true when response is complete.
+          example: 'data: { "text": "response", "end": "true", status: {title: "", content: ""} }', //end is true when response is complete.
         },
       },
     },

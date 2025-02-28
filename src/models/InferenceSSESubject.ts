@@ -13,8 +13,8 @@ export default class InferenceSSESubject{
     this.subject.next(textSignal);
   }
 
-  sendStatus(statusText: string){
-    const statusSignal = JSON.stringify({ status: statusText });
+  sendStatus(title: string, content?: string){
+    const statusSignal = JSON.stringify({ status: {title, content} });
     this.subject.next(statusSignal);
   }
 

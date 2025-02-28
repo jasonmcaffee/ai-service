@@ -49,7 +49,7 @@
               "text/event-stream": {
                 "schema": {
                   "type": "string",
-                  "example": "data: { \"text\": \"response\", \"end\": \"true\" }"
+                  "example": "data: { \"text\": \"response\", \"end\": \"true\", status: {title: \"\", content: \"\"} }"
                 }
               }
             }
