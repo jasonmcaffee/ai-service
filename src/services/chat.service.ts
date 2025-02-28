@@ -114,7 +114,10 @@ export class ChatService {
 
     console.log(`sending messages: `, openAiMessages);
     console.log(`sending tools: `, tools);
-    this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, model, memberId, inferenceSSESubject, abortController, tools);
+    function handleError(error: any){
+
+    }
+    this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
   }
 
   async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,
@@ -128,7 +131,10 @@ export class ChatService {
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
     }
     const tools = shouldSearchWeb ? getWebSearchTools() : [];
-    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, model, memberId, inferenceSSESubject, abortController, tools);
+    function handleError(error: any){
+
+    }
+    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
 
   }
 
@@ -136,10 +142,12 @@ export class ChatService {
     openAiMessages: ChatCompletionMessageParam[],
     handleOnText: (text: string) => void,
     handleResponseCompleted: (text: string, model: Model) => void,
+    handleError: (error: any) => void,
     model: Model,
     memberId: string,
     inferenceSSESubject: InferenceSSESubject,
     abortController: AbortController,
+    toolService: any, //service with tool functions.
     tools?: ChatCompletionTool[]
   ) {
     const apiKey = model.apiKey;
@@ -221,7 +229,7 @@ export class ChatService {
           const content = choice.delta.content;
           streamedText += content;
 
-          const result = this.parseLlamaCppToolCalls(
+          const result = parseLlamaCppToolCalls(
             streamedText,
             completeText,
             accumulatedToolCalls,
@@ -287,7 +295,7 @@ export class ChatService {
               }
             };
 
-            const toolResponse = await handleOpenAiResponse(formattedToolCall, this.llmToolsService, inferenceSSESubject);
+            const toolResponse = await handleOpenAiResponse(formattedToolCall, toolService, inferenceSSESubject);
 
             if (toolResponse) {
               // Add the tool response to messages - with correct structure
@@ -306,8 +314,8 @@ export class ChatService {
         }
 
         // Make a recursive call to continue the conversation
-        return this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted,
-          model, memberId, inferenceSSESubject, abortController, tools);
+        return this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError,
+          model, memberId, inferenceSSESubject, abortController, toolService, tools);
       }
 
       // No tool calls or all tool calls processed, complete the response
@@ -323,102 +331,96 @@ export class ChatService {
     }
   }
 
-  /**
-   * Parse llama.cpp style tool calls from streamed content
-   * @param streamedText The accumulated streamed text
-   * @param completeText The existing complete text without tool calls
-   * @param accumulatedToolCalls The currently accumulated tool calls
-   * @param assistantResponse The current assistant response object
-   * @returns Object containing parsing results and updated values
-   */
-  private parseLlamaCppToolCalls(
-    streamedText: string,
-    completeText: string,
-    accumulatedToolCalls: Record<string, ToolCall>,
-    assistantResponse: ChatCompletionAssistantMessageParam | null
-  ): {
-    newTextToDisplay: string;
-    previousCompleteText: string;
-    foundToolCalls: boolean;
-    assistantResponse: ChatCompletionAssistantMessageParam | null;
-    newToolCalls: Record<string, ToolCall>;
-  } {
-    // Copy the completeText to return as previous value
-    const previousCompleteText = completeText;
-    let newTextToDisplay = '';
-    let foundToolCalls = false;
-    const newToolCalls: Record<string, ToolCall> = {};
+}
 
-    // Initialize assistant response if needed
-    let updatedAssistantResponse = assistantResponse;
+/**
+ * Parse llama.cpp style tool calls from streamed content
+ * @param streamedText The accumulated streamed text
+ * @param completeText The existing complete text without tool calls
+ * @param accumulatedToolCalls The currently accumulated tool calls
+ * @param assistantResponse The current assistant response object
+ * @returns Object containing parsing results and updated values
+ */
+function parseLlamaCppToolCalls(
+  streamedText: string,
+  completeText: string,
+  accumulatedToolCalls: Record<string, ToolCall>,
+  assistantResponse: ChatCompletionAssistantMessageParam | null
+): { newTextToDisplay: string; previousCompleteText: string; foundToolCalls: boolean; assistantResponse: ChatCompletionAssistantMessageParam | null; newToolCalls: Record<string, ToolCall>; } {
+  // Copy the completeText to return as previous value
+  const previousCompleteText = completeText;
+  let newTextToDisplay = '';
+  let foundToolCalls = false;
+  const newToolCalls: Record<string, ToolCall> = {};
 
-    // Check for llama.cpp tool calls in the content
-    const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs;
-    let match;
-    let lastIndex = 0;
+  // Initialize assistant response if needed
+  let updatedAssistantResponse = assistantResponse;
 
-    // Reset the regex to start from the beginning
-    toolCallRegex.lastIndex = 0;
+  // Check for llama.cpp tool calls in the content
+  const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs;
+  let match;
+  let lastIndex = 0;
 
-    // Find all tool calls in the accumulated streamed text
-    while ((match = toolCallRegex.exec(streamedText)) !== null) {
-      // Add text before the tool call to the display text
-      newTextToDisplay += streamedText.substring(lastIndex, match.index);
-      lastIndex = match.index + match[0].length;
+  // Reset the regex to start from the beginning
+  toolCallRegex.lastIndex = 0;
 
-      // Process the tool call
-      try {
-        const toolCallContent = match[1].trim();
-        foundToolCalls = true;
+  // Find all tool calls in the accumulated streamed text
+  while ((match = toolCallRegex.exec(streamedText)) !== null) {
+    // Add text before the tool call to the display text
+    newTextToDisplay += streamedText.substring(lastIndex, match.index);
+    lastIndex = match.index + match[0].length;
 
-        // Create unique ID for this tool call
-        const toolId = `tool-${Date.now()}-${Object.keys(accumulatedToolCalls).length}`;
+    // Process the tool call
+    try {
+      const toolCallContent = match[1].trim();
+      foundToolCalls = true;
 
-        // Initialize assistant message if needed
-        if (!updatedAssistantResponse) {
-          updatedAssistantResponse = {
-            role: 'assistant',
-            content: null,
-            tool_calls: []
-          };
-        }
+      // Create unique ID for this tool call
+      const toolId = `tool-${Date.now()}-${Object.keys(accumulatedToolCalls).length}`;
 
-        try {
-          const parsedContent = JSON.parse(toolCallContent);
-
-          // Add to new tool calls
-          const index = Object.keys(accumulatedToolCalls).length.toString();
-          newToolCalls[index] = {
-            index: parseInt(index),
-            id: toolId,
-            type: 'function',
-            function: {
-              name: parsedContent.name || '',
-              arguments: typeof parsedContent.arguments === 'string'
-                ? parsedContent.arguments
-                : JSON.stringify(parsedContent.arguments)
-            }
-          };
-        } catch (parseError) {
-          console.error(`Error parsing tool call JSON: ${parseError}`);
-        }
-      } catch (error) {
-        console.error(`Error processing tool call: ${error}`);
+      // Initialize assistant message if needed
+      if (!updatedAssistantResponse) {
+        updatedAssistantResponse = {
+          role: 'assistant',
+          content: null,
+          tool_calls: []
+        };
       }
+
+      try {
+        const parsedContent = JSON.parse(toolCallContent);
+
+        // Add to new tool calls
+        const index = Object.keys(accumulatedToolCalls).length.toString();
+        newToolCalls[index] = {
+          index: parseInt(index),
+          id: toolId,
+          type: 'function',
+          function: {
+            name: parsedContent.name || '',
+            arguments: typeof parsedContent.arguments === 'string'
+              ? parsedContent.arguments
+              : JSON.stringify(parsedContent.arguments)
+          }
+        };
+      } catch (parseError) {
+        console.error(`Error parsing tool call JSON: ${parseError}`);
+      }
+    } catch (error) {
+      console.error(`Error processing tool call: ${error}`);
     }
-
-    // Add any remaining text after the last tool call to the display text
-    newTextToDisplay += streamedText.substring(lastIndex);
-
-    return {
-      newTextToDisplay,
-      previousCompleteText,
-      foundToolCalls,
-      assistantResponse: updatedAssistantResponse,
-      newToolCalls
-    };
   }
 
+  // Add any remaining text after the last tool call to the display text
+  newTextToDisplay += streamedText.substring(lastIndex);
+
+  return {
+    newTextToDisplay,
+    previousCompleteText,
+    foundToolCalls,
+    assistantResponse: updatedAssistantResponse,
+    newToolCalls
+  };
 }
 
 function getWebSearchTools(): ChatCompletionTool[]{

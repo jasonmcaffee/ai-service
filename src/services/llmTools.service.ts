@@ -38,7 +38,7 @@ export class LlmToolsService{
         const searchResultResponse = await this.duckduckgoSearchService.searchDuckDuckGo(query, maxPages, startPage);
 
         const urls1 = searchResultResponse.searchResults.map(r => r.url);
-        const urls = urls1;//urls1.slice(0, 5);
+        const urls = urls1.slice(0, 1);
 
         subject.sendStatus(`retrieving contents of ${searchResultResponse.searchResults.length} pages.`);
         //fetch all pages in the results
