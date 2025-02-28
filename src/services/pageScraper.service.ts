@@ -9,12 +9,31 @@ export class PageScraperService{
 
   async getContentsOfWebpagesAsMarkdown({urls, removeScriptsAndStyles, removeImages, shortenUrls, removeNavElements, cleanWikipedia}:
                                           {urls: string[], removeScriptsAndStyles: boolean, removeImages: boolean, shortenUrls: boolean, removeNavElements: boolean, cleanWikipedia: boolean})
-    : Promise<{url: string, markdown: string}[]>{
-    //run in parallel
-    const markdownPromises = urls.map(url => this.getContentsOfWebpageAsMarkdown({url, removeImages, removeNavElements, cleanWikipedia, shortenUrls, removeScriptsAndStyles}));
-    const markdownResults = await Promise.all(markdownPromises);
+    : Promise<{successResults: {url: string, markdown: string}[], errorResults: {url: string, error: Error}[]}>{
 
-    return markdownResults;
+    // Create an array to store all the promises
+    const markdownPromises = urls.map(url =>
+      this.getContentsOfWebpageAsMarkdown({url, removeImages, removeNavElements, cleanWikipedia, shortenUrls, removeScriptsAndStyles})
+        .then(markdownResponse => ({success: true, url: markdownResponse.url, markdown: markdownResponse.markdown}))
+        .catch(error => ({success: false, url, error}))
+    );
+
+    // Wait for all promises to settle (both fulfilled and rejected)
+    const results = await Promise.all(markdownPromises);
+
+    // Separate successful and failed results
+    const successResults = results
+      .filter((result): result is {success: true, url: string, markdown: string} => result.success)
+      .map(({url, markdown}) => ({url, markdown}));
+
+    const errorResults = results
+      .filter((result): result is {success: false, url: string, error: Error} => !result.success)
+      .map(({url, error}) => ({url, error}));
+
+    return {
+      successResults,
+      errorResults
+    };
   }
 
   /**

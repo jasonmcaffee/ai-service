@@ -50,7 +50,7 @@ export class LlmToolsService{
         result.query = query;
         result.searchResults = [];
         let totalTokens = 0;
-        for (let markdownResponse of markdownContentsForAllPagesInTheSearchResults){
+        for (let markdownResponse of markdownContentsForAllPagesInTheSearchResults.successResults){
             const {url, markdown} = markdownResponse;
             const {tokenCount} = getWordAndTokenCount(markdown);
             if( (totalTokens + tokenCount) > maxTokens){
@@ -62,6 +62,10 @@ export class LlmToolsService{
             result.searchResults.push({...correspondingSearchResultForUrl, markdown});
         }
         subject.sendStatus(`sending ${result.searchResults.length} search results with a total of ${totalTokens} tokens to AI`);
+        for(let failureResult of markdownContentsForAllPagesInTheSearchResults.errorResults){
+            subject.sendStatus(`failed getting page contents of url: ${failureResult.url} due to error: ${failureResult.error.message}`);
+            console.warn(`failed getting page contents of url: ${failureResult.url}`, failureResult.error);
+        }
         //set a maximum token length.
         return result;
     }

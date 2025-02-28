@@ -452,6 +452,7 @@ async function handleOpenAiResponse(toolCall: ToolCall, llmToolsService: LlmTool
   } catch (error) {
     console.error('Error handling tool call:', error);
     subject.sendError(error);
+    throw error;
   }
   return null;
 }
