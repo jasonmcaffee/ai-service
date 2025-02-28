@@ -106,17 +106,19 @@ export class ChatService {
     const handleOnText = (text: string) => {};
 
     const handleResponseCompleted = async (completeResponse: string, model: Model) => {
+      this.abortControllers.delete(memberId);
       console.log('handle response completed got: ', completeResponse);
       const formattedResponse = formatDeepSeekResponse(completeResponse);
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
+
     const tools = shouldSearchWeb ? getWebSearchTools() : [];
 
     console.log(`sending messages: `, openAiMessages);
     console.log(`sending tools: `, tools);
-    function handleError(error: any){
-
-    }
+    const handleError = (error: any) =>{
+      this.abortControllers.delete(memberId);
+    };
     this.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
   }
 
@@ -131,10 +133,13 @@ export class ChatService {
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
     }
     const tools = shouldSearchWeb ? getWebSearchTools() : [];
-    function handleError(error: any){
-
+    const handleError = (error: any) =>{
+      this.abortControllers.delete(memberId);
+    };
+    const handleOnComplete = () => {
+      this.abortControllers.delete(memberId);
     }
-    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, ()=>{}, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
+    this.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, handleOnComplete, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
 
   }
 
@@ -321,12 +326,11 @@ export class ChatService {
       // No tool calls or all tool calls processed, complete the response
       const endSignal = JSON.stringify({ end: 'true' });
       await handleResponseCompleted(completeText, model);
-      this.abortControllers.delete(memberId);
       handleOnText(endSignal);
       inferenceSSESubject.sendComplete();
     } catch (error) {
       console.error(`LLM error: `, error);
-      this.abortControllers.delete(memberId);
+      handleError(error);
       inferenceSSESubject.sendError(error);
     }
   }
