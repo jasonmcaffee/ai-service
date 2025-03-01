@@ -37,6 +37,10 @@ describe('Agent Tests', () => {
                 console.log(`openAiMessages: `, JSON.stringify(openAiMessages, null, 2));
                 expect(openAiMessages.length > 0).toBe(true);
 
+                //call 1: initial prompt along with tools available to the ai.
+                //response 1: list of tools to call, along with parameters.  e.g. name: add, arguments: {a: 5, b: 5}
+                //call 2: result of calling tool. e.g. 10
+                //response 2: complete.
                 expect(totalOpenAiCallsMade).toBe(2);
 
                 const assistantMessages = getMessageByRole('assistant', openAiMessages);
@@ -45,6 +49,8 @@ describe('Agent Tests', () => {
                 const assistantToolCalls = assistantMessages[0].tool_calls as ToolCall[];
                 expect(assistantToolCalls.length).toBe(6);
                 const [createAiPlanToolCall, addFunctionStepForAdd, addFunctionStepForSubtract, addFunctionStepForDivide, addFunctionStepForMultiply, completePlan] = assistantToolCalls;
+
+
             }
 
         });

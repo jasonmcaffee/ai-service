@@ -29,9 +29,6 @@ export default class PlannerAgent {
       PlannerAgent.getAiAddFunctionStepToPlanMetadata(),
       PlannerAgent.getAiCompletePlanMetadata(),
 
-      //Tools available which should not be called.
-      // LlmToolsService.getSearchWebOpenAIMetadata(),
-
       CalculatorTools.getAddMetadata(),
       CalculatorTools.getMultiplyMetadata(),
       CalculatorTools.getSubtractMetadata(),
