@@ -4,13 +4,13 @@ import {
   ChatCompletionMessageParam, ChatCompletionMessageToolCall,
   ChatCompletionTool,
 } from 'openai/resources/chat/completions';
+
 import { Model } from '../models/api/conversationApiModels';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import OpenAI from 'openai';
 import { chatPageSystemPrompt } from '../utils/prompts';
 import { LlmToolsService } from './llmTools.service';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
-import { ChatCompletionCreateParamsBase } from 'openai/src/resources/chat/completions';
 
 interface CallOpenAiParams {
   openAiMessages: ChatCompletionMessageParam[];
