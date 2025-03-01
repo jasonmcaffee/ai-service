@@ -1,9 +1,11 @@
 export class AgentPlan{
     functionSteps: FunctionStep[] = [];
+    constructor() {}
+
 }
 
 export class FunctionStep {
-    constructor(readonly functionName: string, readonly args: object, ) {
+    constructor(readonly id: string, readonly functionName: string, readonly args: object, readonly reasonToAddStep: string) {
     }
 
     async do(){

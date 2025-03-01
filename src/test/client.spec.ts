@@ -30,7 +30,7 @@ describe('Client Tests', () => {
       expect(createdDatasource.name).toBe(datasourceName);
 
       const documentText = "Hello this is a story";
-      const createdDocument = await api.createDocument(createdDatasource.id, {text: documentText});
+      const createdDocument = await api.createDocument(createdDatasource.id, {base64String: documentText, fileName: 'test'});
       expect(createdDocument.text).toBe(documentText);
 
       const retrievedDocument = await api.getDocumentById(createdDocument.id);
@@ -62,7 +62,7 @@ describe('Client Tests', () => {
       const isDefault = true;
 
       const createModelResponse = await api.createModel({
-        apiKey, modelName, modelTypeId, url, displayName, isDefault,
+        apiKey, modelName, modelTypeId, url, displayName, isDefault, initialMessage: '',
       });
 
       expect(createModelResponse !== undefined).toBe(true);
