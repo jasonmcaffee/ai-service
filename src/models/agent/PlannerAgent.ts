@@ -7,7 +7,8 @@
 import {AgentPlan, FunctionStep} from "./AgentPlan";
 
 /**
- *
+ * Todo: how do we access context between steps?
+ * eg. search, summarize
  */
 export default class PlannerAgent {
   constructor() {}
