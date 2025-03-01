@@ -171,10 +171,7 @@ export class ChatService {
 }
 
 function getWebSearchTools(): ChatCompletionTool[]{
-  return [{
-    type: "function",
-    function: LlmToolsService.getSearchWebOpenAIMetadata(),
-  }]
+  return [LlmToolsService.getSearchWebOpenAIMetadata(),]
 }
 
 //from chatgpt

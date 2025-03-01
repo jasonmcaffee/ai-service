@@ -4,6 +4,7 @@ import { SearchResultResponse, SearchResultWithMarkdownContentResponse } from '.
 import { PageScraperService } from './pageScraper.service';
 import { getWordAndTokenCount } from '../utils/utils';
 import InferenceSSESubject from "../models/InferenceSSESubject";
+import { ChatCompletionTool } from 'openai/resources/chat/completions';
 
 @Injectable()
 export class LlmToolsService{
@@ -12,20 +13,23 @@ export class LlmToolsService{
     /**
      * Returns metadata describing the `searchWeb` function for OpenAI function calling.
      */
-    static getSearchWebOpenAIMetadata() {
+    static getSearchWebOpenAIMetadata(): ChatCompletionTool {
         return {
-            name: "searchWeb",
-            description: "Search the web using DuckDuckGo and return relevant results.",
-            parameters: {
-                type: "object",
-                properties: {
-                    query: {
-                        type: "string",
-                        description: "The search query string.",
+            type: "function",
+            function: {
+                name: "searchWeb",
+                description: "Search the web using DuckDuckGo and return relevant results.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        query: {
+                            type: "string",
+                            description: "The search query string.",
+                        },
                     },
+                    required: ["query"],
                 },
-                required: ["query"],
-            },
+            }
         };
     }
     async searchWeb({query}: {query?: string} = {query: undefined}, subject: InferenceSSESubject, ): Promise<SearchResultWithMarkdownContentResponse>{

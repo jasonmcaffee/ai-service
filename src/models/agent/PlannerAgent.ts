@@ -9,6 +9,7 @@ import {ModelsService} from "../../services/models.service";
 import {OpenaiWrapperService} from "../../services/openaiWrapper.service";
 import { Model } from '../api/conversationApiModels';
 import { LlmToolsService } from '../../services/llmTools.service';
+import { ChatCompletionTool } from 'openai/resources/chat/completions';
 
 /**
  * Todo: how do we access context between steps?
@@ -19,7 +20,7 @@ export default class PlannerAgent {
   constructor(private readonly model: Model, openAiWrapperService: OpenaiWrapperService) {}
   agentPlan: AgentPlan;
 
-  getTools(){
+  getOpenAiMetadataForTools(): ChatCompletionTool[]{
     return [
       PlannerAgent.getAiCreatePlanToolMetadata(),
       PlannerAgent.getAiAddFunctionStepToPlanMetadata(),
@@ -30,10 +31,12 @@ export default class PlannerAgent {
     ]
   }
 
-  static getAiCreatePlanToolMetadata() {
+  static getAiCreatePlanToolMetadata(): ChatCompletionTool {
     return {
-      name: "aiCreatePlan",
-      description: `Initialize a new execution plan for fulfilling the user's request.
+      type: "function",
+      function: {
+        name: "aiCreatePlan",
+        description: `Initialize a new execution plan for fulfilling the user's request.
         
         This function must be called **first** before adding any function steps.
         
@@ -43,10 +46,11 @@ export default class PlannerAgent {
         3. Once all steps have been added, finalize the plan by calling 'aiCompletePlan'.
 
         The plan serves as a structured sequence of tool calls necessary to accomplish the request.`,
-      parameters: {
-        type: "object",
-        properties: {},
-      },
+        parameters: {
+          type: "object",
+          properties: {},
+        },
+      }
     };
   }
   async aiCreatePlan({}: {}): Promise<AgentPlan> {
@@ -54,41 +58,44 @@ export default class PlannerAgent {
     return this.agentPlan;
   }
 
-  static getAiAddFunctionStepToPlanMetadata() {
+  static getAiAddFunctionStepToPlanMetadata(): ChatCompletionTool {
     return {
-      name: "aiAddFunctionStepToPlan",
-      description: `Add a function call step to the current execution plan. 
-        
-        Each step represents a specific function call that will be executed as part of the plan.
-        
-        Guidelines:
-        - Ensure the function is necessary for fulfilling the request.
-        - Provide a clear reason for adding this function step.
-        - Define arguments precisely to avoid ambiguity.
-        
-        Call this function multiple times to add all required function steps before finalizing with 'aiCompletePlan'.`,
-      parameters: {
-        type: "object",
-        properties: {
-          id: {
-            type: "string",
-            description: "A unique identifier for this function step.",
+      type: "function",
+      function: {
+        name: "aiAddFunctionStepToPlan",
+        description: `Add a function call step to the current execution plan. 
+          
+          Each step represents a specific function call that will be executed as part of the plan.
+          
+          Guidelines:
+          - Ensure the function is necessary for fulfilling the request.
+          - Provide a clear reason for adding this function step.
+          - Define arguments precisely to avoid ambiguity.
+          
+          Call this function multiple times to add all required function steps before finalizing with 'aiCompletePlan'.`,
+        parameters: {
+          type: "object",
+          properties: {
+            id: {
+              type: "string",
+              description: "A unique identifier for this function step.",
+            },
+            functionName: {
+              type: "string",
+              description: "The name of the function to be called in this step.",
+            },
+            functionArgs: {
+              type: "object",
+              description: "The arguments that should be passed to the function when executed.",
+            },
+            reasonToAddStep: {
+              type: "string",
+              description: "A justification for why this function step is necessary to fulfill the user's request.",
+            },
           },
-          functionName: {
-            type: "string",
-            description: "The name of the function to be called in this step.",
-          },
-          functionArgs: {
-            type: "object",
-            description: "The arguments that should be passed to the function when executed.",
-          },
-          reasonToAddStep: {
-            type: "string",
-            description: "A justification for why this function step is necessary to fulfill the user's request.",
-          },
+          required: ["id", "functionName", "functionArgs", "reasonToAddStep"],
         },
-        required: ["id", "functionName", "functionArgs", "reasonToAddStep"],
-      },
+      }
     };
   }
   async aiAddFunctionStepToPlan({ id, functionName, functionArgs, reasonToAddStep, }: { id: string; functionName: string; functionArgs: object; reasonToAddStep: string; }) {
@@ -100,20 +107,23 @@ export default class PlannerAgent {
     this.agentPlan.functionSteps.push(functionStep);
   }
 
-  static getAiCompletePlanMetadata() {
+  static getAiCompletePlanMetadata(): ChatCompletionTool {
     return {
-      name: "aiCompletePlan",
-      description: `Finalize the execution plan, signaling that all necessary function steps have been added. 
+      type: "function",
+      function: {
+        name: "aiCompletePlan",
+        description: `Finalize the execution plan, signaling that all necessary function steps have been added. 
         
         This function should be called after:
         1. 'aiCreatePlan' has been used to initialize a plan.
         2. 'aiAddFunctionStepToPlan' has been used to add all required function calls.
         
         Once this function is called, your work is done.`,
-      parameters: {
-        type: "object",
-        properties: {},
-      },
+        parameters: {
+          type: "object",
+          properties: {},
+        },
+      }
     };
   }
   async aiCompletePlan({}: {}) {
