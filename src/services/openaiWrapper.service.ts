@@ -43,6 +43,7 @@ export class OpenaiWrapperService{
    * @param abortController
    * @param toolService
    * @param tools
+   * @returns a promise which completes when all processing is finished.  Useful for scenarios where we don't need streaming, and just want the complete results.
    */
   async callOpenAiUsingModelAndSubject({
        openAiMessages,
@@ -55,7 +56,7 @@ export class OpenaiWrapperService{
        abortController,
        toolService,
        tools,
-     }: CallOpenAiParams){
+     }: CallOpenAiParams): Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string }> {
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL });
@@ -66,12 +67,9 @@ export class OpenaiWrapperService{
     // Track accumulated tool calls
     const accumulatedToolCalls: Record<string, ToolCall> = {};
 
-    //todo: since it's recursive, don't always add chatPageSystemPrompt.
-    //todo: don't add any messages at all.  make calling function do it.
     try {
       const stream = await openai.chat.completions.create({
         model: model.modelName,
-        // messages: [{ role: 'system', content: chatPageSystemPrompt }, ...openAiMessages],
         messages: openAiMessages,
         tools,
         stream: true,
@@ -160,7 +158,6 @@ export class OpenaiWrapperService{
           }
         }
 
-        //Gather all tool calls
         // Check if we've reached the end of the stream
         if (choice?.finish_reason === 'tool_calls' || choice?.finish_reason === 'stop') {
           // If we have accumulated tool calls, proceed with handling them
@@ -171,18 +168,14 @@ export class OpenaiWrapperService{
         }
       }
 
-
-      // Process tool calls if needed. Note: all tool calls sent by the llm are present at this point.
-      //i.e. tool_call1, tool_call2, etc.  It's not tool_call1, execute, then send result back, then tool_call2.
+      // Process tool calls if needed
       if (needsRecursiveCall && assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
         // Add tool calls to the assistant message
-        // (assistantResponse.tool_calls as any[]) = Object.values(accumulatedToolCalls).map(toolCall => toolCall);
-        assistantResponse.tool_calls  = Object.values(accumulatedToolCalls) as ChatCompletionMessageToolCall[];//same type definition
+        assistantResponse.tool_calls = Object.values(accumulatedToolCalls) as ChatCompletionMessageToolCall[];
         // Add the assistant message to the conversation history
         openAiMessages.push(assistantResponse);
 
         // Process each tool call
-        let index = 0;
         for (const toolCall of Object.values(accumulatedToolCalls)) {
           try {
             const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall, toolService, inferenceSSESubject);
@@ -201,10 +194,9 @@ export class OpenaiWrapperService{
             console.error(`Error processing tool call: ${error}`);
             handleError(error);
           }
-          index++;
         }
 
-        // Make a recursive call to continue the conversation
+        // Make a recursive call to continue the conversation and return its result
         return this.callOpenAiUsingModelAndSubject({
           openAiMessages,
           handleOnText,
@@ -224,10 +216,16 @@ export class OpenaiWrapperService{
       await handleResponseCompleted(completeText, model);
       handleOnText(endSignal);
       inferenceSSESubject.sendComplete();
+
+      // Return the final state
+      return { openAiMessages, completeText };
     } catch (error) {
       console.error(`LLM error: `, error);
       handleError(error);
       inferenceSSESubject.sendError(error);
+
+      // Even in case of error, return the current state
+      return { openAiMessages, completeText };
     }
   }
 

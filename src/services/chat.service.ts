@@ -121,7 +121,8 @@ export class ChatService {
     const handleError = (error: any) =>{
       this.abortControllers.delete(memberId);
     };
-    this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+
+    const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages,
       handleOnText,
       handleResponseCompleted,
@@ -132,6 +133,9 @@ export class ChatService {
       abortController,
       toolService: this.llmToolsService,
       tools,
+    });
+    promise.then(({openAiMessages, completeText}) => {
+      console.log(`all openai interaction complete: ${completeText}`, openAiMessages);
     });
     // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
   }
