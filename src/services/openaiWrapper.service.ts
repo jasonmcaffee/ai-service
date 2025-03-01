@@ -10,6 +10,7 @@ import OpenAI from 'openai';
 import { chatPageSystemPrompt } from '../utils/prompts';
 import { LlmToolsService } from './llmTools.service';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
+import { ChatCompletionCreateParamsBase } from 'openai/src/resources/chat/completions';
 
 interface CallOpenAiParams {
   openAiMessages: ChatCompletionMessageParam[];
@@ -54,7 +55,7 @@ export class OpenaiWrapperService{
        abortController,
        toolService,
        tools,
-     }: CallOpenAiParams) {
+     }: CallOpenAiParams){
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL });
@@ -65,10 +66,13 @@ export class OpenaiWrapperService{
     // Track accumulated tool calls
     const accumulatedToolCalls: Record<string, ToolCall> = {};
 
+    //todo: since it's recursive, don't always add chatPageSystemPrompt.
+    //todo: don't add any messages at all.  make calling function do it.
     try {
       const stream = await openai.chat.completions.create({
         model: model.modelName,
-        messages: [{ role: 'system', content: chatPageSystemPrompt }, ...openAiMessages],
+        // messages: [{ role: 'system', content: chatPageSystemPrompt }, ...openAiMessages],
+        messages: openAiMessages,
         tools,
         stream: true,
       }, { signal });
@@ -226,7 +230,6 @@ export class OpenaiWrapperService{
       inferenceSSESubject.sendError(error);
     }
   }
-
 
 }
 

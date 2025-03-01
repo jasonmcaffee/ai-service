@@ -98,7 +98,8 @@ export class ChatService {
     conversation.messages?.filter(m => m.sentByMemberId === memberId)
       .forEach(m => m.messageText = extractMessageContextFromMessage(m.messageText).textWithoutTags)
 
-    let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
+    // let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
+    let openAiMessages: ChatCompletionMessageParam[] = [{ role: 'system', content: chatPageSystemPrompt}, ...createOpenAIMessagesFromMessages(conversation.messages!)];
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages]
@@ -140,7 +141,7 @@ export class ChatService {
                                            shouldSearchWeb: boolean){
     const prompt = messageContext.textWithoutTags;
     const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
-    let openAiMessages = createOpenAIMessagesFromMessages([userMessage]);
+    let openAiMessages: ChatCompletionMessageParam[] = [{ role: 'system', content: chatPageSystemPrompt}, ...createOpenAIMessagesFromMessages([userMessage])];
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
