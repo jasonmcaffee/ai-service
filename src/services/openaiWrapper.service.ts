@@ -23,6 +23,7 @@ interface CallOpenAiParams {
   abortController?: AbortController;
   toolService: any; // service with tool functions.
   tools?: ChatCompletionTool[];
+  totalOpenAiCallsMade?: number;
 }
 
 @Injectable()
@@ -56,7 +57,8 @@ export class OpenaiWrapperService{
        abortController,
        toolService,
        tools,
-     }: CallOpenAiParams): Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string }> {
+       totalOpenAiCallsMade = 0,
+     }: CallOpenAiParams): Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }> {
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL });
@@ -68,6 +70,7 @@ export class OpenaiWrapperService{
     const accumulatedToolCalls: Record<string, ToolCall> = {};
 
     try {
+      totalOpenAiCallsMade += 1;
       const stream = await openai.chat.completions.create({
         model: model.modelName,
         messages: openAiMessages,
@@ -213,6 +216,7 @@ export class OpenaiWrapperService{
           abortController,
           toolService,
           tools,
+          totalOpenAiCallsMade,
         });
       }
 
@@ -227,7 +231,7 @@ export class OpenaiWrapperService{
       inferenceSSESubject?.sendComplete();
 
       // Return the final state
-      return { openAiMessages, completeText };
+      return { openAiMessages, completeText, totalOpenAiCallsMade };
     } catch (error) {
       console.error(`LLM error: `, error);
       if (handleError) {
@@ -236,7 +240,7 @@ export class OpenaiWrapperService{
       inferenceSSESubject?.sendError(error);
 
       // Even in case of error, return the current state
-      return { openAiMessages, completeText };
+      return { openAiMessages, completeText, totalOpenAiCallsMade };
     }
   }
 

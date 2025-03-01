@@ -32,10 +32,12 @@ describe('Agent Tests', () => {
 
             for(let i = 0; i < 5; i++){
                 const plannerAgent = new PlannerAgent(model, openAiWrapperService, memberId);
-                const {openAiMessages, completeText} = await plannerAgent.createPlan("Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
+                const {openAiMessages, completeText, totalOpenAiCallsMade} = await plannerAgent.createPlan("Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
 
                 console.log(`openAiMessages: `, JSON.stringify(openAiMessages, null, 2));
                 expect(openAiMessages.length > 0).toBe(true);
+
+                expect(totalOpenAiCallsMade).toBe(2);
 
                 const assistantMessages = getMessageByRole('assistant', openAiMessages);
                 expect(assistantMessages.length == 1).toBe(true);
