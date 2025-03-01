@@ -27,6 +27,22 @@ interface CallOpenAiParams {
 @Injectable()
 export class OpenaiWrapperService{
 
+  /**
+   * The tool handling was mainly written by Claude 3.5 and 3.7, and the code deals with the tedious task of:
+   * - using streaming, but also handling tool calls, which are streamed.
+   * -- This gives this function versatility in that the same function can be called in scenarios where streaming is wanted sometimes, and so are tool calls. e.g. user chat prompt triggers a tool call.
+   * - handling tool calls from llama.cpp, which do not come back in the same format as openai.  e.g. it's just a list of tool calls streamed back as text: <tool_call>{...} </tool_call>
+   * @param openAiMessages
+   * @param handleOnText
+   * @param handleResponseCompleted
+   * @param handleError
+   * @param model
+   * @param memberId
+   * @param inferenceSSESubject
+   * @param abortController
+   * @param toolService
+   * @param tools
+   */
   async callOpenAiUsingModelAndSubject({
        openAiMessages,
        handleOnText,
