@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   ChatCompletionAssistantMessageParam, ChatCompletionChunk,
-  ChatCompletionMessageParam,
+  ChatCompletionMessageParam, ChatCompletionMessageToolCall,
   ChatCompletionTool,
 } from 'openai/resources/chat/completions';
 import { Model } from '../models/api/conversationApiModels';
@@ -22,6 +22,7 @@ interface CallOpenAiParams {
   abortController: AbortController;
   toolService: any; // service with tool functions.
   tools?: ChatCompletionTool[];
+  shouldImmediatelyCallToolServiceFunctionWhenAiAsks: boolean;
 }
 
 @Injectable()
@@ -38,6 +39,7 @@ export class OpenaiWrapperService{
        abortController,
        toolService,
        tools,
+      shouldImmediatelyCallToolServiceFunctionWhenAiAsks = true,
      }: CallOpenAiParams) {
     const apiKey = model.apiKey;
     const baseURL = model.url;
@@ -118,13 +120,7 @@ export class OpenaiWrapperService{
           const content = choice.delta.content;
           streamedText += content;
 
-          const result = parseLlamaCppToolCalls(
-            streamedText,
-            completeText,
-            accumulatedToolCalls,
-            assistantResponse
-          );
-
+          const result = parseLlamaCppToolCalls(streamedText, completeText, accumulatedToolCalls, assistantResponse);
           // Get updated values from parsing result
           completeText = result.newTextToDisplay;
 
@@ -132,7 +128,6 @@ export class OpenaiWrapperService{
           if (result.foundToolCalls) {
             needsRecursiveCall = true;
             assistantResponse = result.assistantResponse;
-
             // Merge new tool calls into accumulated ones
             Object.assign(accumulatedToolCalls, result.newToolCalls);
           }
@@ -150,7 +145,7 @@ export class OpenaiWrapperService{
         // Check if we've reached the end of the stream
         if (choice?.finish_reason === 'tool_calls' || choice?.finish_reason === 'stop') {
           // If we have accumulated tool calls, proceed with handling them
-          if (needsRecursiveCall && assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
+          if (shouldImmediatelyCallToolServiceFunctionWhenAiAsks && needsRecursiveCall && assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
             // Break out of the loop, we'll process tool calls
             break;
           }
@@ -160,15 +155,8 @@ export class OpenaiWrapperService{
       // Process tool calls if needed
       if (needsRecursiveCall && assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
         // Add tool calls to the assistant message
-        (assistantResponse.tool_calls as any[]) = Object.values(accumulatedToolCalls).map(toolCall => ({
-          id: toolCall.id,
-          type: toolCall.type,
-          function: {
-            name: toolCall.function!.name,
-            arguments: toolCall.function!.arguments
-          }
-        }));
-
+        // (assistantResponse.tool_calls as any[]) = Object.values(accumulatedToolCalls).map(toolCall => toolCall);
+        assistantResponse.tool_calls  = Object.values(accumulatedToolCalls) as ChatCompletionMessageToolCall[];//same type definition
         // Add the assistant message to the conversation history
         openAiMessages.push(assistantResponse);
 
@@ -176,15 +164,7 @@ export class OpenaiWrapperService{
         let index = 0;
         for (const toolCall of Object.values(accumulatedToolCalls)) {
           try {
-            const formattedToolCall = {
-              index,
-              function: {
-                name: toolCall.function!.name,
-                arguments: toolCall.function!.arguments
-              }
-            };
-
-            const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(formattedToolCall, toolService, inferenceSSESubject);
+            const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall, toolService, inferenceSSESubject);
 
             if (toolResponse) {
               // Add the tool response to messages - with correct structure
@@ -198,6 +178,7 @@ export class OpenaiWrapperService{
             }
           } catch (error) {
             console.error(`Error processing tool call: ${error}`);
+            handleError(error);
           }
           index++;
         }
@@ -214,6 +195,7 @@ export class OpenaiWrapperService{
           abortController,
           toolService,
           tools,
+          shouldImmediatelyCallToolServiceFunctionWhenAiAsks
         });
       }
 
@@ -263,16 +245,25 @@ function parseToolNameAndArgumentsFromToolCall(toolCall: ToolCall){
     toolName, toolArgs,
   };
 }
-
-function /**
- * Parse llama.cpp style tool calls from streamed content
+/**
+ * Parse llama.cpp style tool calls from streamed content.
+ * When llama.cpp sends back tool calls, it does so in the format:
+ * <tool_call>
+ * {"name": "searchWeb", "arguments": {"query": "gene hackman news"}}
+ * </tool_call>
+ * <tool_call>
+ * {"name": "searchWeb", "arguments": {"query": "tame impala news"}}
+ * </tool_call>
+ *
+ * This function is called over and over again as text is streamed back from the llm, so we have to ensure we don't parse the same
+ * <tool_call> more than once.
  * @param streamedText The accumulated streamed text
  * @param completeText The existing complete text without tool calls
  * @param accumulatedToolCalls The currently accumulated tool calls
  * @param assistantResponse The current assistant response object
  * @returns Object containing parsing results and updated values
  */
-parseLlamaCppToolCalls(
+function parseLlamaCppToolCalls(
   streamedText: string,
   completeText: string,
   accumulatedToolCalls: Record<string, ToolCall>,
@@ -295,6 +286,14 @@ parseLlamaCppToolCalls(
   // Reset the regex to start from the beginning
   toolCallRegex.lastIndex = 0;
 
+  // Keep track of processed tool calls by their content to avoid duplicates
+  const processedToolCallContents = new Set(
+    Object.values(accumulatedToolCalls).map(tc =>
+      //@ts-ignore
+      tc.function.arguments
+    )
+  );
+
   // Find all tool calls in the accumulated streamed text
   while ((match = toolCallRegex.exec(streamedText)) !== null) {
     // Add text before the tool call to the display text
@@ -304,10 +303,30 @@ parseLlamaCppToolCalls(
     // Process the tool call
     try {
       const toolCallContent = match[1].trim();
+
+      // Skip if we've already processed this exact tool call
+      let parsedContent;
+      try {
+        parsedContent = JSON.parse(toolCallContent);
+        const toolCallSignature = typeof parsedContent.arguments === 'string'
+          ? parsedContent.arguments
+          : JSON.stringify(parsedContent.arguments);
+
+        // Skip this tool call if we've already processed it
+        if (processedToolCallContents.has(toolCallSignature)) {
+          continue;
+        }
+
+        processedToolCallContents.add(toolCallSignature);
+      } catch (parseError) {
+        console.error(`Error parsing tool call JSON: ${parseError}`);
+        continue;
+      }
+
       foundToolCalls = true;
 
       // Create unique ID for this tool call
-      const toolId = `tool-${Date.now()}-${Object.keys(accumulatedToolCalls).length}`;
+      const toolId = `tool-${Date.now()}-${Object.keys(accumulatedToolCalls).length + Object.keys(newToolCalls).length}`;
 
       // Initialize assistant message if needed
       if (!updatedAssistantResponse) {
@@ -318,25 +337,19 @@ parseLlamaCppToolCalls(
         };
       }
 
-      try {
-        const parsedContent = JSON.parse(toolCallContent);
-
-        // Add to new tool calls
-        const index = Object.keys(accumulatedToolCalls).length.toString();
-        newToolCalls[index] = {
-          index: parseInt(index),
-          id: toolId,
-          type: 'function',
-          function: {
-            name: parsedContent.name || '',
-            arguments: typeof parsedContent.arguments === 'string'
-              ? parsedContent.arguments
-              : JSON.stringify(parsedContent.arguments)
-          }
-        };
-      } catch (parseError) {
-        console.error(`Error parsing tool call JSON: ${parseError}`);
-      }
+      // Add to new tool calls
+      const index = Object.keys(accumulatedToolCalls).length + Object.keys(newToolCalls).length;
+      newToolCalls[index.toString()] = {
+        index: index,
+        id: toolId,
+        type: 'function',
+        function: {
+          name: parsedContent.name || '',
+          arguments: typeof parsedContent.arguments === 'string'
+            ? parsedContent.arguments
+            : JSON.stringify(parsedContent.arguments)
+        }
+      };
     } catch (error) {
       console.error(`Error processing tool call: ${error}`);
     }
