@@ -131,7 +131,6 @@ export class ChatService {
       abortController,
       toolService: this.llmToolsService,
       tools,
-      shouldImmediatelyCallToolServiceFunctionWhenAiAsks: true,
     });
     // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
   }
@@ -164,7 +163,6 @@ export class ChatService {
       abortController,
       toolService: this.llmToolsService,
       tools,
-      shouldImmediatelyCallToolServiceFunctionWhenAiAsks: true,
     });
     // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, handleOnComplete, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
   }

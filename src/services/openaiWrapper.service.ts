@@ -22,7 +22,6 @@ interface CallOpenAiParams {
   abortController: AbortController;
   toolService: any; // service with tool functions.
   tools?: ChatCompletionTool[];
-  shouldImmediatelyCallToolServiceFunctionWhenAiAsks: boolean;
 }
 
 @Injectable()
@@ -39,7 +38,6 @@ export class OpenaiWrapperService{
        abortController,
        toolService,
        tools,
-      shouldImmediatelyCallToolServiceFunctionWhenAiAsks = true,
      }: CallOpenAiParams) {
     const apiKey = model.apiKey;
     const baseURL = model.url;
@@ -142,17 +140,20 @@ export class OpenaiWrapperService{
           }
         }
 
+        //Gather all tool calls
         // Check if we've reached the end of the stream
         if (choice?.finish_reason === 'tool_calls' || choice?.finish_reason === 'stop') {
           // If we have accumulated tool calls, proceed with handling them
-          if (shouldImmediatelyCallToolServiceFunctionWhenAiAsks && needsRecursiveCall && assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
+          if (needsRecursiveCall && assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
             // Break out of the loop, we'll process tool calls
             break;
           }
         }
       }
 
-      // Process tool calls if needed
+
+      // Process tool calls if needed. Note: all tool calls sent by the llm are present at this point.
+      //i.e. tool_call1, tool_call2, etc.  It's not tool_call1, execute, then send result back, then tool_call2.
       if (needsRecursiveCall && assistantResponse && Object.keys(accumulatedToolCalls).length > 0) {
         // Add tool calls to the assistant message
         // (assistantResponse.tool_calls as any[]) = Object.values(accumulatedToolCalls).map(toolCall => toolCall);
@@ -195,7 +196,6 @@ export class OpenaiWrapperService{
           abortController,
           toolService,
           tools,
-          shouldImmediatelyCallToolServiceFunctionWhenAiAsks
         });
       }
 
