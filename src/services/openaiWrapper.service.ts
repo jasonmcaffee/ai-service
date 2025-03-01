@@ -14,13 +14,13 @@ import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 
 interface CallOpenAiParams {
   openAiMessages: ChatCompletionMessageParam[];
-  handleOnText: (text: string) => void;
-  handleResponseCompleted: (text: string, model: Model) => void;
-  handleError: (error: any) => void;
+  handleOnText?: (text: string) => void;
+  handleResponseCompleted?: (text: string, model: Model) => void;
+  handleError?: (error: any) => void;
   model: Model;
   memberId: string;
-  inferenceSSESubject: InferenceSSESubject;
-  abortController: AbortController;
+  inferenceSSESubject?: InferenceSSESubject;
+  abortController?: AbortController;
   toolService: any; // service with tool functions.
   tools?: ChatCompletionTool[];
 }
@@ -60,7 +60,7 @@ export class OpenaiWrapperService{
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL });
-    const signal = abortController.signal;
+    const signal = abortController?.signal;
     let completeText = '';
     let streamedText = '';
 
@@ -152,8 +152,10 @@ export class OpenaiWrapperService{
           if (completeText !== result.previousCompleteText) {
             const newContent = completeText.substring(result.previousCompleteText.length);
             if (newContent) {
-              await handleOnText(newContent);
-              inferenceSSESubject.sendText(newContent);
+              if (handleOnText) {
+                await handleOnText(newContent);
+              }
+              inferenceSSESubject?.sendText(newContent);
             }
           }
         }
@@ -192,7 +194,10 @@ export class OpenaiWrapperService{
             }
           } catch (error) {
             console.error(`Error processing tool call: ${error}`);
-            handleError(error);
+            if (handleError) {
+              handleError(error);
+            }
+            throw error;
           }
         }
 
@@ -213,16 +218,22 @@ export class OpenaiWrapperService{
 
       // No tool calls or all tool calls processed, complete the response
       const endSignal = JSON.stringify({ end: 'true' });
-      await handleResponseCompleted(completeText, model);
-      handleOnText(endSignal);
-      inferenceSSESubject.sendComplete();
+      if (handleResponseCompleted) {
+        await handleResponseCompleted(completeText, model);
+      }
+      if (handleOnText) {
+        handleOnText(endSignal);
+      }
+      inferenceSSESubject?.sendComplete();
 
       // Return the final state
       return { openAiMessages, completeText };
     } catch (error) {
       console.error(`LLM error: `, error);
-      handleError(error);
-      inferenceSSESubject.sendError(error);
+      if (handleError) {
+        handleError(error);
+      }
+      inferenceSSESubject?.sendError(error);
 
       // Even in case of error, return the current state
       return { openAiMessages, completeText };
@@ -231,7 +242,7 @@ export class OpenaiWrapperService{
 
 }
 
-async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ToolCall, llmToolsService: LlmToolsService, subject: InferenceSSESubject): Promise<{ tool_response: { name: string; content: any } } | null> {
+async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ToolCall, llmToolsService: LlmToolsService, subject?: InferenceSSESubject): Promise<{ tool_response: { name: string; content: any } } | null> {
   try {
     const { toolName, toolArgs } = parseToolNameAndArgumentsFromToolCall(toolCall);
     console.log(`Handling tool call: ${toolName} with args:`, toolArgs);
@@ -249,7 +260,7 @@ async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(to
     }
   } catch (error) {
     console.error('Error handling tool call:', error);
-    subject.sendError(error);
+    subject?.sendError(error);
     throw error;
   }
   return null;
@@ -336,7 +347,7 @@ function parseLlamaCppToolCalls(
 
         processedToolCallContents.add(toolCallSignature);
       } catch (parseError) {
-        console.error(`Error parsing tool call JSON: ${parseError}`);
+        console.error(`Error parsing tool call JSON:`, parseError);
         continue;
       }
 
@@ -369,6 +380,7 @@ function parseLlamaCppToolCalls(
       };
     } catch (error) {
       console.error(`Error processing tool call: ${error}`);
+      throw error;
     }
   }
 

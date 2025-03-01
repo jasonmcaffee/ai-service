@@ -10,6 +10,9 @@ import {OpenaiWrapperService} from "../../services/openaiWrapper.service";
 import { Model } from '../api/conversationApiModels';
 import { LlmToolsService } from '../../services/llmTools.service';
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
+import InferenceSSESubject from '../InferenceSSESubject';
+import { chatPageSystemPrompt } from '../../utils/prompts';
+import { CalculatorTools } from './CalculatorTools';
 
 /**
  * Todo: how do we access context between steps?
@@ -17,7 +20,7 @@ import { ChatCompletionTool } from 'openai/resources/chat/completions';
  */
 
 export default class PlannerAgent {
-  constructor(private readonly model: Model, openAiWrapperService: OpenaiWrapperService) {}
+  constructor(private readonly model: Model, private readonly openAiWrapperService: OpenaiWrapperService, private readonly memberId) {}
   agentPlan: AgentPlan;
 
   getOpenAiMetadataForTools(): ChatCompletionTool[]{
@@ -27,10 +30,58 @@ export default class PlannerAgent {
       PlannerAgent.getAiCompletePlanMetadata(),
 
       //Tools available which should not be called.
-      LlmToolsService.getSearchWebOpenAIMetadata(),
+      // LlmToolsService.getSearchWebOpenAIMetadata(),
+
+      CalculatorTools.getAddMetadata(),
+      CalculatorTools.getMultiplyMetadata(),
+      CalculatorTools.getSubtractMetadata(),
+      CalculatorTools.getDivideMetadata(),
     ]
   }
 
+  async createPlan(userPrompt: string){
+    const abortController = new AbortController();
+    const inferenceSSESubject = new InferenceSSESubject();
+    let completeText = '';
+    const result = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+      openAiMessages: [{ role: 'system', content: this.getCreatePlanPrompt(userPrompt)}],
+      handleOnText: (text)=> {
+        completeText += text;
+      },
+      abortController, inferenceSSESubject, model: this.model, memberId: this.memberId, tools: this.getOpenAiMetadataForTools(), toolService: this,
+    });
+    console.log(`plannerAgent completeText streamed: `, completeText);
+    return result;
+  }
+
+  getCreatePlanPrompt(userPrompt: string){
+    return `
+    You are an AI Agent, equipped with tools/functions that are described to you in detail, that is solely tasked with understanding a user prompt and coming up with a plan (series of steps that include things like tool calls) that can be used to respond to the user prompt..
+    You are not tasked with responding the user prompt, as that will be done by another agent, which will use the plan that you've come up with, in order to respond to the user's prompt.
+
+    Use only the tools provided to you when creating a plan.  Do not make up tools that aren't provided.  Do your best with the tools provided.
+    
+    For example, if the user prompt is "search the web for news and summarize what happened today", and you were provided a tool to search the web, a tool for summary, and tools for creating a plan, your tool calls might look something like:
+    - call tool aiCreatePlan, which is needed in order to add steps
+    - call tool aiAddFunctionStepToPlan, passing an argument { id: "1", functionName: "searchWeb"; functionArgs: {"query": "latest music industry news"}, reasonToAddStep: "This step is needed to find information regarding the user's request." }  
+    - call tool aiAddFunctionStepToPlan, passing an argument { id: "2", functionName: "summarize"; functionArgs: {"textToSummarize": "example text"}, reasonToAddStep: "This step is needed to fulfill the user's request." }  
+    - call tool aiCompletePlan, which is needed to indicate the plan has been completed.
+    - receive {success: true} from call to aiCompletePlan.
+    - respond with 'complete'
+    All of your tool calls should be done at the same time. i.e. aiCreatePlan, aiAddFunctionStepToPlan, and aiCompletePlan should be in a single response from you.
+    e.g. Do not wait for the result of a tool before calling aiCompletePlan.
+    
+    Once the aiCompletePlan function is called, you will receive a response message with {success: true}, at which point your work is done, and you should make no further tool calls.  Simply respond with 'complete'.
+    
+    The user prompt is found in the prompt xml tags below:
+    <prompt>${userPrompt}</prompt>
+    
+    Remember, you should only be calling tools related to creating a plan.  When aiAddFunctionStepToPlan is called, you can reference the other tools that were given to you, if needed.
+    You *must* call aiCompletePlan when finished adding steps!
+    
+    Do not use preamble in your response.  Do not respond with anything other than tool calls.  If you were not sent appropriate tools, do not respond at all.
+    `;
+  }
   static getAiCreatePlanToolMetadata(): ChatCompletionTool {
     return {
       type: "function",
@@ -48,16 +99,23 @@ export default class PlannerAgent {
         The plan serves as a structured sequence of tool calls necessary to accomplish the request.`,
         parameters: {
           type: "object",
-          properties: {},
+          properties: {
+            id: {
+              type: "string",
+              description: "A unique identifier for this plan",
+            },
+          },
         },
       }
     };
   }
-  async aiCreatePlan({}: {}): Promise<AgentPlan> {
+  async aiCreatePlan({id}: {id: string}): Promise<{ success: boolean }> {
+    console.log(`aiCreatePlan called with id: ${id}`);
     this.agentPlan = new AgentPlan();
-    return this.agentPlan;
+    return {success: true};
   }
 
+  //{"name": "searchWeb", "arguments": {"query": "latest music industry news"}}
   static getAiAddFunctionStepToPlanMetadata(): ChatCompletionTool {
     return {
       type: "function",
@@ -99,12 +157,14 @@ export default class PlannerAgent {
     };
   }
   async aiAddFunctionStepToPlan({ id, functionName, functionArgs, reasonToAddStep, }: { id: string; functionName: string; functionArgs: object; reasonToAddStep: string; }) {
+    console.log(`aiAddFunctionStepToPlan called with: `, {id, functionName, functionArgs, reasonToAddStep});
     if (!this.agentPlan) {
       throw new Error("No active plan found. Call 'aiCreatePlan' first.");
     }
 
     const functionStep = new FunctionStep(id, functionName, functionArgs, reasonToAddStep);
     this.agentPlan.functionSteps.push(functionStep);
+    return {success: true};
   }
 
   static getAiCompletePlanMetadata(): ChatCompletionTool {
@@ -112,25 +172,32 @@ export default class PlannerAgent {
       type: "function",
       function: {
         name: "aiCompletePlan",
-        description: `Finalize the execution plan, signaling that all necessary function steps have been added. 
+        description: `You must call this function when you have finished adding steps!  Do not skip this for any reason.  
+        Finalize the execution plan, signaling that all necessary function steps have been added. 
         
         This function should be called after:
         1. 'aiCreatePlan' has been used to initialize a plan.
         2. 'aiAddFunctionStepToPlan' has been used to add all required function calls.
         
-        Once this function is called, your work is done.`,
+        Once this function is called, you will receive a response message with {success: true}, at which point your work is done, and you should make no further tool calls.  Simply respond with 'complete'`,
         parameters: {
           type: "object",
-          properties: {},
+          properties: {
+            completedReason: {
+              type: "string",
+              description: "Reason the plan is considered complete.  e.g. All steps have been created needed to fulfill the user request.",
+            },
+          },
         },
       }
     };
   }
-  async aiCompletePlan({}: {}) {
+  async aiCompletePlan({completedReason}: {completedReason: string}) {
+    console.log(`aiCompletePlan called with: `, {completedReason});
     if (!this.agentPlan) {
       throw new Error("No active plan found. Call 'aiCreatePlan' first.");
     }
-
+    return {success: true};
     // this.agentPlan.isComplete = true;
   }
 
