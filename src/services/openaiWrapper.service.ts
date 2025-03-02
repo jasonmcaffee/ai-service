@@ -256,7 +256,7 @@ async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(to
   const {inferenceSSESubject: subject} = aiFunctionContext;
   try {
     const { toolName, toolArgs } = parseToolNameAndArgumentsFromToolCall(toolCall);
-    console.log(`Handling tool call: ${toolName} with args:`, toolArgs);
+    // console.log(`Handling tool call: ${toolName} with args:`, toolArgs);
 
     if (typeof toolService[toolName] == 'function') {
       const result = await toolService[toolName](toolArgs, aiFunctionContext);
