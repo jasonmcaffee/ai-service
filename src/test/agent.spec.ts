@@ -29,7 +29,7 @@ describe('Agent Tests', () => {
         it('It should create plans', async () => {
             const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
             const memberId = "1";
-            const iterations = 10;
+            const iterations = 30;
             const successCounts: Record<string, number> = {};
             const failureCounts: Record<string, number> = {};
 
@@ -41,6 +41,8 @@ describe('Agent Tests', () => {
                 }
             };
 
+            let totalSuccesses = 0;
+
             for (let i = 0; i < iterations; i++) {
                 try {
                     const plannerAgent = new PlannerAgent(model, openAiWrapperService, memberId);
@@ -50,6 +52,14 @@ describe('Agent Tests', () => {
 
                     // console.log(`Iteration ${i + 1} - openAiMessages: `, JSON.stringify(openAiMessages, null, 2));
                     console.log(`Iteration ${i + 1} `);
+
+                    try{
+                        expect(plannerAgent.agentPlan.functionSteps.length).toBe(4);
+                        trackResult("plannerAgentSteps", true);
+                    }catch {
+                        trackResult("plannerAgentSteps", false);
+                        continue;
+                    }
 
                     try {
                         expect(totalOpenAiCallsMade).toBe(2);
@@ -80,18 +90,18 @@ describe('Agent Tests', () => {
                 } catch (err) {
                     console.error(`Iteration ${i + 1} failed with error:`, err);
                 }
+
+                totalSuccesses++;
             }
 
             // Compute final pass percentage
-            const totalAssertions = Object.keys(successCounts).reduce((sum, key) => sum + (successCounts[key] || 0) + (failureCounts[key] || 0), 0);
-            const totalSuccesses = Object.values(successCounts).reduce((sum, count) => sum + count, 0);
-            const successRate = (totalSuccesses / totalAssertions) * 100;
+            // const totalAssertions = Object.keys(successCounts).reduce((sum, key) => sum + (successCounts[key] || 0) + (failureCounts[key] || 0), 0);
+            // const totalSuccesses = Object.values(successCounts).reduce((sum, count) => sum + count, 0);
+            const successRate = (totalSuccesses / iterations) * 100;
 
-            console.log("Test Summary:");
-            console.log("Success Counts:", successCounts);
-            console.log("Failure Counts:", failureCounts);
-            console.log(`Final Success Rate: ${successRate.toFixed(2)}%`); // Final Success Rate: 77.27%
-
+            console.log(`successCounts: `, successCounts);
+            console.log(`failureCounts: `, failureCounts);
+            console.log(`Test Summary: ${totalSuccesses}/${iterations}   ${successRate.toFixed(2)}%`);
             expect(successRate).toBeGreaterThanOrEqual(90);
         }, 5 * 60 * 1000);
         // it('It should create plans', async () => {
