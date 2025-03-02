@@ -29,7 +29,7 @@ describe('Agent Tests', () => {
         it('It should create plans', async () => {
             const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
             const memberId = "1";
-            const iterations = 5;
+            const iterations = 30;
             const successCounts: Record<string, number> = {};
             const failureCounts: Record<string, number> = {};
 

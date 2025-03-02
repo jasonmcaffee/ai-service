@@ -285,6 +285,10 @@ function parseToolNameAndArgumentsFromToolCall(toolCall: ToolCall){
   };
 }
 /**
+ *
+ * NOTE!! THIS REQUIRES A CUSTOM TEMPLATE WITH LLAMA.CPP, due to <tool_call> tags not getting closed correctly.
+ * SEE BOTTOM OF THIS FILE FOR THE TEMPLATE.
+ *
  * Parse llama.cpp style tool calls from streamed content.
  * When llama.cpp sends back tool calls, it does so in the format:
  * <tool_call>
@@ -318,7 +322,8 @@ function parseLlamaCppToolCalls(
   let updatedAssistantResponse = assistantResponse;
 
   // Check for llama.cpp tool calls in the content
-  const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs;
+  // const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs;
+  const toolCallRegex = /### TOOL_CALL_START ###\s*(.*?)\s*### TOOL_CALL_END ###/gs;
   let match;
   let lastIndex = 0;
 
@@ -406,3 +411,60 @@ function parseLlamaCppToolCalls(
     newToolCalls
   };
 }
+
+/**
+ {%- if tools %}
+    {{- '<|im_start|>system\n' }}
+    {%- if messages[0]['role'] == 'system' %}
+        {{- messages[0]['content'] }}
+    {%- else %}
+        {{- 'You are Qwen, created by Alibaba Cloud, with assistance from Jason. You are a helpful assistant.' }}
+    {%- endif %}
+    {{- "\n\n# Tools\n\nYou may use the following tools to help with user queries.\n\n## Available Functions\n\n<tools>" }}
+    {%- for tool in tools %}
+        {{- "\n" }}
+        {{- tool | tojson }}
+    {%- endfor %}
+    {{- "\n</tools>\n\n## Tool Call Format\n\nWhen using a tool, follow this EXACT format for EACH function call:\n\n### TOOL_CALL_START ###\n{\"name\": \"functionName\", \"arguments\": {\"param\": \"value\"}}\n### TOOL_CALL_END ###\n\nComplete one tool call FULLY with both START and END markers before beginning another one.\n\n## Example of Multiple Tool Calls:\n\n### TOOL_CALL_START ###\n{\"name\": \"aiCreatePlan\", \"arguments\": {\"id\": \"math_operation_plan\"}}\n### TOOL_CALL_END ###\n\n### TOOL_CALL_START ###\n{\"name\": \"aiAddFunctionStepToPlan\", \"arguments\": {\"id\": \"1\", \"functionName\": \"aiAdd\", \"functionArgs\": {\"a\": 5, \"b\": 5}, \"reasonToAddStep\": \"First, add 5 to 5.\"}}\n### TOOL_CALL_END ###\n\n### TOOL_CALL_START ###\n{\"name\": \"aiCompletePlan\", \"arguments\": {\"completedReason\": \"Plan is complete\"}}\n### TOOL_CALL_END ###\n<|im_end|>\n" }}
+{%- else %}
+    {%- if messages[0]['role'] == 'system' %}
+        {{- '<|im_start|>system\n' + messages[0]['content'] + '<|im_end|>\n' }}
+    {%- else %}
+        {{- '<|im_start|>system\nYou are Qwen, created by Alibaba Cloud. You are a helpful assistant.<|im_end|>\n' }}
+    {%- endif %}
+{%- endif %}
+{%- for message in messages %}
+    {%- if (message.role == "user") or (message.role == "system" and not loop.first) or (message.role == "assistant" and not message.tool_calls) %}
+        {{- '<|im_start|>' + message.role + '\n' + message.content + '<|im_end|>' + '\n' }}
+    {%- elif message.role == "assistant" %}
+        {{- '<|im_start|>' + message.role }}
+        {%- if message.content %}
+            {{- '\n' + message.content }}
+        {%- endif %}
+        {%- for tool_call in message.tool_calls %}
+            {%- if tool_call.function is defined %}
+                {%- set tool_call = tool_call.function %}
+            {%- endif %}
+            {{- '\n### TOOL_CALL_START ###\n{"name": "' }}
+            {{- tool_call.name }}
+            {{- '", "arguments": ' }}
+            {{- tool_call.arguments | tojson }}
+            {{- '}\n### TOOL_CALL_END ###' }}
+        {%- endfor %}
+        {{- '<|im_end|>\n' }}
+    {%- elif message.role == "tool" %}
+        {%- if (loop.index0 == 0) or (messages[loop.index0 - 1].role != "tool") %}
+            {{- '<|im_start|>user' }}
+        {%- endif %}
+        {{- '\n<tool_response>\n' }}
+        {{- message.content }}
+        {{- '\n</tool_response>' }}
+        {%- if loop.last or (messages[loop.index0 + 1].role != "tool") %}
+            {{- '<|im_end|>\n' }}
+        {%- endif %}
+    {%- endif %}
+{%- endfor %}
+{%- if add_generation_prompt %}
+    {{- '<|im_start|>assistant\n' }}
+{%- endif %}
+ */
