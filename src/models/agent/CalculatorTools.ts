@@ -1,11 +1,12 @@
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
+import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./AiFunctionExecutor";
 
-export class CalculatorTools{
-  static getAddMetadata(): ChatCompletionTool {
+export class CalculatorTools implements AiFunctionExecutor<CalculatorTools>{
+  static getAiAddMetadata(): ChatCompletionTool {
     return {
       type: "function",
       function: {
-        name: "add",
+        name: "aiAdd",
         description: "Add two numbers and return the sum.",
         parameters: {
           type: "object",
@@ -24,16 +25,15 @@ export class CalculatorTools{
       }
     };
   }
-
-  async add({ a, b }: { a: number; b: number }): Promise<number> {
-    return a + b;
+  async aiAdd({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+    return {result: a + b, context};
   }
 
-  static getSubtractMetadata(): ChatCompletionTool {
+  static getAiSubtractMetadata(): ChatCompletionTool {
     return {
       type: "function",
       function: {
-        name: "subtract",
+        name: "aiSubtract",
         description: "Subtract the second number from the first and return the result.",
         parameters: {
           type: "object",
@@ -52,12 +52,11 @@ export class CalculatorTools{
       }
     };
   }
-
-  async subtract({ a, b }: { a: number; b: number }): Promise<number> {
-    return a - b;
+  async aiSubtract({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+    return {result: a - b, context};
   }
 
-  static getMultiplyMetadata(): ChatCompletionTool {
+  static getAiMultiplyMetadata(): ChatCompletionTool {
     return {
       type: "function",
       function: {
@@ -80,16 +79,15 @@ export class CalculatorTools{
       }
     };
   }
-
-  async multiply({ a, b }: { a: number; b: number }): Promise<number> {
-    return a * b;
+  async aiMultiply({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+    return {result: a * b, context};
   }
 
-  static getDivideMetadata(): ChatCompletionTool {
+  static getAiDivideMetadata(): ChatCompletionTool {
     return {
       type: "function",
       function: {
-        name: "divide",
+        name: "aiDivide",
         description: "Divide the first number by the second and return the quotient.",
         parameters: {
           type: "object",
@@ -108,12 +106,11 @@ export class CalculatorTools{
       }
     };
   }
-
-  async divide({ a, b }: { a: number; b: number }): Promise<number> {
+  async aiDivide({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
     if (b === 0) {
       throw new Error("Division by zero is not allowed.");
     }
-    return a / b;
+    return {result: a / b, context};
   }
 
 }

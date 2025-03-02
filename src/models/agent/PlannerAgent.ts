@@ -1,7 +1,5 @@
 /**
  Based on user prompt, create a plan.
-
-
  */
 
 import {AgentPlan, FunctionStep} from "./AgentPlan";
@@ -21,6 +19,13 @@ import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./AiFunct
  */
 
 
+//doing this mainly to test functionality.  not really needed for this implementation.
+class PlannerAgentFunctionContext implements AiFunctionContext {
+  public aiCreatePlanResult: AgentPlan;
+  constructor(public inferenceSSESubject: InferenceSSESubject | undefined, ) {
+  }
+}
+
 export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
   constructor(private readonly model: Model, private readonly openAiWrapperService: OpenaiWrapperService, private readonly memberId) {}
   agentPlan: AgentPlan;
@@ -31,23 +36,26 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
       PlannerAgent.getAiAddFunctionStepToPlanMetadata(),
       PlannerAgent.getAiCompletePlanMetadata(),
 
-      CalculatorTools.getAddMetadata(),
-      CalculatorTools.getMultiplyMetadata(),
-      CalculatorTools.getSubtractMetadata(),
-      CalculatorTools.getDivideMetadata(),
+      CalculatorTools.getAiAddMetadata(),
+      CalculatorTools.getAiMultiplyMetadata(),
+      CalculatorTools.getAiSubtractMetadata(),
+      CalculatorTools.getAiDivideMetadata(),
     ]
   }
 
   async createPlan(userPrompt: string){
     const abortController = new AbortController();
     const inferenceSSESubject = new InferenceSSESubject();
+    const aiFunctionContext = new PlannerAgentFunctionContext(inferenceSSESubject);
+
     let completeText = '';
     const result = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages: [{ role: 'system', content: this.getCreatePlanPrompt(userPrompt)}],
       handleOnText: (text)=> {
         completeText += text;
       },
-      abortController, inferenceSSESubject, model: this.model, memberId: this.memberId, tools: this.getOpenAiMetadataForTools(), toolService: this,
+      abortController, inferenceSSESubject, model: this.model, memberId: this.memberId, tools: this.getOpenAiMetadataForTools(),
+      toolService: this, aiFunctionContext,
     });
     console.log(`plannerAgent completeText streamed: `, completeText);
     return result;
@@ -108,9 +116,10 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
       }
     };
   }
-  async aiCreatePlan({id}: {id: string}, context: AiFunctionContext): Promise<AiFunctionResult> {
+  async aiCreatePlan({id}: {id: string}, context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
     console.log(`aiCreatePlan called with id: ${id}`);
-    this.agentPlan = new AgentPlan();
+    this.agentPlan = new AgentPlan(id);
+    context.aiCreatePlanResult = this.agentPlan;
     return {
       result: {success: true},
       context,
@@ -160,12 +169,14 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
   }
   async aiAddFunctionStepToPlan({ id, functionName, functionArgs, reasonToAddStep, }:
                                 { id: string; functionName: string; functionArgs: object; reasonToAddStep: string; },
-                                context: AiFunctionContext): Promise<AiFunctionResult> {
+                                context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
     console.log(`aiAddFunctionStepToPlan called with: `, {id, functionName, functionArgs, reasonToAddStep});
     if (!this.agentPlan) {
       throw new Error("No active plan found. Call 'aiCreatePlan' first.");
     }
-
+    if(this.agentPlan == context.aiCreatePlanResult){ //testing
+      console.log(`it works!!`);
+    }
     const functionStep = new FunctionStep(id, functionName, functionArgs, reasonToAddStep);
     this.agentPlan.functionSteps.push(functionStep);
     return {
@@ -208,7 +219,6 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
       result: {success: true},
       context
     };
-    // this.agentPlan.isComplete = true;
   }
 
 }
