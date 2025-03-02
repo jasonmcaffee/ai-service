@@ -26,10 +26,10 @@ describe('Agent Tests', () => {
 
     describe('Planner Agent', ()=>{
 
-        it('It should create plans', async () => {
+        it('It should consistently create plans', async () => {
             const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
             const memberId = "1";
-            const iterations = 30;
+            const iterations = 5;
             const successCounts: Record<string, number> = {};
             const failureCounts: Record<string, number> = {};
 
@@ -87,6 +87,50 @@ describe('Agent Tests', () => {
                         trackResult("assistantToolCalls.length", false);
                         continue;
                     }
+
+
+
+                    try{
+                        const [aiCreatePlanCall, aiAddFunctionStepAddCall, aiAddFunctionStepSubtractCall, aiAddFunctionStepDivideCall, aiAddFunctionStep, aiCompletePlanCall] = assistantToolCalls;
+                        expect(aiCreatePlanCall.function?.name).toBe("aiCreatePlan");
+                        expect(aiCompletePlanCall.function?.name).toBe("aiCompletePlan");
+                        trackResult("assistantToolCalls create and complete in right spot", true);
+                    }catch{
+                        trackResult("assistantToolCalls create and complete in right spot", false);
+                        continue;
+                    }
+
+                    try{
+                        const [add, subtract, divide, multiply] = plannerAgent.agentPlan.functionSteps;
+                        expect(add.functionName).toBe("aiAdd");
+                        expect(subtract.functionName).toBe("aiSubtract");
+                        expect(divide.functionName).toBe("aiDivide");
+                        expect(multiply.functionName).toBe("aiMultiply");
+                        trackResult("agentPlan.functionSteps are named correctly and in the correct order", true);
+                    }catch{
+                        trackResult("agentPlan.functionSteps are named correctly and in the correct order", false);
+                        continue;
+                    }
+
+                    try{
+                        const [add, subtract, divide, multiply] = plannerAgent.agentPlan.functionSteps;
+                        expect(add.args['a']).toBe(5);
+                        expect(add.args['b']).toBe(5);
+                        expect(subtract.args['a']).toBe("$aiAdd.result");
+                        expect(subtract.args['b']).toBe(1);
+                        expect(divide.args['a']).toBe("$aiSubtract.result");
+                        expect(divide.args['b']).toBe(3);
+                        expect(multiply.args['a']).toBe("$aiDivide.result");
+                        expect(multiply.args['b']).toBe(2);
+                        trackResult("agentPlan.functionSteps function params are all correct", true);
+                    }catch(e){
+                        trackResult("agentPlan.functionSteps function params are all correct", false);
+                        console.error(`##### function params were not correct: `, e);
+                        continue;
+                    }
+
+
+
                 } catch (err) {
                     console.error(`Iteration ${i + 1} failed with error:`, err);
                 }
@@ -102,7 +146,7 @@ describe('Agent Tests', () => {
             console.log(`successCounts: `, successCounts);
             console.log(`failureCounts: `, failureCounts);
             console.log(`Test Summary: ${totalSuccesses}/${iterations}   ${successRate.toFixed(2)}%`);
-            expect(successRate).toBeGreaterThanOrEqual(90);
+            expect(successRate).toBeGreaterThanOrEqual(100);
         }, 5 * 60 * 1000);
         // it('It should create plans', async () => {
         //     const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);

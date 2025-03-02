@@ -60,7 +60,7 @@ export class CalculatorTools implements AiFunctionExecutor<CalculatorTools>{
     return {
       type: "function",
       function: {
-        name: "multiply",
+        name: "aiMultiply",
         description: "Multiply two numbers and return the product.",
         parameters: {
           type: "object",
