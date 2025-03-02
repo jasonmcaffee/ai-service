@@ -11,6 +11,7 @@ import OpenAI from 'openai';
 import { chatPageSystemPrompt } from '../utils/prompts';
 import { LlmToolsService } from './llmTools.service';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
+import {AiFunctionContext, AiFunctionExecutor} from "../models/agent/AiFunctionExecutor";
 
 interface CallOpenAiParams {
   openAiMessages: ChatCompletionMessageParam[];
@@ -21,9 +22,10 @@ interface CallOpenAiParams {
   memberId: string;
   inferenceSSESubject?: InferenceSSESubject;
   abortController?: AbortController;
-  toolService: any; // service with tool functions.
+  toolService: AiFunctionExecutor<any>; // service with tool functions.
   tools?: ChatCompletionTool[];
   totalOpenAiCallsMade?: number;
+  aiFunctionContext?: AiFunctionContext;
 }
 
 @Injectable()
@@ -44,6 +46,8 @@ export class OpenaiWrapperService{
    * @param abortController
    * @param toolService
    * @param tools
+   * @param totalOpenAiCallsMade
+   * @param aiFunctionContext
    * @returns a promise which completes when all processing is finished.  Useful for scenarios where we don't need streaming, and just want the complete results.
    */
   async callOpenAiUsingModelAndSubject({
@@ -58,6 +62,7 @@ export class OpenaiWrapperService{
        toolService,
        tools,
        totalOpenAiCallsMade = 0,
+       aiFunctionContext = {inferenceSSESubject},
      }: CallOpenAiParams): Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }> {
     const apiKey = model.apiKey;
     const baseURL = model.url;
@@ -183,7 +188,7 @@ export class OpenaiWrapperService{
         // Process each tool call
         for (const toolCall of Object.values(accumulatedToolCalls)) {
           try {
-            const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall, toolService, inferenceSSESubject);
+            const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall, toolService, aiFunctionContext);
 
             if (toolResponse) {
               // Add the tool response to messages - with correct structure
@@ -217,6 +222,7 @@ export class OpenaiWrapperService{
           toolService,
           tools,
           totalOpenAiCallsMade,
+          aiFunctionContext,
         });
       }
 
@@ -246,17 +252,18 @@ export class OpenaiWrapperService{
 
 }
 
-async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ToolCall, llmToolsService: LlmToolsService, subject?: InferenceSSESubject): Promise<{ tool_response: { name: string; content: any } } | null> {
+async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ToolCall, toolService: AiFunctionExecutor<any>, aiFunctionContext: AiFunctionContext): Promise<{ tool_response: { name: string; content: any } } | null> {
+  const {inferenceSSESubject: subject} = aiFunctionContext;
   try {
     const { toolName, toolArgs } = parseToolNameAndArgumentsFromToolCall(toolCall);
     console.log(`Handling tool call: ${toolName} with args:`, toolArgs);
 
-    if (typeof llmToolsService[toolName] == 'function') {
-      const result = await llmToolsService[toolName](toolArgs, subject);
+    if (typeof toolService[toolName] == 'function') {
+      const result = await toolService[toolName](toolArgs, aiFunctionContext);
       return {
         tool_response: {
           name: toolName,
-          content: result,
+          content: result.result,
         }
       }
     } else {

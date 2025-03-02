@@ -13,13 +13,15 @@ import { ChatCompletionTool } from 'openai/resources/chat/completions';
 import InferenceSSESubject from '../InferenceSSESubject';
 import { chatPageSystemPrompt } from '../../utils/prompts';
 import { CalculatorTools } from './CalculatorTools';
+import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./AiFunctionExecutor";
 
 /**
  * Todo: how do we access context between steps?
  * eg. search, summarize
  */
 
-export default class PlannerAgent {
+
+export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
   constructor(private readonly model: Model, private readonly openAiWrapperService: OpenaiWrapperService, private readonly memberId) {}
   agentPlan: AgentPlan;
 
@@ -106,10 +108,13 @@ export default class PlannerAgent {
       }
     };
   }
-  async aiCreatePlan({id}: {id: string}): Promise<{ success: boolean }> {
+  async aiCreatePlan({id}: {id: string}, context: AiFunctionContext): Promise<AiFunctionResult> {
     console.log(`aiCreatePlan called with id: ${id}`);
     this.agentPlan = new AgentPlan();
-    return {success: true};
+    return {
+      result: {success: true},
+      context,
+    };
   }
 
   //{"name": "searchWeb", "arguments": {"query": "latest music industry news"}}
@@ -153,7 +158,9 @@ export default class PlannerAgent {
       }
     };
   }
-  async aiAddFunctionStepToPlan({ id, functionName, functionArgs, reasonToAddStep, }: { id: string; functionName: string; functionArgs: object; reasonToAddStep: string; }) {
+  async aiAddFunctionStepToPlan({ id, functionName, functionArgs, reasonToAddStep, }:
+                                { id: string; functionName: string; functionArgs: object; reasonToAddStep: string; },
+                                context: AiFunctionContext): Promise<AiFunctionResult> {
     console.log(`aiAddFunctionStepToPlan called with: `, {id, functionName, functionArgs, reasonToAddStep});
     if (!this.agentPlan) {
       throw new Error("No active plan found. Call 'aiCreatePlan' first.");
@@ -161,7 +168,10 @@ export default class PlannerAgent {
 
     const functionStep = new FunctionStep(id, functionName, functionArgs, reasonToAddStep);
     this.agentPlan.functionSteps.push(functionStep);
-    return {success: true};
+    return {
+      result: {success: true},
+      context
+    };
   }
 
   static getAiCompletePlanMetadata(): ChatCompletionTool {
@@ -189,12 +199,15 @@ export default class PlannerAgent {
       }
     };
   }
-  async aiCompletePlan({completedReason}: {completedReason: string}) {
+  async aiCompletePlan({completedReason}: {completedReason: string}, context: AiFunctionContext): Promise<AiFunctionResult> {
     console.log(`aiCompletePlan called with: `, {completedReason});
     if (!this.agentPlan) {
       throw new Error("No active plan found. Call 'aiCreatePlan' first.");
     }
-    return {success: true};
+    return {
+      result: {success: true},
+      context
+    };
     // this.agentPlan.isComplete = true;
   }
 

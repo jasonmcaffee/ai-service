@@ -5,9 +5,10 @@ import { PageScraperService } from './pageScraper.service';
 import { getWordAndTokenCount } from '../utils/utils';
 import InferenceSSESubject from "../models/InferenceSSESubject";
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
+import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../models/agent/AiFunctionExecutor";
 
 @Injectable()
-export class LlmToolsService{
+export class LlmToolsService implements AiFunctionExecutor<LlmToolsService>{
     constructor(private readonly duckduckgoSearchService: DuckduckgoSearchService,
                 private readonly pageScraperService: PageScraperService) {}
     /**
@@ -17,7 +18,7 @@ export class LlmToolsService{
         return {
             type: "function",
             function: {
-                name: "searchWeb",
+                name: "aiSearchWeb",
                 description: "Search the web using DuckDuckGo and return relevant results.",
                 parameters: {
                     type: "object",
@@ -32,19 +33,22 @@ export class LlmToolsService{
             }
         };
     }
-    async searchWeb({query}: {query?: string} = {query: undefined}, subject: InferenceSSESubject, ): Promise<SearchResultWithMarkdownContentResponse>{
+    async aiSearchWeb({query}: {query?: string} = {query: undefined}, context: AiFunctionContext, )
+        : Promise<AiFunctionResult>{
+        const {inferenceSSESubject: subject} = context;
+
         const maxTokens = 50000;
         if(!query){
             throw new Error('searchWeb called without a query');
         }
-        subject.sendStatus(`searching web with query: ${query}`);
+        subject?.sendStatus(`searching web with query: ${query}`);
         const maxPages=1, startPage=1;
         const searchResultResponse = await this.duckduckgoSearchService.searchDuckDuckGo(query, maxPages, startPage);
 
         const urls1 = searchResultResponse.searchResults.map(r => r.url);
         const urls = urls1.slice(0, 1);
 
-        subject.sendStatus(`retrieving contents of ${searchResultResponse.searchResults.length} pages.`);
+        subject?.sendStatus(`retrieving contents of ${searchResultResponse.searchResults.length} pages.`);
         //fetch all pages in the results
         const markdownContentsForAllPagesInTheSearchResults = await this.pageScraperService.getContentsOfWebpagesAsMarkdown(
           {urls, removeScriptsAndStyles: true, shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true, });
@@ -65,13 +69,13 @@ export class LlmToolsService{
             const correspondingSearchResultForUrl = searchResultResponse.searchResults.find(s => s.url == url)!; //todo: could be the same url twice?  probably not...
             result.searchResults.push({...correspondingSearchResultForUrl, markdown});
         }
-        subject.sendStatus(`sending ${result.searchResults.length} search results with a total of ${totalTokens} tokens to AI`);
+        subject?.sendStatus(`sending ${result.searchResults.length} search results with a total of ${totalTokens} tokens to AI`);
         for(let failureResult of markdownContentsForAllPagesInTheSearchResults.errorResults){
-            subject.sendStatus(`failed getting page contents of url: ${failureResult.url} due to error: ${failureResult.error.message}`);
+            subject?.sendStatus(`failed getting page contents of url: ${failureResult.url} due to error: ${failureResult.error.message}`);
             console.warn(`failed getting page contents of url: ${failureResult.url}`, failureResult.error);
         }
         //set a maximum token length.
-        return result;
+        return { result, context,};
     }
 
 }
