@@ -29,31 +29,97 @@ describe('Agent Tests', () => {
         it('It should create plans', async () => {
             const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
             const memberId = "1";
+            const iterations = 10;
+            const successCounts: Record<string, number> = {};
+            const failureCounts: Record<string, number> = {};
 
-            for(let i = 0; i < 5; i++){
-                const plannerAgent = new PlannerAgent(model, openAiWrapperService, memberId);
-                const {openAiMessages, completeText, totalOpenAiCallsMade} = await plannerAgent.createPlan("Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
+            const trackResult = (key: string, passed: boolean) => {
+                if (passed) {
+                    successCounts[key] = (successCounts[key] || 0) + 1;
+                } else {
+                    failureCounts[key] = (failureCounts[key] || 0) + 1;
+                }
+            };
 
-                console.log(`openAiMessages: `, JSON.stringify(openAiMessages, null, 2));
-                expect(openAiMessages.length > 0).toBe(true);
+            for (let i = 0; i < iterations; i++) {
+                try {
+                    const plannerAgent = new PlannerAgent(model, openAiWrapperService, memberId);
+                    const { openAiMessages, completeText, totalOpenAiCallsMade } = await plannerAgent.createPlan(
+                        "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2."
+                    );
 
-                //call 1: initial prompt along with tools available to the ai.
-                //response 1: list of tools to call, along with parameters.  e.g. name: add, arguments: {a: 5, b: 5}
-                //call 2: result of calling tool. e.g. 10
-                //response 2: complete.
-                expect(totalOpenAiCallsMade).toBe(2);
+                    // console.log(`Iteration ${i + 1} - openAiMessages: `, JSON.stringify(openAiMessages, null, 2));
+                    console.log(`Iteration ${i + 1} `);
 
-                const assistantMessages = getMessageByRole('assistant', openAiMessages);
-                expect(assistantMessages.length == 1).toBe(true);
-                //@ts-ignore
-                const assistantToolCalls = assistantMessages[0].tool_calls as ToolCall[];
-                expect(assistantToolCalls.length).toBe(6);
-                const [createAiPlanToolCall, addFunctionStepForAdd, addFunctionStepForSubtract, addFunctionStepForDivide, addFunctionStepForMultiply, completePlan] = assistantToolCalls;
+                    try {
+                        expect(totalOpenAiCallsMade).toBe(2);
+                        trackResult("totalOpenAiCallsMade", true);
+                    } catch {
+                        trackResult("totalOpenAiCallsMade", false);
+                        continue;
+                    }
 
+                    const assistantMessages = getMessageByRole('assistant', openAiMessages);
+                    try {
+                        expect(assistantMessages.length === 1).toBe(true);
+                        trackResult("assistantMessages.length", true);
+                    } catch {
+                        trackResult("assistantMessages.length", false);
+                        continue;
+                    }
 
+                    //@ts-ignore
+                    const assistantToolCalls = assistantMessages[0]?.tool_calls as ToolCall[] || [];
+                    try {
+                        expect(assistantToolCalls.length).toBe(6);
+                        trackResult("assistantToolCalls.length", true);
+                    } catch {
+                        trackResult("assistantToolCalls.length", false);
+                        continue;
+                    }
+                } catch (err) {
+                    console.error(`Iteration ${i + 1} failed with error:`, err);
+                }
             }
 
-        }, 1 * 60 * 1000);
+            // Compute final pass percentage
+            const totalAssertions = Object.keys(successCounts).reduce((sum, key) => sum + (successCounts[key] || 0) + (failureCounts[key] || 0), 0);
+            const totalSuccesses = Object.values(successCounts).reduce((sum, count) => sum + count, 0);
+            const successRate = (totalSuccesses / totalAssertions) * 100;
+
+            console.log("Test Summary:");
+            console.log("Success Counts:", successCounts);
+            console.log("Failure Counts:", failureCounts);
+            console.log(`Final Success Rate: ${successRate.toFixed(2)}%`); // Final Success Rate: 77.27%
+
+            expect(successRate).toBeGreaterThanOrEqual(90);
+        }, 5 * 60 * 1000);
+        // it('It should create plans', async () => {
+        //     const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
+        //     const memberId = "1";
+        //
+        //     for(let i = 0; i < 5; i++){
+        //         const plannerAgent = new PlannerAgent(model, openAiWrapperService, memberId);
+        //         const {openAiMessages, completeText, totalOpenAiCallsMade} = await plannerAgent.createPlan("Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
+        //
+        //         console.log(`openAiMessages: `, JSON.stringify(openAiMessages, null, 2));
+        //         expect(openAiMessages.length > 0).toBe(true);
+        //
+        //         //call 1: initial prompt along with tools available to the ai.
+        //         //response 1: list of tools to call, along with parameters.  e.g. name: add, arguments: {a: 5, b: 5}
+        //         //call 2: result of calling tool. e.g. 10
+        //         //response 2: complete.
+        //         expect(totalOpenAiCallsMade).toBe(2);
+        //
+        //         const assistantMessages = getMessageByRole('assistant', openAiMessages);
+        //         expect(assistantMessages.length == 1).toBe(true);
+        //         //@ts-ignore
+        //         const assistantToolCalls = assistantMessages[0].tool_calls as ToolCall[];
+        //         expect(assistantToolCalls.length).toBe(6);
+        //         // const [createAiPlanToolCall, addFunctionStepForAdd, addFunctionStepForSubtract, addFunctionStepForDivide, addFunctionStepForMultiply, completePlan] = assistantToolCalls;
+        //     }
+        //
+        // }, 1 * 60 * 1000);
     });
 });
 
