@@ -144,6 +144,7 @@ export class OpenaiWrapperService{
           const content = choice.delta.content;
           streamedText += content;
 
+          // const result = {foundToolCalls: null, assistantResponse: null, previousCompleteText: completeText, newToolCalls: null};
           const result = parseLlamaCppToolCalls(streamedText, completeText, accumulatedToolCalls, assistantResponse);
           // Get updated values from parsing result
           completeText = result.newTextToDisplay;
@@ -291,12 +292,12 @@ function parseToolNameAndArgumentsFromToolCall(toolCall: ToolCall){
  *
  * Parse llama.cpp style tool calls from streamed content.
  * When llama.cpp sends back tool calls, it does so in the format:
- * <tool_call>
+ *  Tool_Call_Start 
  * {"name": "searchWeb", "arguments": {"query": "gene hackman news"}}
- * </tool_call>
- * <tool_call>
+ *  Tool_Call_End 
+ *  Tool_Call_Start 
  * {"name": "searchWeb", "arguments": {"query": "tame impala news"}}
- * </tool_call>
+ *  Tool_Call_End 
  *
  * This function is called over and over again as text is streamed back from the llm, so we have to ensure we don't parse the same
  * <tool_call> more than once.
@@ -323,8 +324,13 @@ function parseLlamaCppToolCalls(
 
   // Check for llama.cpp tool calls in the content
   // const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs;
-  const toolCallRegex = /### TOOL_CALL_START ###\s*(.*?)\s*### TOOL_CALL_END ###/gs;
-  let match;
+  // const toolCallRegex = /_ Tool_Call_Start  _\s*(.*?)\s* Tool_Call_End /gs;
+  // const toolCallRegex = /<Tool_Call_Start> \s*([\s\S]*?)\s* <Tool_End>/g;
+  // const toolCallRegex = /\[Tool_Call_Start\] \s*([\s\S]*?)\s* \[Tool_End\]/g;
+  // const toolCallRegex = /\[Tool_Call_Start\]\s*([\s\S]*?)\s*\[Tool_End\]/g;
+    const toolCallRegex = /\[Tool_Call_Start\]\s*([\s\S]*?)\s*\[Tool_End\]/g;
+
+    let match;
   let lastIndex = 0;
 
   // Reset the regex to start from the beginning
@@ -341,8 +347,10 @@ function parseLlamaCppToolCalls(
   // Find all tool calls in the accumulated streamed text
   while ((match = toolCallRegex.exec(streamedText)) !== null) {
     // Add text before the tool call to the display text
-    newTextToDisplay += streamedText.substring(lastIndex, match.index);
+    const sub = streamedText.substring(lastIndex, match.index);
+    newTextToDisplay += sub;
     lastIndex = match.index + match[0].length;
+    // console.log(`lastIndex: ${lastIndex}, match.index: ${match.index} sub: ${sub}, newTextToDisplay: ${newTextToDisplay}, streamedText: ${streamedText}`)
 
     // Process the tool call
     try {
@@ -413,19 +421,98 @@ function parseLlamaCppToolCalls(
 }
 
 /**
- {%- if tools %}
+{%- if tools %}
     {{- '<|im_start|>system\n' }}
     {%- if messages[0]['role'] == 'system' %}
         {{- messages[0]['content'] }}
     {%- else %}
         {{- 'You are Qwen, created by Alibaba Cloud, with assistance from Jason. You are a helpful assistant.' }}
     {%- endif %}
-    {{- "\n\n# Tools\n\nYou may use the following tools to help with user queries.\n\n## Available Functions\n\n<tools>" }}
+
+    {{- "\n\n# Tools\n\n" }}
+    {{- "You may use the following tools to help with user queries.\n\n" }}
+    {{- "## Available Functions\n\n" }}
+    {{- "<tools>\n" }}
     {%- for tool in tools %}
-        {{- "\n" }}
         {{- tool | tojson }}
+        {{- "\n" }}
     {%- endfor %}
-    {{- "\n</tools>\n\n## Tool Call Format\n\nWhen using a tool, follow this EXACT format for EACH function call:\n\n### TOOL_CALL_START ###\n{\"name\": \"functionName\", \"arguments\": {\"param\": \"value\"}}\n### TOOL_CALL_END ###\n\nComplete one tool call FULLY with both START and END markers before beginning another one.\n\n## Example of Multiple Tool Calls:\n\n### TOOL_CALL_START ###\n{\"name\": \"aiCreatePlan\", \"arguments\": {\"id\": \"math_operation_plan\"}}\n### TOOL_CALL_END ###\n\n### TOOL_CALL_START ###\n{\"name\": \"aiAddFunctionStepToPlan\", \"arguments\": {\"id\": \"1\", \"functionName\": \"aiAdd\", \"functionArgs\": {\"a\": 5, \"b\": 5}, \"reasonToAddStep\": \"First, add 5 to 5.\"}}\n### TOOL_CALL_END ###\n\n### TOOL_CALL_START ###\n{\"name\": \"aiCompletePlan\", \"arguments\": {\"completedReason\": \"Plan is complete\"}}\n### TOOL_CALL_END ###\n<|im_end|>\n" }}
+    {{- "</tools>\n\n" }}
+
+    {{- "## Tool Call Format\n\n" }}
+    {{- "When using a tool, follow this EXACT format for EACH function call:\n\n" }}
+    {{- " Tool_Call_Start \n" }}
+    {{- "{\"name\": \"functionName\", \"arguments\": {\"param\": \"value\"}}\n" }}
+    {{- " Tool_Call_End \n\n" }}
+    {{- "Complete one tool call FULLY with both START and END markers before beginning another one.\n\n" }}
+
+    {{- "## IMPORTANT: Format Requirements\n\n" }}
+    {{- "1. Include BOTH underscores (_) on BOTH markers\n" }}
+    {{- "2. Always include a NEWLINE after  Tool_Call_End  before starting a new  Tool_Call_Start \n" }}
+    {{- "3. Check EVERY marker, especially the LAST  Tool_Call_End \n" }}
+    {{- "4. Complete each tool call fully before beginning another\n\n" }}
+
+    {{- "## IMPORTANT: Common Format Errors to Avoid\n\n" }}
+    {{- "Pay close attention to the format of tool calls. The model often makes these mistakes:\n\n" }}
+
+    {{- "### CORRECT FORMAT (Use exactly this):\n" }}
+    {{- " Tool_Call_Start \n" }}
+    {{- "{\"name\": \"functionName\", \"arguments\": {\"param\": \"value\"}}\n" }}
+    {{- " Tool_Call_End \n\n" }}
+    {{- " Tool_Call_Start \n" }}
+    {{- "{\"name\": \"anotherFunction\", \"arguments\": {\"param\": \"value\"}}\n" }}
+    {{- " Tool_Call_End \n\n" }}
+
+    {{- "### COMMON INCORRECT FORMATS (Do NOT use these):\n\n" }}
+    {{- "#### Missing newlines between calls:\n" }}
+    {{- "❌  Tool_Call_Start \n" }}
+    {{- "{\"name\": \"functionName\", \"arguments\": {\"param\": \"value\"}}\n" }}
+    {{- " Tool_Call_End  Tool_Call_Start \n" }}
+    {{- "{\"name\": \"anotherFunction\", \"arguments\": {\"param\": \"value\"}}\n" }}
+    {{- " Tool_Call_End \n\n" }}
+
+    {{- "## ADDITIONAL Instructions: What the Model Should NOT Do\n\n" }}
+    {{- "- **Do NOT** output an incomplete ending marker. In other words, never output `TOOL_CALL` when the complete marker should be ` Tool_Call_End `.\n\n" }}
+    {{- "  **Incorrect Example:**\n" }}
+    {{- "  ```\n" }}
+    {{- "   Tool_Call_Start \n" }}
+    {{- "  {\"name\": \"aiCreatePlan\", \"arguments\": {\"id\": \"math_operation_plan\"}}\n" }}
+    {{- "  TOOL_CALL\n" }}
+    {{- "  ```\n\n" }}
+    {{- "  **Correct Example:**\n" }}
+    {{- "  ```\n" }}
+    {{- "   Tool_Call_Start \n" }}
+    {{- "  {\"name\": \"aiCreatePlan\", \"arguments\": {\"id\": \"math_operation_plan\"}}\n" }}
+    {{- "   Tool_Call_End \n" }}
+    {{- "  ```\n\n" }}
+    {{- "- Ensure that every tool call is terminated with the full ` Tool_Call_End ` marker on a new line.\n\n" }}
+
+    {{- "## Multiple Examples of Properly Formatted Tool Calls:\n\n" }}
+    {{- "### Example 1 - Math Operations (with proper newlines):\n" }}
+    {{- " Tool_Call_Start \n" }}
+    {{- "{\"name\": \"aiCreatePlan\", \"arguments\": {\"id\": \"math_operation_plan\"}}\n" }}
+    {{- " Tool_Call_End \n\n" }}
+    {{- " Tool_Call_Start \n" }}
+    {{- "{\"name\": \"aiAddFunctionStepToPlan\", \"arguments\": {\"id\": \"1\", \"functionName\": \"aiAdd\", \"functionArgs\": {\"a\": 5, \"b\": 5}, \"reasonToAddStep\": \"First, add 5 to 5.\"}}\n" }}
+    {{- " Tool_Call_End \n\n" }}
+    {{- " Tool_Call_Start \n" }}
+    {{- "{\"name\": \"aiCompletePlan\", \"arguments\": {\"completedReason\": \"Plan is complete\"}}\n" }}
+    {{- " Tool_Call_End \n\n" }}
+
+    {{- "### Example 2 - Multiple Operations (carefully check all markers):\n" }}
+    {{- " Tool_Call_Start \n" }}
+    {{- "{\"name\": \"aiCreatePlan\", \"arguments\": {\"id\": \"complex_plan\"}}\n" }}
+    {{- " Tool_Call_End \n\n" }}
+    {{- " Tool_Call_Start \n" }}
+    {{- "{\"name\": \"aiAddFunctionStepToPlan\", \"arguments\": {\"id\": \"1\", \"functionName\": \"aiAdd\", \"functionArgs\": {\"a\": 10, \"b\": 5}, \"reasonToAddStep\": \"First step\"}}\n" }}
+    {{- " Tool_Call_End \n\n" }}
+    {{- " Tool_Call_Start \n" }}
+    {{- "{\"name\": \"aiAddFunctionStepToPlan\", \"arguments\": {\"id\": \"2\", \"functionName\": \"aiMultiply\", \"functionArgs\": {\"a\": \"$aiAdd.result\", \"b\": 2}, \"reasonToAddStep\": \"Second step\"}}\n" }}
+    {{- " Tool_Call_End \n\n" }}
+    {{- " Tool_Call_Start \n" }}
+    {{- "{\"name\": \"aiCompletePlan\", \"arguments\": {\"completedReason\": \"Plan complete\"}}\n" }}
+    {{- " Tool_Call_End \n" }}
+    {{- "<|im_end|>\n" }}
 {%- else %}
     {%- if messages[0]['role'] == 'system' %}
         {{- '<|im_start|>system\n' + messages[0]['content'] + '<|im_end|>\n' }}
@@ -445,11 +532,14 @@ function parseLlamaCppToolCalls(
             {%- if tool_call.function is defined %}
                 {%- set tool_call = tool_call.function %}
             {%- endif %}
-            {{- '\n### TOOL_CALL_START ###\n{"name": "' }}
+            {{- '\n Tool_Call_Start \n{"name": "' }}
             {{- tool_call.name }}
             {{- '", "arguments": ' }}
             {{- tool_call.arguments | tojson }}
-            {{- '}\n### TOOL_CALL_END ###' }}
+            {{- '}\n Tool_Call_End \n' }}
+            {%- if not loop.last %}
+                {{- '\n' }}
+            {%- endif %}
         {%- endfor %}
         {{- '<|im_end|>\n' }}
     {%- elif message.role == "tool" %}
@@ -467,4 +557,6 @@ function parseLlamaCppToolCalls(
 {%- if add_generation_prompt %}
     {{- '<|im_start|>assistant\n' }}
 {%- endif %}
+
+
  */

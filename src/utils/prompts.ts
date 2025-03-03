@@ -122,3 +122,115 @@ export function nameConversationPrompt(conversation: Conversation){
 
   return prompt;
 }
+
+
+export function getToolsPrompt(tools: object[]){
+  const template = `
+# Tools
+When using tools previously provided, ensure that you use the format listed below.
+
+## Tool Call Format
+
+When using a tool, follow this EXACT format for EACH function call:
+
+ [Tool_Call_Start] 
+{"name": "functionName", "arguments": {"param": "value"}}
+ [Tool_End] 
+
+Complete one tool call FULLY with both START and END markers before beginning another one.
+
+## IMPORTANT: Format Requirements
+
+1. Include BOTH underscores (_) on BOTH markers
+2. Always include a space before [Tool_End], and before [Tool_Call_Start]
+3. Always include a space after [Tool_End], and before [Tool_Call_Start]
+4. Always include a NEWLINE after  [Tool_End]  before starting a new  [Tool_Call_Start] 
+5. Check EVERY marker, especially the LAST  [Tool_End] 
+6. Complete each tool call fully before beginning another
+
+## IMPORTANT: Common Format Errors to Avoid
+
+Pay close attention to the format of tool calls. The model often makes these mistakes:
+
+### CORRECT FORMAT (Use exactly this):
+ [Tool_Call_Start] 
+{"name": "functionName", "arguments": {"param": "value"}}
+ [Tool_End] 
+
+ [Tool_Call_Start] 
+{"name": "anotherFunction", "arguments": {"param": "value"}}
+ [Tool_End] 
+
+### COMMON INCORRECT FORMATS (Do NOT use these):
+
+#### Incorrectly missing newlines between calls:
+❌  
+ \`\`\`
+[Tool_Call_Start] 
+{"name": "functionName", "arguments": {"param": "value"}}
+ [Tool_End]  [Tool_Call_Start] 
+{"name": "anotherFunction", "arguments": {"param": "value"}}
+ [Tool_End] 
+ \`\`\`
+## ADDITIONAL Instructions: What you Should NOT Do
+
+- **Do NOT** output an incomplete ending marker. In other words, never output \`Tool\` when the complete marker should be \` [Tool_End] \`.
+
+  **Incorrect Example:**
+  \`\`\`
+   [Tool_Call_Start] 
+  {"name": "aiCreatePlan", "arguments": {"id": "math_operation_plan"}}
+  Tool
+  \`\`\`
+
+  **Correct Example:**
+  \`\`\`
+   [Tool_Call_Start] 
+  {"name": "aiCreatePlan", "arguments": {"id": "math_operation_plan"}}
+   [Tool_End] 
+  \`\`\`
+- Ensure that every tool call is terminated with the full \` [Tool_End] \` marker on a new line.
+
+## Multiple Examples of Properly Formatted Tool Calls:
+
+### Example 1 - Math Operations (with proper newlines):
+ \`\`\`
+ [Tool_Call_Start] 
+{"name": "aiCreatePlan", "arguments": {"id": "math_operation_plan"}}
+ [Tool_End] 
+
+ [Tool_Call_Start] 
+{"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "aiAdd", "functionArgs": {"a": 5, "b": 5}, "reasonToAddStep": "First, add 5 to 5."}}
+ [Tool_End] 
+
+ [Tool_Call_Start] 
+{"name": "aiCompletePlan", "arguments": {"completedReason": "Plan is complete"}}
+ [Tool_End] 
+ \`\`\` 
+
+### Example 2 - Multiple Operations (carefully check all markers):
+ \`\`\`
+ [Tool_Call_Start] 
+{"name": "aiCreatePlan", "arguments": {"id": "complex_plan"}}
+ [Tool_End] 
+
+ [Tool_Call_Start] 
+{"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "aiAdd", "functionArgs": {"a": 10, "b": 5}, "reasonToAddStep": "First step"}}
+ [Tool_End] 
+
+ [Tool_Call_Start] 
+{"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "aiMultiply", "functionArgs": {"a": "$aiAdd.result", "b": 2}, "reasonToAddStep": "Second step"}}
+ [Tool_End] 
+
+ [Tool_Call_Start] 
+{"name": "aiCompletePlan", "arguments": {"completedReason": "Plan complete"}}
+ [Tool_End] 
+  \`\`\`
+  
+  
+It is imperative that every [Tool_Call_Start] has an ending [Tool_End].
+Review your plan and ensure that you verify this is always done, no matter what.  
+`;
+
+  return template;
+}

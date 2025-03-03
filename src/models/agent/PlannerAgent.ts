@@ -12,7 +12,7 @@ import { Model } from '../api/conversationApiModels';
 import { LlmToolsService } from '../../services/llmTools.service';
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
 import InferenceSSESubject from '../InferenceSSESubject';
-import { chatPageSystemPrompt } from '../../utils/prompts';
+import {chatPageSystemPrompt, getToolsPrompt} from '../../utils/prompts';
 import { CalculatorTools } from './CalculatorTools';
 import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./AiFunctionExecutor";
 
@@ -32,6 +32,7 @@ class PlannerAgentFunctionContext implements AiFunctionContext {
 export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
   constructor(private readonly model: Model, private readonly openAiWrapperService: OpenaiWrapperService, private readonly memberId) {}
   agentPlan: AgentPlan;
+  public isPlanCreationComplete: boolean;
 
   getOpenAiMetadataForTools(): ChatCompletionTool[]{
     return [
@@ -47,13 +48,17 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
   }
 
   async createPlan(userPrompt: string){
+    this.isPlanCreationComplete = false;
     const abortController = new AbortController();
     const inferenceSSESubject = new InferenceSSESubject();
     const aiFunctionContext = new PlannerAgentFunctionContext(inferenceSSESubject);
 
     let completeText = '';
     const result = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
-      openAiMessages: [{ role: 'system', content: this.getCreatePlanPrompt(userPrompt)}],
+      openAiMessages: [
+          { role: 'system', content: getToolsPrompt(this.getOpenAiMetadataForTools())},
+          { role: 'system', content: this.getCreatePlanPrompt(userPrompt)}
+      ],
       handleOnText: (text)=> {
         completeText += text;
       },
@@ -81,14 +86,14 @@ You are a Planning Agent whose ONLY responsibility is to create a structured pla
    - Middle calls: \`aiAddFunctionStepToPlan\` (one or more steps)
    - Last call: \`aiCompletePlan\` (always last)
 4. Make ALL tool calls in a SINGLE response (do not wait for results between calls)
-5. After receiving \`{success: true}\` from \`aiCompletePlan\`, respond only with 'complete'
+5. After receiving \`{success: true}\` from \`aiCompletePlan\`, respond only with a blank space. e.g. ' '  This is extremely important.
 
 ## Critical Rules
 - Call ONLY the planning tools (aiCreatePlan, aiAddFunctionStepToPlan, aiCompletePlan)
 - Reference other provided tools ONLY as steps in your plan
 - NEVER invent tools that weren't provided to you
 - Make ALL tool calls in ONE response
-- Use parameter referencing syntax \`$functionName.propertyName\` for dependencies
+- Use parameter referencing syntax \`$functionName.result\` for dependencies
 - ALWAYS end your plan with aiCompletePlan
 - NO explanatory text, preambles, or dialogue - ONLY tool calls
 - Format all tool calls as proper JSON objects
@@ -124,14 +129,16 @@ Do not guess or make up any property names.
 **User prompt**: "Find the latest news about climate change and summarize it for me."
 
 **Successful Response**:
+Note: there is a blank space after aiCompletePlan
 \`\`\`
     {"name": "aiCreatePlan", "arguments": {"id": "climate_news_plan"}}
     {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "searchWeb", "functionArgs": {"query": "latest climate change news"}, "reasonToAddStep": "Need to gather recent information on climate change."}}
     {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "summarize", "functionArgs": {"textToSummarize": "$searchWeb.result"}, "reasonToAddStep": "Need to condense the search results into a readable summary."}}
-    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to search for and summarize climate change news as requested."}}
-    \`\`\`
+    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to search for and summarize climate change news as requested."}} 
+\`\`\`
 
 ## SUCCESSFUL EXAMPLE 2: Multi-Step Calculation
+Note: there is a blank space after aiCompletePlan
 **User prompt**: "Convert 100 USD to EUR, then calculate 15% of that amount."
 
 **Successful Response**:
@@ -155,7 +162,7 @@ Do not guess or make up any property names.
 \`\`\`
     {"name": "aiCreatePlan", "arguments": {"id": "paris_weather_plan"}}
     {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "getWeather", "functionArgs": {"location": "Paris"}, "reasonToAddStep": "Need to retrieve current weather data for Paris."}}
-    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides step to get weather information for Paris as requested."}}
+    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides step to get weather information for Paris as requested."}} 
     \`\`\`
 
 ## UNSUCCESSFUL EXAMPLE 2: Multiple Responses Instead of One
@@ -334,6 +341,7 @@ Remember: You MUST call all tools (aiCreatePlan → aiAddFunctionStepToPlan → 
     if (!this.agentPlan) {
       throw new Error("No active plan found. Call 'aiCreatePlan' first.");
     }
+    this.isPlanCreationComplete = true;
     return {
       result: {success: true},
       context
