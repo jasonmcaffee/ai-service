@@ -30,7 +30,7 @@ describe('Agent Tests', () => {
         it('It should consistently create plans', async () => {
             const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
             const memberId = "1";
-            const iterations = 10;
+            const iterations = 100;
             const successCounts: Record<string, number> = {};
             const failureCounts: Record<string, number> = {};
 
