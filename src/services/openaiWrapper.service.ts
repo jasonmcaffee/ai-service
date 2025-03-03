@@ -59,7 +59,7 @@ export class OpenaiWrapperService{
        memberId,
        inferenceSSESubject,
        abortController,
-       toolService,
+       toolService, //todo: just use the aiFunctionContext.
        tools,
        totalOpenAiCallsMade = 0,
        aiFunctionContext = {inferenceSSESubject, aiFunctionExecutor: toolService},
