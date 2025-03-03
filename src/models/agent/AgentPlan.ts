@@ -1,9 +1,9 @@
 export class AgentPlan{
-    functionSteps: FunctionStep[] = [];
+    functionSteps: AiFunctionStep[] = [];
     constructor(private readonly id: string) {}
 }
 
-export class FunctionStep {
+export class AiFunctionStep {
     constructor(readonly id: string, readonly functionName: string, readonly args: object, readonly reasonToAddStep: string) {
     }
 }

@@ -5,7 +5,7 @@ import { PageScraperService } from './pageScraper.service';
 import { getWordAndTokenCount } from '../utils/utils';
 import InferenceSSESubject from "../models/InferenceSSESubject";
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
-import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../models/agent/AiFunctionExecutor";
+import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../models/agent/aiTypes";
 
 @Injectable()
 export class LlmToolsService implements AiFunctionExecutor<LlmToolsService>{

@@ -1,5 +1,5 @@
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
-import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./AiFunctionExecutor";
+import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./aiTypes";
 
 export class CalculatorTools implements AiFunctionExecutor<CalculatorTools>{
   static getAiAddMetadata(): ChatCompletionTool {
@@ -111,6 +111,15 @@ export class CalculatorTools implements AiFunctionExecutor<CalculatorTools>{
       throw new Error("Division by zero is not allowed.");
     }
     return {result: a / b, context};
+  }
+
+  getToolsMetadata(): ChatCompletionTool[] {
+    return [
+      CalculatorTools.getAiAddMetadata(),
+      CalculatorTools.getAiMultiplyMetadata(),
+      CalculatorTools.getAiSubtractMetadata(),
+      CalculatorTools.getAiDivideMetadata(),
+    ];
   }
 
 }

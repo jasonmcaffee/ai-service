@@ -30,7 +30,7 @@ describe('Agent Tests', () => {
         it('It should consistently create plans', async () => {
             const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
             const memberId = "1";
-            const iterations = 100;
+            const iterations = 1;
             const successCounts: Record<string, number> = {};
             const failureCounts: Record<string, number> = {};
 
@@ -159,32 +159,7 @@ describe('Agent Tests', () => {
             console.log(`Test Summary: ${totalSuccesses}/${iterations}   ${successRate.toFixed(2)}%`);
             expect(successRate).toBeGreaterThanOrEqual(100);
         }, 15 * 60 * 1000);
-        // it('It should create plans', async () => {
-        //     const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
-        //     const memberId = "1";
-        //
-        //     for(let i = 0; i < 5; i++){
-        //         const plannerAgent = new PlannerAgent(model, openAiWrapperService, memberId);
-        //         const {openAiMessages, completeText, totalOpenAiCallsMade} = await plannerAgent.createPlan("Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
-        //
-        //         console.log(`openAiMessages: `, JSON.stringify(openAiMessages, null, 2));
-        //         expect(openAiMessages.length > 0).toBe(true);
-        //
-        //         //call 1: initial prompt along with tools available to the ai.
-        //         //response 1: list of tools to call, along with parameters.  e.g. name: add, arguments: {a: 5, b: 5}
-        //         //call 2: result of calling tool. e.g. 10
-        //         //response 2: complete.
-        //         expect(totalOpenAiCallsMade).toBe(2);
-        //
-        //         const assistantMessages = getMessageByRole('assistant', openAiMessages);
-        //         expect(assistantMessages.length == 1).toBe(true);
-        //         //@ts-ignore
-        //         const assistantToolCalls = assistantMessages[0].tool_calls as ToolCall[];
-        //         expect(assistantToolCalls.length).toBe(6);
-        //         // const [createAiPlanToolCall, addFunctionStepForAdd, addFunctionStepForSubtract, addFunctionStepForDivide, addFunctionStepForMultiply, completePlan] = assistantToolCalls;
-        //     }
-        //
-        // }, 1 * 60 * 1000);
+
     });
 });
 

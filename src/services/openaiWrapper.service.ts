@@ -11,7 +11,7 @@ import OpenAI from 'openai';
 import { chatPageSystemPrompt } from '../utils/prompts';
 import { LlmToolsService } from './llmTools.service';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
-import {AiFunctionContext, AiFunctionExecutor} from "../models/agent/AiFunctionExecutor";
+import {AiFunctionContext, AiFunctionExecutor} from "../models/agent/aiTypes";
 
 interface CallOpenAiParams {
   openAiMessages: ChatCompletionMessageParam[];
@@ -62,7 +62,7 @@ export class OpenaiWrapperService{
        toolService,
        tools,
        totalOpenAiCallsMade = 0,
-       aiFunctionContext = {inferenceSSESubject},
+       aiFunctionContext = {inferenceSSESubject, aiFunctionExecutor: toolService},
      }: CallOpenAiParams): Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }> {
     const apiKey = model.apiKey;
     const baseURL = model.url;
@@ -292,12 +292,12 @@ function parseToolNameAndArgumentsFromToolCall(toolCall: ToolCall){
  *
  * Parse llama.cpp style tool calls from streamed content.
  * When llama.cpp sends back tool calls, it does so in the format:
- *  Tool_Call_Start 
+ *  Tool_Call_Start
  * {"name": "searchWeb", "arguments": {"query": "gene hackman news"}}
- *  Tool_Call_End 
- *  Tool_Call_Start 
+ *  Tool_Call_End
+ *  Tool_Call_Start
  * {"name": "searchWeb", "arguments": {"query": "tame impala news"}}
- *  Tool_Call_End 
+ *  Tool_Call_End
  *
  * This function is called over and over again as text is streamed back from the llm, so we have to ensure we don't parse the same
  * <tool_call> more than once.
