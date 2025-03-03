@@ -26,10 +26,11 @@ describe('Agent Tests', () => {
 
     describe('Planner Agent', ()=>{
 
+        //86% success. error is that aiAdd.result is expected, but aiAdd.sum is being passed.
         it('It should consistently create plans', async () => {
             const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
             const memberId = "1";
-            const iterations = 5;
+            const iterations = 100;
             const successCounts: Record<string, number> = {};
             const failureCounts: Record<string, number> = {};
 
@@ -126,6 +127,7 @@ describe('Agent Tests', () => {
                     }catch(e){
                         trackResult("agentPlan.functionSteps function params are all correct", false);
                         console.error(`##### function params were not correct: `, e);
+                        console.log(`complete text from llm: `, completeText);
                         continue;
                     }
 
@@ -147,7 +149,7 @@ describe('Agent Tests', () => {
             console.log(`failureCounts: `, failureCounts);
             console.log(`Test Summary: ${totalSuccesses}/${iterations}   ${successRate.toFixed(2)}%`);
             expect(successRate).toBeGreaterThanOrEqual(100);
-        }, 5 * 60 * 1000);
+        }, 15 * 60 * 1000);
         // it('It should create plans', async () => {
         //     const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
         //     const memberId = "1";

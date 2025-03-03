@@ -60,7 +60,7 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
       abortController, inferenceSSESubject, model: this.model, memberId: this.memberId, tools: this.getOpenAiMetadataForTools(),
       toolService: this, aiFunctionContext,
     });
-    console.log(`plannerAgent completeText streamed: `, completeText);
+    // console.log(`plannerAgent completeText streamed: `, completeText);
     result.completeText = completeText;
     return result;
   }
@@ -106,9 +106,8 @@ Example:
     \`\`\`
 
 ## Parameter Referencing Syntax
-When a step depends on a previous step's result:
-- For a specific property: \`$functionName.propertyName\`
-- For the entire result: \`$functionName\`
+When a step depends on a previous step's result, use this to indicate the entire result: \`$functionName.result\`
+Do not guess or make up any property names. 
 
 ## Chain-of-Thought Process
 1. First, identify what the user is asking for
@@ -128,7 +127,7 @@ When a step depends on a previous step's result:
 \`\`\`
     {"name": "aiCreatePlan", "arguments": {"id": "climate_news_plan"}}
     {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "searchWeb", "functionArgs": {"query": "latest climate change news"}, "reasonToAddStep": "Need to gather recent information on climate change."}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "summarize", "functionArgs": {"textToSummarize": "$searchWeb.results"}, "reasonToAddStep": "Need to condense the search results into a readable summary."}}
+    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "summarize", "functionArgs": {"textToSummarize": "$searchWeb.result"}, "reasonToAddStep": "Need to condense the search results into a readable summary."}}
     {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to search for and summarize climate change news as requested."}}
     \`\`\`
 
@@ -139,7 +138,7 @@ When a step depends on a previous step's result:
 \`\`\`
     {"name": "aiCreatePlan", "arguments": {"id": "currency_calculation_plan"}}
     {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "currencyConvert", "functionArgs": {"amount": 100, "from": "USD", "to": "EUR"}, "reasonToAddStep": "Need to convert USD to EUR as requested."}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculatePercentage", "functionArgs": {"value": "$currencyConvert.convertedAmount", "percentage": 15}, "reasonToAddStep": "Need to calculate 15% of the converted amount."}}
+    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculatePercentage", "functionArgs": {"value": "$currencyConvert.result", "percentage": 15}, "reasonToAddStep": "Need to calculate 15% of the converted amount."}}
     {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to convert currency and calculate percentage as requested."}}
     \`\`\`
 
@@ -170,7 +169,7 @@ First response:
     \`\`\`
 Then in a second response:
 \`\`\`
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.items"}, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}}
+    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.result"}, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}}
     {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create a shopping list and calculate total cost."}}
     \`\`\`
 
@@ -180,7 +179,7 @@ Then in a second response:
 \`\`\`
     {"name": "aiCreatePlan", "arguments": {"id": "shopping_list_plan"}}
     {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "createShoppingList", "functionArgs": {"numItems": 5}, "reasonToAddStep": "Need to create a shopping list with 5 items."}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.items"}, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}}
+    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.result"}, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}}
     {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create a shopping list and calculate total cost."}}
     \`\`\`
 
@@ -191,7 +190,7 @@ Then in a second response:
 \`\`\`
     {"name": "aiCreatePlan", "arguments": {"id": "email_plan"}}
     {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "generateEmail", "functionArgs": {"recipient": "boss", "subject": "Request for Day Off", "purpose": "day off request"}, "reasonToAddStep": "Need to draft an email requesting time off."}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "sendEmail", "functionArgs": {"emailContent": "$generateEmail.content"}, "reasonToAddStep": "Need to send the generated email."}}
+    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "sendEmail", "functionArgs": {"emailContent": "$generateEmail.result"}, "reasonToAddStep": "Need to send the generated email."}}
     {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create and send an email requesting time off."}}
     \`\`\`
 
