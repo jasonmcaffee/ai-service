@@ -14,7 +14,7 @@ export class ExecutorAgent{
 
   async executePlan(){
     for (let aiFunctionStep of this.agentPlan.functionSteps){
-
+      await executeAiFunctionStep(aiFunctionStep, this.aiFunctionContext);
     }
   }
 
@@ -34,8 +34,48 @@ export class ExecutorAgent{
  * @param aiFunctionContext
  */
 async function executeAiFunctionStep(aiFunctionStep: AiFunctionStep, aiFunctionContext: AiFunctionContext){
-  aiFunctionStep.args
+  const functionNameToExecute = aiFunctionStep.functionName;
+  const functionArgs = aiFunctionStep.args;
+  const functionArgsWithReferencesToFunctionResultsSwappedOutWithValues = swapFunctionArgsWithStorageDataIfNeeded(functionArgs, aiFunctionContext.functionResults);
+  const aiFunctionExecutor = aiFunctionContext.aiFunctionExecutor;
+  const aiFunctionResult = await aiFunctionExecutor[functionNameToExecute](functionArgsWithReferencesToFunctionResultsSwappedOutWithValues);
+  //store the result of the function in our functionResults so other functions can access the result.
+  const resultStorageKey = `$${functionNameToExecute}.result`;
+  aiFunctionContext.functionResults[resultStorageKey] = aiFunctionResult.result;
+}
 
-  //iterate over each arg and see if it's $aiAdd.result format.
-  //if so, replace it.
+/**
+ * Iterate over each property of functionArgs, and if the property looks like a: "$aiAdd.result", swap the value with what's in the store.
+ * e.g. if functionResultsStore is {"$aiAdd.result": 5}, and functionArgs is {a: "$aiAdd.result", b: 7},
+ * then we will return a new functionArgs object that is:
+ * {a: 5, b: 7}
+ * @param functionArgs
+ * @param functionResultsStore
+ */
+function swapFunctionArgsWithStorageDataIfNeeded(functionArgs: object, functionResultsStore: object): object {
+  //iterate over each functionArgs property and swap its value out, if the value refers to a functionResultsStore key. e.g. "$aiAdd.result"
+  const newFunctionArgs = Object.entries(functionArgs).reduce((accumulated, [key, value]) => {
+    const swappedValueIfValueReferredToFunctionResultsStorageKey = swapParamValueWithStorageDataIfNeeded(value, functionResultsStore);
+    accumulated[key] = swappedValueIfValueReferredToFunctionResultsStorageKey;
+    return accumulated;
+  }, {});
+  return newFunctionArgs;
+}
+
+/**
+ * If the paramValue is actually a reference to a value in the functionResultsStore, return the value in the store.
+ * e.g. if the paramValue is "$aiAdd.result", and the functionResultsStore has "$aiAdd.result": 5,
+ * we will return 5.
+ * @param paramValue
+ * @param functionResultsStore
+ */
+function swapParamValueWithStorageDataIfNeeded(paramValue: any, functionResultsStore: object): any{
+  const regex = /^\$[a-zA-Z_$][a-zA-Z0-9_$]*\.result$/;
+  const doesMatch = regex.test(paramValue);
+  if(!doesMatch){
+    return paramValue;
+  }
+  //return the paramValue stored in the store.
+  const newParamValue = functionResultsStore[paramValue];
+  return newParamValue;
 }
