@@ -19,6 +19,7 @@ import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./aiTypes
 //doing this mainly to test functionality.  not really needed for this implementation.
 class PlannerAgentFunctionContext implements AiFunctionContext {
   public aiCreatePlanResult: AgentPlan;
+  public functionResults = {};//where we house "$aiAdd.result" etc
   constructor(public inferenceSSESubject: InferenceSSESubject | undefined, public aiFunctionExecutor: AiFunctionExecutor<any>) {
   }
 }
@@ -52,7 +53,7 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
     let completeText = '';
     const result = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages: [
-          { role: 'system', content: getToolsPrompt(this.getToolsMetadata())},
+          { role: 'system', content: getToolsPrompt()},
           { role: 'system', content: this.getCreatePlanPrompt(userPrompt)}
       ],
       handleOnText: (text)=> {

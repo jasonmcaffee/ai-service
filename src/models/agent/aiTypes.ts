@@ -6,6 +6,7 @@ import { ChatCompletionTool } from 'openai/resources/chat/completions';
 export type AiFunctionContext = {
     inferenceSSESubject?: InferenceSSESubject;
     aiFunctionExecutor: AiFunctionExecutor<any>;
+    functionResults: object; //where we house "$aiAdd.result", etc.
 };
 
 export type AiFunctionResult = { result: any; context: AiFunctionContext };

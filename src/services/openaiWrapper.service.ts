@@ -62,7 +62,7 @@ export class OpenaiWrapperService{
        toolService, //todo: just use the aiFunctionContext.
        tools,
        totalOpenAiCallsMade = 0,
-       aiFunctionContext = {inferenceSSESubject, aiFunctionExecutor: toolService},
+       aiFunctionContext = {inferenceSSESubject, aiFunctionExecutor: toolService, functionResults: {}},
      }: CallOpenAiParams): Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }> {
     const apiKey = model.apiKey;
     const baseURL = model.url;

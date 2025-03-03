@@ -17,7 +17,7 @@ import {
   extractMessageContextFromMessage,
   formatDeepSeekResponse
 } from '../utils/utils';
-import {chatPageSystemPrompt} from "../utils/prompts";
+import { chatPageSystemPrompt, getToolsPrompt } from '../utils/prompts';
 import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
 import {LlmToolsService} from "./llmTools.service";
@@ -99,10 +99,17 @@ export class ChatService {
       .forEach(m => m.messageText = extractMessageContextFromMessage(m.messageText).textWithoutTags)
 
     // let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
-    let openAiMessages: ChatCompletionMessageParam[] = [{ role: 'system', content: chatPageSystemPrompt}, ...createOpenAIMessagesFromMessages(conversation.messages!)];
+    let openAiMessages: ChatCompletionMessageParam[] = [
+      {role: "system", content: getToolsPrompt()},
+      { role: 'system', content: chatPageSystemPrompt},
+      ...createOpenAIMessagesFromMessages(conversation.messages!)
+    ];
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
-      openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages]
+      openAiMessages = [
+        ...createOpenAIMessagesFromMessages([modelInitialMessage]),
+        ...openAiMessages
+      ]
     }
 
     const handleOnText = (text: string) => {};
@@ -148,7 +155,11 @@ export class ChatService {
     let openAiMessages: ChatCompletionMessageParam[] = [{ role: 'system', content: chatPageSystemPrompt}, ...createOpenAIMessagesFromMessages([userMessage])];
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
-      openAiMessages = [...createOpenAIMessagesFromMessages([modelInitialMessage]), ...openAiMessages];
+      openAiMessages = [
+        {role: "system", content: getToolsPrompt()},
+        ...createOpenAIMessagesFromMessages([modelInitialMessage]),
+        ...openAiMessages
+      ];
     }
     const tools = shouldSearchWeb ? getWebSearchTools() : [];
     const handleError = (error: any) =>{

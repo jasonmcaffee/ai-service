@@ -7,6 +7,7 @@ import InferenceSSESubject from "../models/InferenceSSESubject";
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
 import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../models/agent/aiTypes";
 
+
 @Injectable()
 export class LlmToolsService implements AiFunctionExecutor<LlmToolsService>{
     constructor(private readonly duckduckgoSearchService: DuckduckgoSearchService,
@@ -76,6 +77,12 @@ export class LlmToolsService implements AiFunctionExecutor<LlmToolsService>{
         }
         //set a maximum token length.
         return { result, context,};
+    }
+
+    getToolsMetadata(): ChatCompletionTool[] {
+        return [
+          LlmToolsService.getSearchWebOpenAIMetadata(),
+        ];
     }
 
 }
