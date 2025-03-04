@@ -1,8 +1,10 @@
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
-import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../aiTypes";
+import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../../../models/agent/aiTypes";
 import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from './aiToolTypes';
+import { Injectable } from '@nestjs/common';
 
-export class CalculatorTools implements AiFunctionExecutor<CalculatorTools> {
+@Injectable()
+export class CalculatorToolsService implements AiFunctionExecutor<CalculatorToolsService> {
 
   // Exponentiation Function
   @chatCompletionTool({

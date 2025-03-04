@@ -9,11 +9,11 @@ import {AgentPlan, AiFunctionStep} from "./AgentPlan";
 import {ModelsService} from "../../services/models.service";
 import {OpenaiWrapperService} from "../../services/openaiWrapper.service";
 import { Model } from '../api/conversationApiModels';
-import { LlmToolsService } from '../../services/agent/tools/llmTools.service';
+import { WebToolsService } from '../../services/agent/tools/webTools.service';
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
 import InferenceSSESubject from '../InferenceSSESubject';
 import {getChatPageSystemPrompt, getToolsPrompt} from '../../utils/prompts';
-import { CalculatorTools } from './tools/CalculatorTools';
+import { CalculatorToolsService } from '../../services/agent/tools/calculatorTools.service';
 import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./aiTypes";
 
 //doing this mainly to test functionality.  not really needed for this implementation.

@@ -9,7 +9,7 @@ import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../../../
 
 
 @Injectable()
-export class LlmToolsService implements AiFunctionExecutor<LlmToolsService>{
+export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
     constructor(private readonly duckduckgoSearchService: DuckduckgoSearchService,
                 private readonly pageScraperService: PageScraperService) {}
     /**
@@ -81,7 +81,7 @@ export class LlmToolsService implements AiFunctionExecutor<LlmToolsService>{
 
     getToolsMetadata(): ChatCompletionTool[] {
         return [
-          LlmToolsService.getSearchWebOpenAIMetadata(),
+          WebToolsService.getSearchWebOpenAIMetadata(),
         ];
     }
 

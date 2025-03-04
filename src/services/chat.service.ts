@@ -20,10 +20,10 @@ import {
 import { getChatPageSystemPrompt, getToolsPrompt } from '../utils/prompts';
 import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
-import {LlmToolsService} from "./agent/tools/llmTools.service";
+import {WebToolsService} from "./agent/tools/webTools.service";
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import { OpenaiWrapperService } from './openaiWrapper.service';
-import { CalculatorTools } from '../models/agent/tools/CalculatorTools';
+import { CalculatorToolsService } from './agent/tools/calculatorTools.service';
 
 @Injectable()
 export class ChatService {
@@ -32,8 +32,9 @@ export class ChatService {
 
   constructor(private readonly conversationService: ConversationService,
               private readonly modelsService: ModelsService,
-              private readonly llmToolsService: LlmToolsService,
-              private readonly openAiWrapperService: OpenaiWrapperService) {}
+              private readonly llmToolsService: WebToolsService,
+              private readonly openAiWrapperService: OpenaiWrapperService,
+              private readonly calculatorToolsService: CalculatorToolsService) {}
 
 
   /**
@@ -122,9 +123,8 @@ export class ChatService {
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
-    const calculatorTools = new CalculatorTools();
-    const tools = shouldSearchWeb ? getWebSearchTools() : calculatorTools.getToolsMetadata();
-    const toolService = shouldSearchWeb ? this.llmToolsService : calculatorTools;
+    const tools = shouldSearchWeb ? getWebSearchTools() : this.calculatorToolsService.getToolsMetadata();
+    const toolService = shouldSearchWeb ? this.llmToolsService : this.calculatorToolsService;
 
     console.log(`sending messages: `, openAiMessages);
     console.log(`sending tools: `, tools);
@@ -189,7 +189,7 @@ export class ChatService {
 }
 
 function getWebSearchTools(): ChatCompletionTool[]{
-  return [LlmToolsService.getSearchWebOpenAIMetadata(),]
+  return [WebToolsService.getSearchWebOpenAIMetadata(),]
 }
 
 //from chatgpt

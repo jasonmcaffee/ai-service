@@ -1,6 +1,6 @@
 import { AgentPlan, AiFunctionStep } from '../models/agent/AgentPlan';
 import { AiFunctionContext, AiFunctionExecutor } from '../models/agent/aiTypes';
-import { CalculatorTools } from '../models/agent/tools/CalculatorTools';
+import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
 import { PlanExecutor } from '../models/agent/PlanExecutor';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from '../models/api/conversationApiModels';
@@ -20,16 +20,16 @@ describe('Plan and Execute agent', () => {
 
   beforeAll(async () => {
     testingModule = await Test.createTestingModule({
-      providers: [OpenaiWrapperService],
+      providers: [OpenaiWrapperService, CalculatorToolsService],
     }).compile();
   });
 
   it('should create and execute a plan', async ()=> {
     const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
+    const calculatorToolsService = testingModule.get<CalculatorToolsService>(CalculatorToolsService);
     const memberId = "1";
 
-    const calculatorTools = new CalculatorTools();
-    const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, calculatorTools);
+    const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, calculatorToolsService);
 
     async function askMathBot(mathQuestion: string){
       const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(mathQuestion);

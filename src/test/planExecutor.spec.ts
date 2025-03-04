@@ -1,6 +1,6 @@
 import { AgentPlan, AiFunctionStep } from '../models/agent/AgentPlan';
 import { AiFunctionContext, AiFunctionExecutor } from '../models/agent/aiTypes';
-import { CalculatorTools } from '../models/agent/tools/CalculatorTools';
+import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
 import { PlanExecutor } from '../models/agent/PlanExecutor';
 
 describe('Executor Tests', () => {
@@ -10,7 +10,7 @@ describe('Executor Tests', () => {
     const functionStep2 = new AiFunctionStep("2", "aiSubtract", {a: "$aiAdd.result", b: 1}, "test");
     agentPlan.functionSteps = [functionStep1, functionStep2];
 
-    const aiFunctionExecutor: AiFunctionExecutor<CalculatorTools> = new CalculatorTools();
+    const aiFunctionExecutor: AiFunctionExecutor<CalculatorToolsService> = new CalculatorToolsService();
     const aiFunctionContext: AiFunctionContext = {aiFunctionExecutor, functionResults: {}};
 
     const planExecutor = new PlanExecutor(agentPlan, aiFunctionContext);
