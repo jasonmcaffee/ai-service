@@ -8,8 +8,6 @@ import {
 import { Model } from '../models/api/conversationApiModels';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import OpenAI from 'openai';
-import { chatPageSystemPrompt } from '../utils/prompts';
-import { LlmToolsService } from './llmTools.service';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import {AiFunctionContext, AiFunctionExecutor} from "../models/agent/aiTypes";
 
@@ -307,7 +305,7 @@ function parseToolNameAndArgumentsFromToolCall(toolCall: ToolCall){
  * @param assistantResponse The current assistant response object
  * @returns Object containing parsing results and updated values
  */
-function parseLlamaCppToolCalls(
+export function parseLlamaCppToolCalls(
   streamedText: string,
   completeText: string,
   accumulatedToolCalls: Record<string, ToolCall>,
@@ -322,12 +320,6 @@ function parseLlamaCppToolCalls(
   // Initialize assistant response if needed
   let updatedAssistantResponse = assistantResponse;
 
-  // Check for llama.cpp tool calls in the content
-  // const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs;
-  // const toolCallRegex = /_ Tool_Call_Start  _\s*(.*?)\s* Tool_Call_End /gs;
-  // const toolCallRegex = /<Tool_Call_Start> \s*([\s\S]*?)\s* <Tool_End>/g;
-  // const toolCallRegex = /\[Tool_Call_Start\] \s*([\s\S]*?)\s* \[Tool_End\]/g;
-  // const toolCallRegex = /\[Tool_Call_Start\]\s*([\s\S]*?)\s*\[Tool_End\]/g;
     const toolCallRegex = /\[Tool_Call_Start\]\s*([\s\S]*?)\s*\[Tool_End\]/g;
 
     let match;

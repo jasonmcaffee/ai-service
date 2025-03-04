@@ -14,7 +14,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
     const aiFunctionContext: AiFunctionContext = {functionResults: {}, aiFunctionExecutor: this.aiFunctionExecutor};
     const planExecutor = new PlanExecutor(agentPlan, aiFunctionContext);
     await planExecutor.executePlan();
-    const planFinalResult = planExecutor.getFinalResultFromPlan();
+    const planFinalResult = await planExecutor.getFinalResultFromPlan();
     return planFinalResult;
   }
 

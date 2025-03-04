@@ -61,6 +61,27 @@ export function getWordAndTokenCount(text: string){
   };
 }
 
+// Monday, October 25, 2024
+export function getTodaysDate(){
+  const today = new Date();
+
+  // Get the day of the week
+  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const dayOfWeek = daysOfWeek[today.getDay()];
+
+  // Get the month
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const month = months[today.getMonth()];
+
+  // Get the day and year
+  const day = today.getDate();
+  const year = today.getFullYear();
+
+  // Format the date
+  const formattedDate = `${dayOfWeek}, ${month} ${day}, ${year}`;
+
+  return formattedDate;
+}
 // export async function createObserver(){
 //   return new Promise((resolve) => {
 //     new Observable((observer) => {

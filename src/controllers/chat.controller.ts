@@ -31,6 +31,9 @@ export class ChatController {
                       @Query('modelId') modelId: string, @Query('shouldSearchWeb') shouldSearchWeb: boolean) {
     console.log('got stream inference request: ', prompt, conversationId, modelId);
     const memberId = this.authenticationService.getMemberId();
+    if(typeof shouldSearchWeb === "string"){
+      shouldSearchWeb = shouldSearchWeb === "true";
+    }
     return this.chatService.streamInference(prompt, memberId, conversationId, modelId, shouldSearchWeb);
   }
 

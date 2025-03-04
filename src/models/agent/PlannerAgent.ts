@@ -12,7 +12,7 @@ import { Model } from '../api/conversationApiModels';
 import { LlmToolsService } from '../../services/llmTools.service';
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
 import InferenceSSESubject from '../InferenceSSESubject';
-import {chatPageSystemPrompt, getToolsPrompt} from '../../utils/prompts';
+import {getChatPageSystemPrompt, getToolsPrompt} from '../../utils/prompts';
 import { CalculatorTools } from './tools/CalculatorTools';
 import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./aiTypes";
 

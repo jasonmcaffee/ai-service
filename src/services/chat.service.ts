@@ -17,12 +17,13 @@ import {
   extractMessageContextFromMessage,
   formatDeepSeekResponse
 } from '../utils/utils';
-import { chatPageSystemPrompt, getToolsPrompt } from '../utils/prompts';
+import { getChatPageSystemPrompt, getToolsPrompt } from '../utils/prompts';
 import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
 import {LlmToolsService} from "./llmTools.service";
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import { OpenaiWrapperService } from './openaiWrapper.service';
+import { CalculatorTools } from '../models/agent/tools/CalculatorTools';
 
 @Injectable()
 export class ChatService {
@@ -100,8 +101,8 @@ export class ChatService {
 
     // let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
     let openAiMessages: ChatCompletionMessageParam[] = [
+      { role: 'system', content: getChatPageSystemPrompt()},
       {role: "system", content: getToolsPrompt()},
-      { role: 'system', content: chatPageSystemPrompt},
       ...createOpenAIMessagesFromMessages(conversation.messages!)
     ];
     if(model.initialMessage){
@@ -121,7 +122,9 @@ export class ChatService {
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
-    const tools = shouldSearchWeb ? getWebSearchTools() : [];
+    const calculatorTools = new CalculatorTools();
+    const tools = shouldSearchWeb ? getWebSearchTools() : calculatorTools.getToolsMetadata();
+    const toolService = shouldSearchWeb ? this.llmToolsService : calculatorTools;
 
     console.log(`sending messages: `, openAiMessages);
     console.log(`sending tools: `, tools);
@@ -138,7 +141,7 @@ export class ChatService {
       memberId,
       inferenceSSESubject,
       abortController,
-      toolService: this.llmToolsService,
+      toolService,
       tools,
     });
     promise.then(({openAiMessages, completeText}) => {
@@ -152,7 +155,7 @@ export class ChatService {
                                            shouldSearchWeb: boolean){
     const prompt = messageContext.textWithoutTags;
     const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
-    let openAiMessages: ChatCompletionMessageParam[] = [{ role: 'system', content: chatPageSystemPrompt}, ...createOpenAIMessagesFromMessages([userMessage])];
+    let openAiMessages: ChatCompletionMessageParam[] = [{ role: 'system', content: getChatPageSystemPrompt()}, ...createOpenAIMessagesFromMessages([userMessage])];
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [
