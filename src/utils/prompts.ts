@@ -1,5 +1,6 @@
 import { Conversation, Document } from '../models/api/conversationApiModels';
 import { getTodaysDate } from './utils';
+import { ChatCompletionTool } from 'openai/resources/chat/completions';
 
 export const toolCallStartMarker = `[Tool_Call_Start]`;
 export const toolCallEndMarker = `[Tool_End]`;
@@ -170,9 +171,29 @@ export function nameConversationPrompt(conversation: Conversation){
 }
 
 
-export function getToolsPrompt(){
+export function getToolsPrompt(tools: ChatCompletionTool[]){
+  let toolsAsJson = tools.map(t => JSON.stringify(t, null, 2)).join(', \n');
+  toolsAsJson = tools.length > 0 ? `[${toolsAsJson}]` : '';
+  let toolFunctionNames = tools.map(t => t.function.name).join(', \n');
   const template = `
 # Tools
+You have a limited number of explicitly defined tools/functions available to you, which you may utilize when fulfilling user requests.
+You should only utilize the tools when needed, and you should only reference tools that are explicitly defined in the <tools> tag.
+The tools are in the openai ChatCompletionTool format.
+
+<tools>
+${toolsAsJson}
+</tools>
+
+To help ensure that you follow the instructions, here are the functionNames available to you as tools.
+You should never attempt using a functionName that isn't explicitly listed inside the <functionNames> tag.
+<functionNames>
+${toolFunctionNames}
+</functionNames>
+
+Remember: always verify that a tool/function exists in the <tools> xml, and if it doesn't exist, do not make up a tool!
+Remember: always verify that a tool/function exists in the <functionNames> xml, and if it doesn't exist, do not make up a functionName!
+
 When using tools provided in the <tools> xml tag, ensure that you use the format listed below.
 
 ## IMPORTANT: Tool existence.

@@ -7,7 +7,7 @@ import { Model } from '../models/api/conversationApiModels';
 import { OpenaiWrapperService } from '../services/openaiWrapper.service';
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 import InferenceSSESubject from '../models/InferenceSSESubject';
-import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import { getChatPageSystemPrompt } from '../utils/prompts';
 
 describe('Plan and Execute agent', () => {
@@ -27,8 +27,77 @@ describe('Plan and Execute agent', () => {
     }).compile();
   });
 
-  it('should create and execute a plan with no tools', async ()=>{
+  it('should acknowledge what tools are available', async ()=>{
+    const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
+    class NoToolsService implements AiFunctionExecutor<NoToolsService> {
 
+      getToolsMetadata(): ChatCompletionTool[] {
+        return [];
+      }
+    }
+    const noToolsService = new NoToolsService();
+    const inferenceSSESubject = new InferenceSSESubject();
+    const memberId = "1";
+    const abortController = new AbortController();
+    const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, noToolsService, inferenceSSESubject, abortController);
+
+    const originalOpenAiMessages: ChatCompletionMessageParam[] = [
+      {role: 'system', content: getChatPageSystemPrompt()}
+    ];
+
+    async function askNoToolsPlannerBot(mathQuestion: string){
+      const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(mathQuestion, originalOpenAiMessages);
+      return result;
+    }
+
+    async function askNoToolsLlm(question: string){
+      const result = await openAiWrapperService.callOpenAiUsingModelAndSubject({
+        openAiMessages: [...originalOpenAiMessages, {role: 'user', content: question}],
+        model,
+        memberId, aiFunctionContext: {inferenceSSESubject, aiFunctionExecutor:noToolsService, functionResults: {}, },
+        abortController, inferenceSSESubject, totalOpenAiCallsMade: 0, tools: noToolsService.getToolsMetadata(), toolService: noToolsService
+      });
+      return result;
+    }
+
+    const result = await askNoToolsLlm('What tools are available to you?');
+    expect(result.completeText.length > 0).toBe(true);
+
+    const result1 = await askNoToolsPlannerBot("What tools are available to you?");
+    expect(result1.planFinalResult).toBe(undefined);
+
+
+    // const result2 = await askNoToolsPlannerBot("What is the capital of France?");
+    // expect(result2.planFinalResult).toBe(undefined);
+  });
+
+  it('should create and execute a plan with no tools', async ()=>{
+    const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
+    class NoToolsService implements AiFunctionExecutor<NoToolsService> {
+      getToolsMetadata(): ChatCompletionTool[] {
+        return [];
+      }
+    }
+    const noToolsService = new NoToolsService();
+    const inferenceSSESubject = new InferenceSSESubject();
+    const memberId = "1";
+    const abortController = new AbortController();
+    const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, noToolsService, inferenceSSESubject, abortController);
+
+    const originalOpenAiMessages: ChatCompletionMessageParam[] = [
+      {role: 'system', content: getChatPageSystemPrompt()}
+    ];
+
+    async function askNoToolsBot(mathQuestion: string){
+      const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(mathQuestion, originalOpenAiMessages);
+      return result;
+    }
+
+    // const result1 = await askNoToolsBot("compute 3 raised to the power of 4, then add 10");
+    // expect(result1.planFinalResult).toBe(undefined);
+
+    const result2 = await askNoToolsBot("Search the web for bitcoin news, then send an email to Bob@gmail.com with the latest headlines.");
+    expect(result2.planFinalResult).toBe(undefined);
   });
 
   it('should create and execute a plan that returns correct calculations.', async ()=> {

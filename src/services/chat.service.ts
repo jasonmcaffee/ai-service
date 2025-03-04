@@ -100,10 +100,13 @@ export class ChatService {
     conversation.messages?.filter(m => m.sentByMemberId === memberId)
       .forEach(m => m.messageText = extractMessageContextFromMessage(m.messageText).textWithoutTags)
 
+    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : this.calculatorToolsService.getToolsMetadata();
+    const toolService = shouldSearchWeb ? this.webToolsService : this.calculatorToolsService;
+
     // let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
     let openAiMessages: ChatCompletionMessageParam[] = [
       { role: 'system', content: getChatPageSystemPrompt()},
-      {role: "system", content: getToolsPrompt()},
+      {role: "system", content: getToolsPrompt(toolService.getToolsMetadata())},
       ...createOpenAIMessagesFromMessages(conversation.messages!)
     ];
     if(model.initialMessage){
@@ -114,29 +117,11 @@ export class ChatService {
       ]
     }
 
-    const handleOnText = (text: string) => {};
-
-    const handleResponseCompleted = async (completeResponse: string, model: Model) => {
-      // this.abortControllers.delete(memberId);
-      // console.log('handle response completed got: ', completeResponse);
-      // const formattedResponse = completeResponse;
-      // await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
-    }
-
-    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : this.calculatorToolsService.getToolsMetadata();
-    const toolService = shouldSearchWeb ? this.webToolsService : this.calculatorToolsService;
-
     console.log(`sending messages: `, openAiMessages);
     console.log(`sending tools: `, tools);
-    const handleError = (error: any) =>{
-      // this.abortControllers.delete(memberId);
-    };
 
     const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages,
-      // handleOnText,
-      // handleResponseCompleted,
-      // handleError,
       model,
       memberId,
       inferenceSSESubject,
@@ -163,26 +148,20 @@ export class ChatService {
     const prompt = messageContext.textWithoutTags;
     const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
     let openAiMessages: ChatCompletionMessageParam[] = [{ role: 'system', content: getChatPageSystemPrompt()}, ...createOpenAIMessagesFromMessages([userMessage])];
+
+    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : [];
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [
-        {role: "system", content: getToolsPrompt()},
+        {role: "system", content: getToolsPrompt(tools)},
         ...createOpenAIMessagesFromMessages([modelInitialMessage]),
         ...openAiMessages
       ];
     }
-    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : [];
-    const handleError = (error: any) =>{
-      // this.abortControllers.delete(memberId);
-    };
-    const handleOnComplete = () => {
-      // this.abortControllers.delete(memberId);
-    }
+
+
     this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages,
-      // handleOnText: () => {},
-      // handleResponseCompleted: handleOnComplete,
-      // handleError,
       model,
       memberId,
       inferenceSSESubject,

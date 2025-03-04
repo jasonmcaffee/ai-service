@@ -7,6 +7,8 @@ import { Model } from '../models/api/conversationApiModels';
 import { ChatCompletionChunk, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
+import InferenceSSESubject from '../models/InferenceSSESubject';
+import { getChatPageSystemPrompt } from '../utils/prompts';
 
 describe('Agent Tests', () => {
     let testingModule: TestingModule;
@@ -34,6 +36,10 @@ describe('Agent Tests', () => {
             const iterations = 10;
             const successCounts: Record<string, number> = {};
             const failureCounts: Record<string, number> = {};
+            const inferenceSSESubject = new InferenceSSESubject();
+            const originalOpenAiMessages: ChatCompletionMessageParam[] = [
+                {role: 'system', content: getChatPageSystemPrompt()}
+            ];
 
             const trackResult = (key: string, passed: boolean) => {
                 if (passed) {
@@ -48,7 +54,7 @@ describe('Agent Tests', () => {
             for (let i = 0; i < iterations; i++) {
                 try {
                     const calculatorTools = testingModule.get<CalculatorToolsService>(CalculatorToolsService);
-                    const plannerAgent = new PlannerAgent(model, openAiWrapperService, memberId, calculatorTools);
+                    const plannerAgent = new PlannerAgent(model, openAiWrapperService, memberId, calculatorTools, inferenceSSESubject, originalOpenAiMessages);
                     const { openAiMessages, completeText, totalOpenAiCallsMade } = await plannerAgent.createPlan(
                         "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2."
                     );
