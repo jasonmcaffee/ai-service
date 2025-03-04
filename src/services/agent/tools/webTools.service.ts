@@ -6,6 +6,7 @@ import { getWordAndTokenCount } from '../../../utils/utils';
 import InferenceSSESubject from "../../../models/InferenceSSESubject";
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
 import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../../../models/agent/aiTypes";
+import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from './aiToolTypes';
 
 
 @Injectable()
@@ -15,25 +16,23 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
     /**
      * Returns metadata describing the `searchWeb` function for OpenAI function calling.
      */
-    static getSearchWebOpenAIMetadata(): ChatCompletionTool {
-        return {
-            type: "function",
-            function: {
-                name: "aiSearchWeb",
-                description: "Search the web using DuckDuckGo and return relevant results.",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        query: {
-                            type: "string",
-                            description: "The search query string.",
-                        },
+    @chatCompletionTool({
+        type: "function",
+        function: {
+            name: "aiSearchWeb",
+            description: "Search the web using DuckDuckGo and return relevant results.",
+            parameters: {
+                type: "object",
+                properties: {
+                    query: {
+                        type: "string",
+                        description: "The search query string.",
                     },
-                    required: ["query"],
                 },
-            }
-        };
-    }
+                required: ["query"],
+            },
+        }
+    })
     async aiSearchWeb({query}: {query?: string} = {query: undefined}, context: AiFunctionContext, )
         : Promise<AiFunctionResult>{
         const {inferenceSSESubject: subject} = context;
@@ -80,9 +79,7 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
     }
 
     getToolsMetadata(): ChatCompletionTool[] {
-        return [
-          WebToolsService.getSearchWebOpenAIMetadata(),
-        ];
+        return extractChatCompletionToolAnnotationValues(this);
     }
 
 }

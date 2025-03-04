@@ -123,7 +123,7 @@ export class ChatService {
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
-    const tools = shouldSearchWeb ? getWebSearchTools() : this.calculatorToolsService.getToolsMetadata();
+    const tools = shouldSearchWeb ? this.llmToolsService.getToolsMetadata() : this.calculatorToolsService.getToolsMetadata();
     const toolService = shouldSearchWeb ? this.llmToolsService : this.calculatorToolsService;
 
     console.log(`sending messages: `, openAiMessages);
@@ -164,7 +164,7 @@ export class ChatService {
         ...openAiMessages
       ];
     }
-    const tools = shouldSearchWeb ? getWebSearchTools() : [];
+    const tools = shouldSearchWeb ? this.llmToolsService.getToolsMetadata() : [];
     const handleError = (error: any) =>{
       this.abortControllers.delete(memberId);
     };
@@ -188,9 +188,6 @@ export class ChatService {
 
 }
 
-function getWebSearchTools(): ChatCompletionTool[]{
-  return [WebToolsService.getSearchWebOpenAIMetadata(),]
-}
 
 //from chatgpt
 //data: 429 You exceeded your current quota
