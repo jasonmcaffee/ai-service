@@ -1,6 +1,9 @@
 import { Conversation, Document } from '../models/api/conversationApiModels';
 import { getTodaysDate } from './utils';
 
+export const toolCallStartMarker = `[Tool_Call_Start]`;
+export const toolCallEndMarker = `[Tool_End]`;
+
 export const getChatPageSystemPrompt = () => `
 # AI Response Interaction Guidelines
 
@@ -181,24 +184,24 @@ Always verify that the tool is defined in the <tools> xml tag.
 
 When using a tool, follow this EXACT format for EACH function call:
 
- [Tool_Call_Start] 
+ ${toolCallStartMarker}
 {"name": "functionName", "arguments": {"param": "value"}}
- [Tool_End] 
+ ${toolCallEndMarker} 
 
 Complete one tool call FULLY with both START and END markers before beginning another one.
 
 ## IMPORTANT: Format Requirements
 
 1. Include BOTH underscores (_) on BOTH markers
-2. Always include a space before [Tool_End], and before [Tool_Call_Start]
-3. Always include a space after [Tool_End], and before [Tool_Call_Start]
-4. Always include a NEWLINE after  [Tool_End]  before starting a new  [Tool_Call_Start] 
-5. Check EVERY marker, especially the LAST  [Tool_End] 
+2. Always include a space before ${toolCallEndMarker}, and before ${toolCallStartMarker}
+3. Always include a space after ${toolCallEndMarker}, and before ${toolCallStartMarker}
+4. Always include a NEWLINE after  ${toolCallEndMarker}  before starting a new  ${toolCallStartMarker} 
+5. Check EVERY marker, especially the LAST  ${toolCallEndMarker} 
 6. Complete each tool call fully before beginning another
 7. Never mix tool calls with other response text. 
-   7a. For example, never respond with something like: "Sure! [Tool_Call_Start]{"name": "functionName", "arguments": {"param": "value"}}[Tool_End]" 
-   7b. For example, never respond with something like: "[Tool_Call_Start]{"name": "functionName", "arguments": {"param": "value"}}[Tool_End] Latest email from Bob is: Hey Mark!" 
-   7c. For example, always only have tool calls in your response, like: "[Tool_Call_Start]{"name": "functionName", "arguments": {"param": "value"}}[Tool_End][Tool_Call_Start]{"name": "functionName", "arguments": {"param": "value"}}[Tool_End]"
+   7a. For example, never respond with something like: "Sure! ${toolCallStartMarker}{"name": "functionName", "arguments": {"param": "value"}}${toolCallEndMarker}" 
+   7b. For example, never respond with something like: "${toolCallStartMarker}{"name": "functionName", "arguments": {"param": "value"}}${toolCallEndMarker} Latest email from Bob is: Hey Mark!" 
+   7c. For example, always only have tool calls in your response, like: "${toolCallStartMarker}{"name": "functionName", "arguments": {"param": "value"}}${toolCallEndMarker}${toolCallStartMarker}{"name": "functionName", "arguments": {"param": "value"}}${toolCallEndMarker}"
 8. If you call a tool, then you must use the result of the tool in your answer.
    8a. For example, if exampleFunctionAiSummarizeText is called, then you must use the summary in your response.
    8b. For example, if exampleFunctionAiGetLatestNews is called, then you must use the latest news sent back to you.
@@ -213,94 +216,96 @@ Pay close attention to the format of tool calls. The model often makes these mis
 Do not try to utilize any of the exampleFunctionAi tools shown in the examples.  They are for example use only.
 
 ### CORRECT FORMAT (Use exactly this):
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "functionName", "arguments": {"param": "value"}}
- [Tool_End] 
+ ${toolCallEndMarker} 
 
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "anotherFunction", "arguments": {"param": "value"}}
- [Tool_End] 
+ ${toolCallEndMarker} 
 
 ### COMMON INCORRECT FORMATS (Do NOT use these):
 
 #### Incorrectly missing newlines between calls:
 ❌  
  \`\`\`
-[Tool_Call_Start] 
+${toolCallStartMarker} 
 {"name": "functionName", "arguments": {"param": "value"}}
- [Tool_End]  [Tool_Call_Start] 
+ ${toolCallEndMarker}  ${toolCallStartMarker} 
 {"name": "anotherFunction", "arguments": {"param": "value"}}
- [Tool_End] 
+ ${toolCallEndMarker} 
  \`\`\`
 ## ADDITIONAL Instructions: What you Should NOT Do
 
-- **Do NOT** output an incomplete ending marker. In other words, never output \`Tool\` when the complete marker should be \` [Tool_End] \`.
+- **Do NOT** output an incomplete ending marker. In other words, never output \`Tool\` when the complete marker should be \` ${toolCallEndMarker} \`.
 
   **Incorrect Example:**
   \`\`\`
-   [Tool_Call_Start] 
+   ${toolCallStartMarker} 
   {"name": "exampleFunctionAiCreatePlan", "arguments": {"id": "math_operation_plan"}}
-  Tool
+   ${toolCallStartMarker} 
+  {"name": "exampleFunctionAiCreatePlan", "arguments": {"id": "math_operation_plan"}}
+  [Tool_Call_End]
   \`\`\`
 
   **Correct Example:**
   \`\`\`
-   [Tool_Call_Start] 
+   ${toolCallStartMarker} 
   {"name": "exampleFunctionAiCreatePlan", "arguments": {"id": "math_operation_plan"}}
-   [Tool_End] 
+   ${toolCallEndMarker} 
   \`\`\`
-- Ensure that every tool call is terminated with the full \` [Tool_End] \` marker on a new line.
+- Ensure that every tool call is terminated with the full \` ${toolCallEndMarker} \` marker on a new line.
 
 ## Multiple Examples of Properly Formatted Tool Calls:
 
 ### Example 1 - Math Operations (with proper newlines):
  \`\`\`
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "exampleFunctionAiCreatePlan", "arguments": {"id": "math_operation_plan"}}
- [Tool_End] 
+ ${toolCallEndMarker} 
 
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "exampleFunctionAiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctionAiAdd", "functionArgs": {"a": 5, "b": 5}, "reasonToAddStep": "First, add 5 to 5."}}
- [Tool_End] 
+ ${toolCallEndMarker} 
 
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "exampleFunctionAiCompletePlan", "arguments": {"completedReason": "Plan is complete"}}
- [Tool_End] 
+ ${toolCallEndMarker} 
  \`\`\` 
 
 ### Example 2 - Multiple Operations (carefully check all markers):
  \`\`\`
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "exampleFunctionAiCreatePlan", "arguments": {"id": "complex_plan"}}
- [Tool_End] 
+ ${toolCallEndMarker} 
 
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "exampleFunctionAiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctionAiAdd", "functionArgs": {"a": 10, "b": 5}, "reasonToAddStep": "First step"}}
- [Tool_End] 
+ ${toolCallEndMarker} 
 
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "exampleFunctionAiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "exampleFunctionAiMultiply", "functionArgs": {"a": "$exampleFunctionAiAdd.result", "b": 2}, "reasonToAddStep": "Second step"}}
- [Tool_End] 
+ ${toolCallEndMarker} 
 
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "exampleFunctionAiCompletePlan", "arguments": {"completedReason": "Plan complete"}}
- [Tool_End] 
+ ${toolCallEndMarker} 
   \`\`\`
   
 ### Example 3 - Multiple Operations where the output of one tool call depends on the other.
 If the parameter to a tool call depends on the result of another tool call, then the parameter value should be in the format "$previousToolCall.result".
 For example, "add 5 plus 5, then subtract 3", would result in the first parameter of the subtract function to be "$exampleFunctionAiAdd.result".
  \`\`\`
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "exampleFunctionAiAdd", "arguments": {a: 5, b: 5}}
- [Tool_End] 
+ ${toolCallEndMarker} 
 
- [Tool_Call_Start] 
+ ${toolCallStartMarker} 
 {"name": "exampleFunctionAiSubtract", "arguments": {a: "$exampleFunctionAiAdd.result", b: 3}}
- [Tool_End] 
+ ${toolCallEndMarker} 
   \`\`\`
     
-It is imperative that every [Tool_Call_Start] has an ending [Tool_End].
+It is imperative that every ${toolCallStartMarker} has an ending ${toolCallEndMarker}.
 Again, do not try to utilize any of the exampleFunctionAi tools shown in the examples.  They are for example use only.
 Review your plan and ensure that you verify this is always done, no matter what.  
 `;

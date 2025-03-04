@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from '../models/api/conversationApiModels';
 import { OpenaiWrapperService, parseLlamaCppToolCalls } from '../services/openaiWrapper.service';
+import { toolCallEndMarker, toolCallStartMarker } from '../utils/prompts';
 
 describe("parseLlamaCppToolCalls", ()=>{
   let testingModule: TestingModule;
@@ -29,7 +30,7 @@ describe("parseLlamaCppToolCalls", ()=>{
   const testCases: TestCase[] = [
     {
       name: 'Single simple tool call',
-      streamedText: '[Tool_Call_Start]{"name": "searchWeb", "arguments": {"query": "gene hackman news"}}[Tool_End]',
+      streamedText: `${toolCallStartMarker}{"name": "searchWeb", "arguments": {"query": "gene hackman news"}}${toolCallEndMarker}`,
       completeText: '',
       accumulatedToolCalls: {},
       assistantResponse: null,
@@ -41,7 +42,7 @@ describe("parseLlamaCppToolCalls", ()=>{
     },
     {
       name: 'Tool call with existing text',
-      streamedText: 'Hello world [Tool_Call_Start]{"name": "searchWeb", "arguments": {"query": "gene hackman news"}}[Tool_End]',
+      streamedText: `Hello world ${toolCallStartMarker}{"name": "searchWeb", "arguments": {"query": "gene hackman news"}}${toolCallEndMarker}`,
       completeText: '',
       accumulatedToolCalls: {},
       assistantResponse: null,
@@ -53,7 +54,7 @@ describe("parseLlamaCppToolCalls", ()=>{
     },
     {
       name: 'Multiple tool calls',
-      streamedText: '[Tool_Call_Start]{"name": "searchWeb", "arguments": {"query": "gene hackman news"}}[Tool_End][Tool_Call_Start]{"name": "searchWeb", "arguments": {"query": "tame impala news"}}[Tool_End]',
+      streamedText: `${toolCallStartMarker}{"name": "searchWeb", "arguments": {"query": "gene hackman news"}}${toolCallEndMarker}${toolCallStartMarker}{"name": "searchWeb", "arguments": {"query": "tame impala news"}}${toolCallEndMarker}`,
       completeText: '',
       accumulatedToolCalls: {},
       assistantResponse: null,
@@ -65,7 +66,7 @@ describe("parseLlamaCppToolCalls", ()=>{
     },
     {
       name: 'Duplicate tool calls should be ignored',
-      streamedText: '[Tool_Call_Start]{"name": "searchWeb", "arguments": {"query": "gene hackman news"}}[Tool_End][Tool_Call_Start]{"name": "searchWeb", "arguments": {"query": "gene hackman news"}}[Tool_End]',
+      streamedText: `${toolCallStartMarker}{"name": "searchWeb", "arguments": {"query": "gene hackman news"}}${toolCallEndMarker}${toolCallStartMarker}{"name": "searchWeb", "arguments": {"query": "gene hackman news"}}${toolCallEndMarker}`,
       completeText: '',
       accumulatedToolCalls: {},
       assistantResponse: null,
@@ -77,7 +78,7 @@ describe("parseLlamaCppToolCalls", ()=>{
     },
     {
       name: 'Tool call with pre-existing accumulated tool calls',
-      streamedText: '[Tool_Call_Start]{"name": "searchWeb", "arguments": {"query": "new search"}}[Tool_End]',
+      streamedText: `${toolCallStartMarker}{"name": "searchWeb", "arguments": {"query": "new search"}}${toolCallEndMarker}`,
       completeText: '',
       accumulatedToolCalls: {
         '0': {
@@ -147,14 +148,14 @@ describe("parseLlamaCppToolCalls", ()=>{
 
   it('should handle partial/incomplete tool calls', () => {
     const result = parseLlamaCppToolCalls(
-      '[Tool_Call_Start]{"name": "searchWeb"',
+      `${toolCallStartMarker}{"name": "searchWeb"`,
       '',
       {},
       null
     );
 
     expect(result.foundToolCalls).toBe(false);
-    expect(result.newTextToDisplay).toBe('[Tool_Call_Start]{"name": "searchWeb"');
+    expect(result.newTextToDisplay).toBe(`${toolCallStartMarker}{"name": "searchWeb"`);
   });
 
   it("should parse tool calls from text streams correctly", ()=> {

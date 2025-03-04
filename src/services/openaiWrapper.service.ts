@@ -50,9 +50,6 @@ export class OpenaiWrapperService{
    */
   async callOpenAiUsingModelAndSubject({
        openAiMessages,
-       // handleOnText,
-       // handleResponseCompleted,
-       // handleError,
        model,
        memberId,
        inferenceSSESubject,
@@ -159,9 +156,6 @@ export class OpenaiWrapperService{
           if (completeText !== result.previousCompleteText) {
             const newContent = completeText.substring(result.previousCompleteText.length);
             if (newContent) {
-              // if (handleOnText) {
-              //   await handleOnText(newContent);
-              // }
               inferenceSSESubject?.sendText(newContent);
             }
           }
@@ -201,9 +195,6 @@ export class OpenaiWrapperService{
             }
           } catch (error) {
             console.error(`Error processing tool call: ${error}`);
-            // if (handleError) {
-            //   handleError(error);
-            // }
             throw error;
           }
         }
@@ -211,9 +202,6 @@ export class OpenaiWrapperService{
         // Make a recursive call to continue the conversation and return its result
         return this.callOpenAiUsingModelAndSubject({
           openAiMessages,
-          // handleOnText,
-          // handleResponseCompleted,
-          // handleError,
           model,
           memberId,
           inferenceSSESubject,
@@ -288,17 +276,7 @@ function parseToolNameAndArgumentsFromToolCall(toolCall: ToolCall){
  * NOTE!! THIS REQUIRES A CUSTOM TEMPLATE WITH LLAMA.CPP, due to <tool_call> tags not getting closed correctly.
  * SEE BOTTOM OF THIS FILE FOR THE TEMPLATE.
  *
- * Parse llama.cpp style tool calls from streamed content.
- * When llama.cpp sends back tool calls, it does so in the format:
- *  Tool_Call_Start
- * {"name": "searchWeb", "arguments": {"query": "gene hackman news"}}
- *  Tool_Call_End
- *  Tool_Call_Start
- * {"name": "searchWeb", "arguments": {"query": "tame impala news"}}
- *  Tool_Call_End
- *
  * This function is called over and over again as text is streamed back from the llm, so we have to ensure we don't parse the same
- * <tool_call> more than once.
  * @param streamedText The accumulated streamed text
  * @param completeText The existing complete text without tool calls
  * @param accumulatedToolCalls The currently accumulated tool calls

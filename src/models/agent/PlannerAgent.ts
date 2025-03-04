@@ -10,7 +10,7 @@ import {ModelsService} from "../../services/models.service";
 import {OpenaiWrapperService} from "../../services/openaiWrapper.service";
 import { Model } from '../api/conversationApiModels';
 import { WebToolsService } from '../../services/agent/tools/webTools.service';
-import { ChatCompletionTool } from 'openai/resources/chat/completions';
+import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import InferenceSSESubject from '../InferenceSSESubject';
 import {getChatPageSystemPrompt, getToolsPrompt} from '../../utils/prompts';
 import { CalculatorToolsService } from '../../services/agent/tools/calculatorTools.service';
@@ -25,7 +25,11 @@ class PlannerAgentFunctionContext implements AiFunctionContext {
 }
 
 export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
-  constructor(private readonly model: Model, private readonly openAiWrapperService: OpenaiWrapperService, private readonly memberId, private  readonly aiFunctionExecutor: AiFunctionExecutor<any>) {}
+  constructor(private readonly model: Model, private readonly openAiWrapperService: OpenaiWrapperService,
+              private readonly memberId, private readonly aiFunctionExecutor: AiFunctionExecutor<any>,
+              private readonly inferenceSSESubject: InferenceSSESubject,
+              private readonly originalOpenAiMessages: ChatCompletionMessageParam[]
+              ) {}
   agentPlan: AgentPlan;
   public isPlanCreationComplete: boolean;
 
@@ -42,20 +46,21 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
   async createPlan(userPrompt: string){
     this.isPlanCreationComplete = false;
     const abortController = new AbortController();
-    const inferenceSSESubject = new InferenceSSESubject();
+    // const inferenceSSESubject = new InferenceSSESubject();
     // const aiFunctionExecutor = new CalculatorTools();
-    const aiFunctionContext = new PlannerAgentFunctionContext(inferenceSSESubject, this);
+    const aiFunctionContext = new PlannerAgentFunctionContext(this.inferenceSSESubject, this);
 
     let completeText = '';
     const result = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages: [
-          { role: 'system', content: getToolsPrompt()},
+          ...this.originalOpenAiMessages,
+          { role: 'system', content: getToolsPrompt()}, //TODO: this might be duplicate. could do ensureGetToolsPromptExists(openAiMessages)
           { role: 'system', content: this.getCreatePlanPrompt(userPrompt)}
       ],
       // handleOnText: (text)=> {
       //   completeText += text;
       // },
-      abortController, inferenceSSESubject, model: this.model, memberId: this.memberId, tools: this.getToolsMetadata(),
+      abortController, inferenceSSESubject: this.inferenceSSESubject, model: this.model, memberId: this.memberId, tools: this.getToolsMetadata(),
       toolService: this,
       aiFunctionContext,
     });
@@ -66,6 +71,8 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
 
   //Test Summary: 9/30   30.00%
   getCreatePlanPrompt(userPrompt: string){
+    const toolStartMarker = `[Tool_Call_Start]`;
+    const toolEndMarker = `[Tool_End]`;
     return `
 # Planning Agent Instructions
 
@@ -96,12 +103,12 @@ You are a Planning Agent whose ONLY responsibility is to create a structured pla
 Format each tool call as a JSON object with "name" and "arguments" fields:
 
 \`\`\`
-  {"name": "toolName", "arguments": {parameterName: parameterValue, ...}}
+  ${toolStartMarker} {"name": "toolName", "arguments": {parameterName: parameterValue, ...}} ${toolEndMarker}
 \`\`\`
 
 Example:
 \`\`\`
-  {"name": "aiCreatePlan", "arguments": {"id": "my_plan_id"}}
+  ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "my_plan_id"}} ${toolEndMarker}
 \`\`\`
 
 ## Parameter Referencing Syntax
@@ -125,10 +132,10 @@ Do not guess or make up any property names.
 **Successful Response**:
 Note: there is a blank space after aiCompletePlan
 \`\`\`
-    {"name": "aiCreatePlan", "arguments": {"id": "climate_news_plan"}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "searchWeb", "functionArgs": {"query": "latest climate change news"}, "reasonToAddStep": "Need to gather recent information on climate change."}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "summarize", "functionArgs": {"textToSummarize": "$searchWeb.result"}, "reasonToAddStep": "Need to condense the search results into a readable summary."}}
-    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to search for and summarize climate change news as requested."}} 
+    ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "climate_news_plan"}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "searchWeb", "functionArgs": {"query": "latest climate change news"}, "reasonToAddStep": "Need to gather recent information on climate change."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "summarize", "functionArgs": {"textToSummarize": "$searchWeb.result"}, "reasonToAddStep": "Need to condense the search results into a readable summary."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to search for and summarize climate change news as requested."}}  ${toolEndMarker}
 \`\`\`
 
 ## SUCCESSFUL EXAMPLE 2: Multi-Step Calculation
@@ -137,10 +144,10 @@ Note: there is a blank space after aiCompletePlan
 
 **Successful Response**:
 \`\`\`
-    {"name": "aiCreatePlan", "arguments": {"id": "currency_calculation_plan"}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "currencyConvert", "functionArgs": {"amount": 100, "from": "USD", "to": "EUR"}, "reasonToAddStep": "Need to convert USD to EUR as requested."}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculatePercentage", "functionArgs": {"value": "$currencyConvert.result", "percentage": 15}, "reasonToAddStep": "Need to calculate 15% of the converted amount."}}
-    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to convert currency and calculate percentage as requested."}}
+    ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "currency_calculation_plan"}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "currencyConvert", "functionArgs": {"amount": 100, "from": "USD", "to": "EUR"}, "reasonToAddStep": "Need to convert USD to EUR as requested."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculatePercentage", "functionArgs": {"value": "$currencyConvert.result", "percentage": 15}, "reasonToAddStep": "Need to calculate 15% of the converted amount."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to convert currency and calculate percentage as requested."}} ${toolEndMarker}
 \`\`\`
 
 ## UNSUCCESSFUL EXAMPLE 1: Missing Tool Calls
@@ -154,9 +161,9 @@ Note: there is a blank space after aiCompletePlan
 
 **Corrected Response**:
 \`\`\`
-    {"name": "aiCreatePlan", "arguments": {"id": "paris_weather_plan"}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "getWeather", "functionArgs": {"location": "Paris"}, "reasonToAddStep": "Need to retrieve current weather data for Paris."}}
-    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides step to get weather information for Paris as requested."}} 
+    ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "paris_weather_plan"}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "getWeather", "functionArgs": {"location": "Paris"}, "reasonToAddStep": "Need to retrieve current weather data for Paris."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides step to get weather information for Paris as requested."}}  ${toolEndMarker}
 \`\`\`
 
 ## UNSUCCESSFUL EXAMPLE 2: Multiple Responses Instead of One
@@ -165,43 +172,44 @@ Note: there is a blank space after aiCompletePlan
 **Problematic Response**:
 First response:
 \`\`\`
-    {"name": "aiCreatePlan", "arguments": {"id": "shopping_list_plan"}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "createShoppingList", "functionArgs": {"numItems": 5}, "reasonToAddStep": "Need to create a shopping list with 5 items."}}
+    ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "shopping_list_plan"}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "createShoppingList", "functionArgs": {"numItems": 5}, "reasonToAddStep": "Need to create a shopping list with 5 items."}} ${toolEndMarker}
 \`\`\`
 Then in a second response:
 \`\`\`
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.result"}, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}}
-    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create a shopping list and calculate total cost."}}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.result"}, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create a shopping list and calculate total cost."}} ${toolEndMarker}
 \`\`\`
 
 **Why it fails**: The LLM split the tool calls across multiple responses instead of including all in one response.
 
 **Corrected Response**:
 \`\`\`
-    {"name": "aiCreatePlan", "arguments": {"id": "shopping_list_plan"}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "createShoppingList", "functionArgs": {"numItems": 5}, "reasonToAddStep": "Need to create a shopping list with 5 items."}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.result"}, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}}
-    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create a shopping list and calculate total cost."}}
+    ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "shopping_list_plan"}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "createShoppingList", "functionArgs": {"numItems": 5}, "reasonToAddStep": "Need to create a shopping list with 5 items."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.result"}, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create a shopping list and calculate total cost."}} ${toolEndMarker}
 \`\`\`
 
 ## UNSUCCESSFUL EXAMPLE 3: Inventing Tools
+You should only refer to tools defined in the <tools> xml tag.
 **User prompt**: "Write an email to my boss asking for a day off."
 
 **Problematic Response**:
 \`\`\`
-    {"name": "aiCreatePlan", "arguments": {"id": "email_plan"}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "generateEmail", "functionArgs": {"recipient": "boss", "subject": "Request for Day Off", "purpose": "day off request"}, "reasonToAddStep": "Need to draft an email requesting time off."}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "sendEmail", "functionArgs": {"emailContent": "$generateEmail.result"}, "reasonToAddStep": "Need to send the generated email."}}
-    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create and send an email requesting time off."}}
+    ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "email_plan"}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "generateEmail", "functionArgs": {"recipient": "boss", "subject": "Request for Day Off", "purpose": "day off request"}, "reasonToAddStep": "Need to draft an email requesting time off."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "sendEmail", "functionArgs": {"emailContent": "$generateEmail.result"}, "reasonToAddStep": "Need to send the generated email."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create and send an email requesting time off."}} ${toolEndMarker}
 \`\`\`
 
 **Why it fails**: The LLM invented tools that weren't provided (generateEmail, sendEmail).
 
-**Corrected Response (assuming textGeneration is an available tool)**:
+**Corrected Response (assuming textGeneration is an available tool defined in <tools>)**:
 \`\`\`
-    {"name": "aiCreatePlan", "arguments": {"id": "email_plan"}}
-    {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "textGeneration", "functionArgs": {"prompt": "Write a professional email to my boss requesting a day off", "style": "formal"}, "reasonToAddStep": "Need to draft an email requesting time off."}}
-    {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides step to generate email content for a day off request."}}
+    ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "email_plan"}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "textGeneration", "functionArgs": {"prompt": "Write a professional email to my boss requesting a day off", "style": "formal"}, "reasonToAddStep": "Need to draft an email requesting time off."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides step to generate email content for a day off request."}} ${toolEndMarker}
 \`\`\`
 
 ## User Prompt
