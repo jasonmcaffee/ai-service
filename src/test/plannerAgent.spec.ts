@@ -6,6 +6,7 @@ import PlannerAgent from '../models/agent/PlannerAgent';
 import { Model } from '../models/api/conversationApiModels';
 import { ChatCompletionChunk, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
+import { CalculatorTools } from '../models/agent/CalculatorTools';
 
 describe('Agent Tests', () => {
     let testingModule: TestingModule;
@@ -46,7 +47,8 @@ describe('Agent Tests', () => {
 
             for (let i = 0; i < iterations; i++) {
                 try {
-                    const plannerAgent = new PlannerAgent(model, openAiWrapperService, memberId);
+                    const calculatorTools = new CalculatorTools();
+                    const plannerAgent = new PlannerAgent(model, openAiWrapperService, memberId, calculatorTools);
                     const { openAiMessages, completeText, totalOpenAiCallsMade } = await plannerAgent.createPlan(
                         "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2."
                     );

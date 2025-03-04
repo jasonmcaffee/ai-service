@@ -1,7 +1,7 @@
 import { AgentPlan, AiFunctionStep } from '../models/agent/AgentPlan';
 import { AiFunctionContext, AiFunctionExecutor } from '../models/agent/aiTypes';
 import { CalculatorTools } from '../models/agent/CalculatorTools';
-import { ExecutorAgent } from '../models/agent/ExecutorAgent';
+import { PlanExecutor } from '../models/agent/PlanExecutor';
 
 describe('Executor Tests', () => {
   it('should execute a plan', async ()=> {
@@ -13,9 +13,9 @@ describe('Executor Tests', () => {
     const aiFunctionExecutor: AiFunctionExecutor<CalculatorTools> = new CalculatorTools();
     const aiFunctionContext: AiFunctionContext = {aiFunctionExecutor, functionResults: {}};
 
-    const executorAgent = new ExecutorAgent(agentPlan, aiFunctionContext);
+    const planExecutor = new PlanExecutor(agentPlan, aiFunctionContext);
 
-    await executorAgent.executePlan();
+    await planExecutor.executePlan();
 
     expect(aiFunctionContext.functionResults["$aiAdd.result"]).toBe(3);
     expect(aiFunctionContext.functionResults["$aiSubtract.result"]).toBe(2);

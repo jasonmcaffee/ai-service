@@ -3,7 +3,9 @@ import {ModelsService} from "../../services/models.service";
 import {OpenaiWrapperService} from "../../services/openaiWrapper.service";
 import { AiFunction, AiFunctionContext } from './aiTypes';
 
-export class ExecutorAgent{
+const lastResultKey = "$$lastResult$$";
+
+export class PlanExecutor {
   /**
    *
    * @param agentPlan - list of functions to be called by the executor
@@ -16,6 +18,10 @@ export class ExecutorAgent{
     for (let aiFunctionStep of this.agentPlan.functionSteps){
       await executeAiFunctionStep(aiFunctionStep, this.aiFunctionContext);
     }
+  }
+
+  async getFinalResultFromPlan(){
+    return this.aiFunctionContext.functionResults[lastResultKey];
   }
 
 
@@ -42,6 +48,7 @@ async function executeAiFunctionStep(aiFunctionStep: AiFunctionStep, aiFunctionC
   //store the result of the function in our functionResults so other functions can access the result.
   const resultStorageKey = `$${functionNameToExecute}.result`;
   aiFunctionContext.functionResults[resultStorageKey] = aiFunctionResult.result;
+  aiFunctionContext.functionResults[lastResultKey] = aiFunctionResult.result;
 }
 
 /**

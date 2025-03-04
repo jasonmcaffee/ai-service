@@ -20,12 +20,12 @@ import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./aiTypes
 class PlannerAgentFunctionContext implements AiFunctionContext {
   public aiCreatePlanResult: AgentPlan;
   public functionResults = {};//where we house "$aiAdd.result" etc
-  constructor(public inferenceSSESubject: InferenceSSESubject | undefined, public aiFunctionExecutor: AiFunctionExecutor<any>) {
+  constructor(public inferenceSSESubject: InferenceSSESubject | undefined, public aiFunctionExecutor: AiFunctionExecutor<PlannerAgent>) {
   }
 }
 
 export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
-  constructor(private readonly model: Model, private readonly openAiWrapperService: OpenaiWrapperService, private readonly memberId) {}
+  constructor(private readonly model: Model, private readonly openAiWrapperService: OpenaiWrapperService, private readonly memberId, private  readonly aiFunctionExecutor: AiFunctionExecutor<any>) {}
   agentPlan: AgentPlan;
   public isPlanCreationComplete: boolean;
 
@@ -35,11 +35,7 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
       PlannerAgent.getAiCreatePlanToolMetadata(),
       PlannerAgent.getAiAddFunctionStepToPlanMetadata(),
       PlannerAgent.getAiCompletePlanMetadata(),
-
-      CalculatorTools.getAiAddMetadata(),
-      CalculatorTools.getAiMultiplyMetadata(),
-      CalculatorTools.getAiSubtractMetadata(),
-      CalculatorTools.getAiDivideMetadata(),
+      ...this.aiFunctionExecutor.getToolsMetadata(),
     ]
   }
 
@@ -47,8 +43,8 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
     this.isPlanCreationComplete = false;
     const abortController = new AbortController();
     const inferenceSSESubject = new InferenceSSESubject();
-    const aiFunctionExecutor = new CalculatorTools();
-    const aiFunctionContext = new PlannerAgentFunctionContext(inferenceSSESubject, aiFunctionExecutor);
+    // const aiFunctionExecutor = new CalculatorTools();
+    const aiFunctionContext = new PlannerAgentFunctionContext(inferenceSSESubject, this);
 
     let completeText = '';
     const result = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
@@ -65,7 +61,7 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
     });
     // console.log(`plannerAgent completeText streamed: `, completeText);
     result.completeText = completeText;
-    return result;
+    return {...result, agentPlan: this.agentPlan};
   }
 
   //Test Summary: 9/30   30.00%
