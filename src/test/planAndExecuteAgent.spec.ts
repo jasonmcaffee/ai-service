@@ -8,6 +8,7 @@ import { OpenaiWrapperService } from '../services/openaiWrapper.service';
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { getChatPageSystemPrompt } from '../utils/prompts';
 
 describe('Plan and Execute agent', () => {
   let testingModule: TestingModule;
@@ -26,6 +27,10 @@ describe('Plan and Execute agent', () => {
     }).compile();
   });
 
+  it('should create and execute a plan with no tools', async ()=>{
+
+  });
+
   it('should create and execute a plan that returns correct calculations.', async ()=> {
     const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
     const calculatorToolsService = testingModule.get<CalculatorToolsService>(CalculatorToolsService);
@@ -35,8 +40,9 @@ describe('Plan and Execute agent', () => {
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, calculatorToolsService, inferenceSSESubject, abortController);
 
     const originalOpenAiMessages: ChatCompletionMessageParam[] = [
-      // {role: 'system', content: 'you are a friendly assistant'}
+      {role: 'system', content: getChatPageSystemPrompt()}
     ]
+
     async function askMathBot(mathQuestion: string){
       const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(mathQuestion, originalOpenAiMessages);
       return result;

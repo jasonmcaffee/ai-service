@@ -34,22 +34,22 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
       await planExecutor.executePlan();
       const planFinalResult = await planExecutor.getFinalResultFromPlan();
       //note: send the original openAi messages, not the one for executing the plan again.
-      const r2 = await this.sendPlanFinalResultToLLM(plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext);
-      return {planFinalResult};
+      const r2 = await this.sendPlanFinalResultToLLM(prompt, plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext);
+      return {planFinalResult, finalResponseFromLLM: r2.completeText};
     }catch(e){
       console.error(`PlanAndExecuteAgent error: `, e);
       throw e;
     }
   }
 
-  async sendPlanFinalResultToLLM(plannerAgent: PlannerAgent, planFinalResult: any, openAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContext){
-    const newPrompt = getPromptToTellLLMAboutTheUserPromptAndPlanAndResult(plannerAgent, planFinalResult);
+  async sendPlanFinalResultToLLM(userPrompt: string, plannerAgent: PlannerAgent, planFinalResult: any, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContext){
+    const newPrompt = getPromptToTellLLMAboutTheUserPromptAndPlanAndResult(userPrompt, plannerAgent, planFinalResult);
     const newOpenAiMessages: ChatCompletionMessageParam[] = [
-      {role: 'user', content: newPrompt},
-      ...openAiMessages,
+      ...originalOpenAiMessages,
+      {role: 'system', content: newPrompt},
     ];
 
-    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, this.model, this.memberId, this.inferenceSSESubject, this.abortController, this.aiFunctionExecutor, this.aiFunctionExecutor.getToolsMetadata, 0, context);
+    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(originalOpenAiMessages, this.model, this.memberId, this.inferenceSSESubject, this.abortController, this.aiFunctionExecutor, this.aiFunctionExecutor.getToolsMetadata, 0, context);
     return this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages: newOpenAiMessages,
       toolService: this.aiFunctionExecutor,
@@ -67,6 +67,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
 
 
 function getPromptToTellLLMAboutTheUserPromptAndPlanAndResult(
+  userPrompt: string,
   plannerAgent: PlannerAgent,
   planFinalResult: any
 ): string {
@@ -76,56 +77,22 @@ function getPromptToTellLLMAboutTheUserPromptAndPlanAndResult(
     : JSON.stringify(planFinalResult, null, 2);
 
   // Generate XML-formatted function steps
-  const functionStepsTakenAsString = plannerAgent.agentPlan.functionSteps
-    .map(functionStep => `
-      <function_step>
-        <name>${functionStep.functionName}</name>
-        <reason>${functionStep.reasonToAddStep}</reason>
-      </function_step>
-    `).join('\n');
+  // const functionStepsTakenAsString = plannerAgent.agentPlan.functionSteps
+  //   .map(functionStep => `
+  //     <function_step>
+  //       <name>${functionStep.functionName}</name>
+  //       <reason>${functionStep.reasonToAddStep}</reason>
+  //     </function_step>
+  //   `).join('\n');
 
   return `
-    # Response Generation Instructions
-
-    ## Context
-    The previous user message initiated a multi-step planning process that resulted in a specific outcome. 
-
-    ## Response Requirements
-    1. Summarize the original user request
-    2. Detail ALL function steps executed:
-       - Function name
-       - Reason for calling the function
-    3. Explain the final result clearly
-    4. Maintain a professional and informative tone
-
-    ## Function Steps Executed
-    <function_steps>
-      ${functionStepsTakenAsString}
-    </function_steps>
-
-    ## Final Result
+    <user_request>${userPrompt}</user_request>
+    
+    An ai agent has intercepted the above user_reqest and responded with the final_result below:
     <final_result>
       ${planFinalResultAsString}
     </final_result>
-
-    ## Response Guidelines
-    - Be precise and concise
-    - Use clear, accessible language
-    - Directly address the original request
-
-    ## Good Response Example:
-    Based on your request to [describe original request], I utilized these strategic steps:
-    - Function A: Reason for calling
-    - Function B: Reason for calling
-
-    The result reveals: [clear, concise summary of findings]
-
-    ## Avoid These Response Patterns:
-    ❌ Vague explanations
-    ❌ Overly technical language
-    ❌ Responses that don't address the original request
-
-    ## Final Instruction
-    Provide a response that clearly demonstrates the process and insights gained.
+    
+    Respond to the user_request using the information in the final_result tag.
   `;
 }
