@@ -13,9 +13,9 @@ import {AiFunctionContext, AiFunctionExecutor} from "../models/agent/aiTypes";
 
 interface CallOpenAiParams {
   openAiMessages: ChatCompletionMessageParam[];
-  handleOnText?: (text: string) => void;
-  handleResponseCompleted?: (text: string, model: Model) => void;
-  handleError?: (error: any) => void;
+  // handleOnText?: (text: string) => void;
+  // handleResponseCompleted?: (text: string, model: Model) => void;
+  // handleError?: (error: any) => void;
   model: Model;
   memberId: string;
   inferenceSSESubject?: InferenceSSESubject;
@@ -50,9 +50,9 @@ export class OpenaiWrapperService{
    */
   async callOpenAiUsingModelAndSubject({
        openAiMessages,
-       handleOnText,
-       handleResponseCompleted,
-       handleError,
+       // handleOnText,
+       // handleResponseCompleted,
+       // handleError,
        model,
        memberId,
        inferenceSSESubject,
@@ -159,9 +159,9 @@ export class OpenaiWrapperService{
           if (completeText !== result.previousCompleteText) {
             const newContent = completeText.substring(result.previousCompleteText.length);
             if (newContent) {
-              if (handleOnText) {
-                await handleOnText(newContent);
-              }
+              // if (handleOnText) {
+              //   await handleOnText(newContent);
+              // }
               inferenceSSESubject?.sendText(newContent);
             }
           }
@@ -201,9 +201,9 @@ export class OpenaiWrapperService{
             }
           } catch (error) {
             console.error(`Error processing tool call: ${error}`);
-            if (handleError) {
-              handleError(error);
-            }
+            // if (handleError) {
+            //   handleError(error);
+            // }
             throw error;
           }
         }
@@ -211,9 +211,9 @@ export class OpenaiWrapperService{
         // Make a recursive call to continue the conversation and return its result
         return this.callOpenAiUsingModelAndSubject({
           openAiMessages,
-          handleOnText,
-          handleResponseCompleted,
-          handleError,
+          // handleOnText,
+          // handleResponseCompleted,
+          // handleError,
           model,
           memberId,
           inferenceSSESubject,
@@ -227,21 +227,21 @@ export class OpenaiWrapperService{
 
       // No tool calls or all tool calls processed, complete the response
       const endSignal = JSON.stringify({ end: 'true' });
-      if (handleResponseCompleted) {
-        await handleResponseCompleted(completeText, model);
-      }
-      if (handleOnText) {
-        handleOnText(endSignal);
-      }
+      // if (handleResponseCompleted) {
+      //   await handleResponseCompleted(completeText, model);
+      // }
+      // if (handleOnText) {
+      //   handleOnText(endSignal);
+      // }
       inferenceSSESubject?.sendComplete();
 
       // Return the final state
       return { openAiMessages, completeText, totalOpenAiCallsMade };
     } catch (error) {
       console.error(`LLM error: `, error);
-      if (handleError) {
-        handleError(error);
-      }
+      // if (handleError) {
+      //   handleError(error);
+      // }
       inferenceSSESubject?.sendError(error);
 
       // Even in case of error, return the current state

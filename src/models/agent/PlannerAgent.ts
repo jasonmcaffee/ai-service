@@ -52,15 +52,15 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
           { role: 'system', content: getToolsPrompt()},
           { role: 'system', content: this.getCreatePlanPrompt(userPrompt)}
       ],
-      handleOnText: (text)=> {
-        completeText += text;
-      },
+      // handleOnText: (text)=> {
+      //   completeText += text;
+      // },
       abortController, inferenceSSESubject, model: this.model, memberId: this.memberId, tools: this.getToolsMetadata(),
       toolService: this,
       aiFunctionContext,
     });
     // console.log(`plannerAgent completeText streamed: `, completeText);
-    result.completeText = completeText;
+    // result.completeText = completeText;
     return {...result, agentPlan: this.agentPlan};
   }
 

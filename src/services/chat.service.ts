@@ -134,9 +134,9 @@ export class ChatService {
 
     const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages,
-      handleOnText,
-      handleResponseCompleted,
-      handleError,
+      // handleOnText,
+      // handleResponseCompleted,
+      // handleError,
       model,
       memberId,
       inferenceSSESubject,
@@ -173,22 +173,24 @@ export class ChatService {
     }
     const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : [];
     const handleError = (error: any) =>{
-      this.abortControllers.delete(memberId);
+      // this.abortControllers.delete(memberId);
     };
     const handleOnComplete = () => {
-      this.abortControllers.delete(memberId);
+      // this.abortControllers.delete(memberId);
     }
     this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages,
-      handleOnText: () => {},
-      handleResponseCompleted: handleOnComplete,
-      handleError,
+      // handleOnText: () => {},
+      // handleResponseCompleted: handleOnComplete,
+      // handleError,
       model,
       memberId,
       inferenceSSESubject,
       abortController,
       toolService: this.webToolsService,
       tools,
+    }).finally(()=>{
+      this.abortControllers.delete(memberId);
     });
     // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, handleOnComplete, handleError, model, memberId, inferenceSSESubject, abortController, this.webToolsService, tools);
   }
