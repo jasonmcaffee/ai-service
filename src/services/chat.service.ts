@@ -32,7 +32,7 @@ export class ChatService {
 
   constructor(private readonly conversationService: ConversationService,
               private readonly modelsService: ModelsService,
-              private readonly llmToolsService: WebToolsService,
+              private readonly webToolsService: WebToolsService,
               private readonly openAiWrapperService: OpenaiWrapperService,
               private readonly calculatorToolsService: CalculatorToolsService) {}
 
@@ -123,8 +123,8 @@ export class ChatService {
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
-    const tools = shouldSearchWeb ? this.llmToolsService.getToolsMetadata() : this.calculatorToolsService.getToolsMetadata();
-    const toolService = shouldSearchWeb ? this.llmToolsService : this.calculatorToolsService;
+    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : this.calculatorToolsService.getToolsMetadata();
+    const toolService = shouldSearchWeb ? this.webToolsService : this.calculatorToolsService;
 
     console.log(`sending messages: `, openAiMessages);
     console.log(`sending tools: `, tools);
@@ -147,7 +147,7 @@ export class ChatService {
     promise.then(({openAiMessages, completeText}) => {
       console.log(`all openai interaction complete: ${completeText}`, openAiMessages);
     });
-    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
+    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.webToolsService, tools);
   }
 
   async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,
@@ -164,7 +164,7 @@ export class ChatService {
         ...openAiMessages
       ];
     }
-    const tools = shouldSearchWeb ? this.llmToolsService.getToolsMetadata() : [];
+    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : [];
     const handleError = (error: any) =>{
       this.abortControllers.delete(memberId);
     };
@@ -180,10 +180,10 @@ export class ChatService {
       memberId,
       inferenceSSESubject,
       abortController,
-      toolService: this.llmToolsService,
+      toolService: this.webToolsService,
       tools,
     });
-    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, handleOnComplete, handleError, model, memberId, inferenceSSESubject, abortController, this.llmToolsService, tools);
+    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, handleOnComplete, handleError, model, memberId, inferenceSSESubject, abortController, this.webToolsService, tools);
   }
 
 }

@@ -16,9 +16,11 @@ export class DuckduckgoSearchService {
     async searchDuckDuckGoStream(query: string, searchResultsSubject?: Subject<string>, maxPages=3, startPage=1, ): Promise<SearchResultResponse>{
         //duckduckgo has headless mode detection and throws an error.  use stealth to circumvent.
         chromium.use(stealth);
-        this.browser = this.browser || await chromium.launch({
-            args: ['--disable-blink-features=AutomationControlled'],
-        });
+        if (!this.browser || this.browser.isConnected() === false) {
+            this.browser = await chromium.launch({
+                args: ['--disable-blink-features=AutomationControlled'],
+            });
+        }
         const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36";
 
         const context = await this.browser.newContext({
