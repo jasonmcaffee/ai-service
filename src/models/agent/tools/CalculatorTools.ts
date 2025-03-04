@@ -1,8 +1,8 @@
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
 import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../aiTypes";
-import { AIFunctionsWithMetadata, chatCompletionTool, extractChatCompletionToolAnnotationValues } from './aiToolTypes';
+import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from './aiToolTypes';
 
-export class CalculatorTools implements AiFunctionExecutor<CalculatorTools>, AIFunctionsWithMetadata{
+export class CalculatorTools implements AiFunctionExecutor<CalculatorTools> {
 
   // Exponentiation Function
   @chatCompletionTool({

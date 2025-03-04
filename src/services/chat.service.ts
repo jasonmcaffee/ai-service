@@ -20,7 +20,7 @@ import {
 import { getChatPageSystemPrompt, getToolsPrompt } from '../utils/prompts';
 import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
-import {LlmToolsService} from "./llmTools.service";
+import {LlmToolsService} from "./agent/tools/llmTools.service";
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import { OpenaiWrapperService } from './openaiWrapper.service';
 import { CalculatorTools } from '../models/agent/tools/CalculatorTools';

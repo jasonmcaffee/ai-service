@@ -46,33 +46,9 @@ import { ChatApi } from './client/api-client';
 import { ChatApiCustomStreaming } from './client/api-client/apis/ChatApiCustomStreaming';
 
 async function testClient(){
-  const apiConfig = new Configuration({basePath: 'http://localhost:3000'});
-  const api = new ConversationApi(new Configuration({basePath: 'http://localhost:3000'}));
+  // const apiConfig = new Configuration({basePath: 'http://localhost:3000'});
+  // const api = new ConversationApi(new Configuration({basePath: 'http://localhost:3000'}));
 
-  // works
-  // const conversation = await api.createConversation( {conversationName: 'test 2'});
-  // const addedMessage = await api.addMessage(conversation.conversationId, {messageText: 'hi message'});
-  // console.log('added message', addedMessage);
-
-  // const retrievedConversation = await api.getConversation("ff37fb6b-2211-4188-a266-b202ab791430");
-  // console.log('retrieved conversation: ', retrievedConversation);
-
-  // const retrievedConversations = await api.getConversationsForMember();
-  // console.log('retrieved conversations: ', retrievedConversations);
-  //works
-  // const chatApi = new ChatApiCustomStreaming(apiConfig);
-
-  // let completed = ''
-  // const chatResult = await chatApi.customChatControllerStreamInferenceV2({
-  //       prompt: 'What is 2 + 2?'
-  //   },
-  //   (text: string) => {
-  //     console.log('got text: ', text);
-  //   },
-  //   (completeResponse: string) => {
-  //     console.log('complete result: ', completeResponse);
-  //   }
-  //   );
 
 }
 

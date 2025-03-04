@@ -1,12 +1,5 @@
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
 
-// Then create a type that enforces the relationship
-export type AIFunctionsWithMetadata = {
-  [K in string as K extends `ai${string}` ? K : never]: Function;
-} & {
-  [K in string as K extends `ai${infer Rest}` ? `getAi${Rest}Metadata` : never]: ChatCompletionTool;
-};
-
 const metadataRegistry = new Map<Function, ChatCompletionTool>();
 
 // Create the decorator factory

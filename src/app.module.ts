@@ -1,16 +1,23 @@
 import { Module } from '@nestjs/common';
-import { readdirSync } from 'fs';
+import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
 
-// Helper function to dynamically load modules
-function loadModules(directory: string, suffix: string) {
-  return readdirSync(directory)
-    .filter((file) => file.endsWith(suffix))
-    .map((file) => {
-      const module = require(join(directory, file));
-      // Support default and named exports
-      return module.default || Object.values(module)[0];
-    });
+// Recursive function to scan subdirectories for files with a given suffix
+function loadModules(directory: string, suffix: string): any[] {
+  let modules: any[] = [];
+
+  readdirSync(directory).forEach((file) => {
+    const fullPath = join(directory, file);
+    if (statSync(fullPath).isDirectory()) {
+      // Recursively scan subdirectories
+      modules = [...modules, ...loadModules(fullPath, suffix)];
+    } else if (file.endsWith(suffix)) {
+      const module = require(fullPath);
+      modules.push(module.default || Object.values(module)[0]);
+    }
+  });
+
+  return modules;
 }
 
 // Dynamically load controllers and services

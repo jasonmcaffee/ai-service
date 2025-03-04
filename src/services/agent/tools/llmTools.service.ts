@@ -1,11 +1,11 @@
 import {Injectable} from "@nestjs/common";
-import {DuckduckgoSearchService} from "./duckduckgoSearch.service";
-import { SearchResultResponse, SearchResultWithMarkdownContentResponse } from '../models/api/conversationApiModels';
-import { PageScraperService } from './pageScraper.service';
-import { getWordAndTokenCount } from '../utils/utils';
-import InferenceSSESubject from "../models/InferenceSSESubject";
+import {DuckduckgoSearchService} from "../../duckduckgoSearch.service";
+import { SearchResultResponse, SearchResultWithMarkdownContentResponse } from '../../../models/api/conversationApiModels';
+import { PageScraperService } from '../../pageScraper.service';
+import { getWordAndTokenCount } from '../../../utils/utils';
+import InferenceSSESubject from "../../../models/InferenceSSESubject";
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
-import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../models/agent/aiTypes";
+import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../../../models/agent/aiTypes";
 
 
 @Injectable()

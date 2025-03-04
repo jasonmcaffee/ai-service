@@ -9,7 +9,7 @@ import {AgentPlan, AiFunctionStep} from "./AgentPlan";
 import {ModelsService} from "../../services/models.service";
 import {OpenaiWrapperService} from "../../services/openaiWrapper.service";
 import { Model } from '../api/conversationApiModels';
-import { LlmToolsService } from '../../services/llmTools.service';
+import { LlmToolsService } from '../../services/agent/tools/llmTools.service';
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
 import InferenceSSESubject from '../InferenceSSESubject';
 import {getChatPageSystemPrompt, getToolsPrompt} from '../../utils/prompts';
