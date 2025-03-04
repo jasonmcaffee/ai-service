@@ -1,6 +1,6 @@
 import { AgentPlan, AiFunctionStep } from '../models/agent/AgentPlan';
 import { AiFunctionContext, AiFunctionExecutor } from '../models/agent/aiTypes';
-import { CalculatorTools } from '../models/agent/CalculatorTools';
+import { CalculatorTools } from '../models/agent/tools/CalculatorTools';
 import { PlanExecutor } from '../models/agent/PlanExecutor';
 
 describe('Executor Tests', () => {

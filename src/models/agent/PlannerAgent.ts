@@ -13,7 +13,7 @@ import { LlmToolsService } from '../../services/llmTools.service';
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
 import InferenceSSESubject from '../InferenceSSESubject';
 import {chatPageSystemPrompt, getToolsPrompt} from '../../utils/prompts';
-import { CalculatorTools } from './CalculatorTools';
+import { CalculatorTools } from './tools/CalculatorTools';
 import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./aiTypes";
 
 //doing this mainly to test functionality.  not really needed for this implementation.

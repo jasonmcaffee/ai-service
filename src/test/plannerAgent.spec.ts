@@ -6,7 +6,7 @@ import PlannerAgent from '../models/agent/PlannerAgent';
 import { Model } from '../models/api/conversationApiModels';
 import { ChatCompletionChunk, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
-import { CalculatorTools } from '../models/agent/CalculatorTools';
+import { CalculatorTools } from '../models/agent/tools/CalculatorTools';
 
 describe('Agent Tests', () => {
     let testingModule: TestingModule;
