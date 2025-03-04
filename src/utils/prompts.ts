@@ -16,11 +16,13 @@ export const getChatPageSystemPrompt = () => `
 - **ALWAYS call available tools when relevant**
 - Tool calls must be the ONLY content when executed
 - Do NOT skip tool calls for seemingly simple tasks
-- Example scenarios for tool usage:
+- Example scenarios for tool usage, if the tool has been explicitly given to you:
  - Calculations (even simple ones like 5 + 5)
  - Date/time queries
  - Web searches
  - Computational tasks
+- Do NOT invent/hallucinate/imagine tools that haven't been explicitly given to you.
+- Only reference tools that have explicitly spelled out to you, via json descriptions with function name, parameter names, etc. 
 
 ### 3. Response Characteristics
 - Be direct and concise
@@ -168,7 +170,12 @@ export function nameConversationPrompt(conversation: Conversation){
 export function getToolsPrompt(){
   const template = `
 # Tools
-When using tools previously provided, ensure that you use the format listed below.
+When using tools provided in the <tools> xml tag, ensure that you use the format listed below.
+
+## IMPORTANT: Tool existence.
+Never attempt to call a tool that is not defined in the <tools> xml tag!
+Never attempt to call a tool with a name that starts with "exampleFunctionAi".
+Always verify that the tool is defined in the <tools> xml tag. 
 
 ## Tool Call Format
 
@@ -193,18 +200,17 @@ Complete one tool call FULLY with both START and END markers before beginning an
    7b. For example, never respond with something like: "[Tool_Call_Start]{"name": "functionName", "arguments": {"param": "value"}}[Tool_End] Latest email from Bob is: Hey Mark!" 
    7c. For example, always only have tool calls in your response, like: "[Tool_Call_Start]{"name": "functionName", "arguments": {"param": "value"}}[Tool_End][Tool_Call_Start]{"name": "functionName", "arguments": {"param": "value"}}[Tool_End]"
 8. If you call a tool, then you must use the result of the tool in your answer.
-   8a. For example, if aiSummarizeText is called, then you must use the summary in your response.
-   8b. For example, if aiGetLatestNews is called, then you must use the latest news sent back to you.
+   8a. For example, if exampleFunctionAiSummarizeText is called, then you must use the summary in your response.
+   8b. For example, if exampleFunctionAiGetLatestNews is called, then you must use the latest news sent back to you.
 9. If you call a tool, never start responding before getting the result of the tool.
-   9a. For example, if addNumbers is called, don't start responding with your own answer to the prompt to add until you get the result from addNumbers tool call.
+   9a. For example, if exampleFunctionAiAddNumbers is called, don't start responding with your own answer to the prompt to add until you get the result from addNumbers tool call.
    
 ## IMPORTANT: Common Format Errors to Avoid
 
 Pay close attention to the format of tool calls. The model often makes these mistakes:
 
 ## IMPORTANT: Only call tools that have been previously defined.
-Do not assume that tools or functions in the below example are actually real or available to you.  
-They are meant for instruction only, not to define their existence. 
+Do not try to utilize any of the exampleFunctionAi tools shown in the examples.  They are for example use only.
 
 ### CORRECT FORMAT (Use exactly this):
  [Tool_Call_Start] 
@@ -233,14 +239,14 @@ They are meant for instruction only, not to define their existence.
   **Incorrect Example:**
   \`\`\`
    [Tool_Call_Start] 
-  {"name": "fakeAiCreatePlan", "arguments": {"id": "math_operation_plan"}}
+  {"name": "exampleFunctionAiCreatePlan", "arguments": {"id": "math_operation_plan"}}
   Tool
   \`\`\`
 
   **Correct Example:**
   \`\`\`
    [Tool_Call_Start] 
-  {"name": "fakeAiCreatePlan", "arguments": {"id": "math_operation_plan"}}
+  {"name": "exampleFunctionAiCreatePlan", "arguments": {"id": "math_operation_plan"}}
    [Tool_End] 
   \`\`\`
 - Ensure that every tool call is terminated with the full \` [Tool_End] \` marker on a new line.
@@ -250,51 +256,52 @@ They are meant for instruction only, not to define their existence.
 ### Example 1 - Math Operations (with proper newlines):
  \`\`\`
  [Tool_Call_Start] 
-{"name": "fakeAiCreatePlan", "arguments": {"id": "math_operation_plan"}}
+{"name": "exampleFunctionAiCreatePlan", "arguments": {"id": "math_operation_plan"}}
  [Tool_End] 
 
  [Tool_Call_Start] 
-{"name": "fakeAiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "fakeAiAdd", "functionArgs": {"a": 5, "b": 5}, "reasonToAddStep": "First, add 5 to 5."}}
+{"name": "exampleFunctionAiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctionAiAdd", "functionArgs": {"a": 5, "b": 5}, "reasonToAddStep": "First, add 5 to 5."}}
  [Tool_End] 
 
  [Tool_Call_Start] 
-{"name": "fakeAiCompletePlan", "arguments": {"completedReason": "Plan is complete"}}
+{"name": "exampleFunctionAiCompletePlan", "arguments": {"completedReason": "Plan is complete"}}
  [Tool_End] 
  \`\`\` 
 
 ### Example 2 - Multiple Operations (carefully check all markers):
  \`\`\`
  [Tool_Call_Start] 
-{"name": "fakeAiCreatePlan", "arguments": {"id": "complex_plan"}}
+{"name": "exampleFunctionAiCreatePlan", "arguments": {"id": "complex_plan"}}
  [Tool_End] 
 
  [Tool_Call_Start] 
-{"name": "fakeAiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "fakeAiAdd", "functionArgs": {"a": 10, "b": 5}, "reasonToAddStep": "First step"}}
+{"name": "exampleFunctionAiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctionAiAdd", "functionArgs": {"a": 10, "b": 5}, "reasonToAddStep": "First step"}}
  [Tool_End] 
 
  [Tool_Call_Start] 
-{"name": "fakeAiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "fakeAiMultiply", "functionArgs": {"a": "$fakeAiAdd.result", "b": 2}, "reasonToAddStep": "Second step"}}
+{"name": "exampleFunctionAiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "exampleFunctionAiMultiply", "functionArgs": {"a": "$exampleFunctionAiAdd.result", "b": 2}, "reasonToAddStep": "Second step"}}
  [Tool_End] 
 
  [Tool_Call_Start] 
-{"name": "fakeAiCompletePlan", "arguments": {"completedReason": "Plan complete"}}
+{"name": "exampleFunctionAiCompletePlan", "arguments": {"completedReason": "Plan complete"}}
  [Tool_End] 
   \`\`\`
   
 ### Example 3 - Multiple Operations where the output of one tool call depends on the other.
 If the parameter to a tool call depends on the result of another tool call, then the parameter value should be in the format "$previousToolCall.result".
-For example, "add 5 plus 5, then subtract 3", would result in the first parameter of the subtract function to be "$fakeAiAdd.result".
+For example, "add 5 plus 5, then subtract 3", would result in the first parameter of the subtract function to be "$exampleFunctionAiAdd.result".
  \`\`\`
  [Tool_Call_Start] 
-{"name": "fakeAiAdd", "arguments": {a: 5, b: 5}}
+{"name": "exampleFunctionAiAdd", "arguments": {a: 5, b: 5}}
  [Tool_End] 
 
  [Tool_Call_Start] 
-{"name": "fakeAiSubtract", "arguments": {a: "$fakeAiAdd.result", b: 3}}
+{"name": "exampleFunctionAiSubtract", "arguments": {a: "$exampleFunctionAiAdd.result", b: 3}}
  [Tool_End] 
   \`\`\`
     
 It is imperative that every [Tool_Call_Start] has an ending [Tool_End].
+Again, do not try to utilize any of the exampleFunctionAi tools shown in the examples.  They are for example use only.
 Review your plan and ensure that you verify this is always done, no matter what.  
 `;
 

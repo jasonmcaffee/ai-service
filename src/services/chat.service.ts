@@ -117,10 +117,10 @@ export class ChatService {
     const handleOnText = (text: string) => {};
 
     const handleResponseCompleted = async (completeResponse: string, model: Model) => {
-      this.abortControllers.delete(memberId);
-      console.log('handle response completed got: ', completeResponse);
-      const formattedResponse = formatDeepSeekResponse(completeResponse);
-      await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
+      // this.abortControllers.delete(memberId);
+      // console.log('handle response completed got: ', completeResponse);
+      // const formattedResponse = completeResponse;
+      // await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     }
 
     const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : this.calculatorToolsService.getToolsMetadata();
@@ -129,7 +129,7 @@ export class ChatService {
     console.log(`sending messages: `, openAiMessages);
     console.log(`sending tools: `, tools);
     const handleError = (error: any) =>{
-      this.abortControllers.delete(memberId);
+      // this.abortControllers.delete(memberId);
     };
 
     const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
@@ -146,7 +146,14 @@ export class ChatService {
     });
     promise.then(({openAiMessages, completeText}) => {
       console.log(`all openai interaction complete: ${completeText}`, openAiMessages);
+      this.abortControllers.delete(memberId);
+      console.log('handle response completed got: ', completeText);
+      const formattedResponse = completeText;
+      this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     });
+    promise.catch(e => {
+      this.abortControllers.delete(memberId);
+    })
     // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.webToolsService, tools);
   }
 
