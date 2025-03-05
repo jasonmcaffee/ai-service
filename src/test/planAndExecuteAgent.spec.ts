@@ -96,7 +96,7 @@ describe('Plan and Execute agent', () => {
     // const result1 = await askNoToolsBot("compute 3 raised to the power of 4, then add 10");
     // expect(result1.planFinalResult).toBe(undefined);
 
-    const result2 = await askNoToolsBot("Search the web for bitcoin news, then send an email to Bob@gmail.com with the latest headlines.");
+    const result2 = await askNoToolsBot("Call my dentist and schedule an appointment for the 5th of May, then text my Mom hello");
     expect(result2.planFinalResult).toBe(undefined);
   });
 

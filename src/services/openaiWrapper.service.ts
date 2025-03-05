@@ -10,6 +10,7 @@ import InferenceSSESubject from '../models/InferenceSSESubject';
 import OpenAI from 'openai';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import {AiFunctionContext, AiFunctionExecutor} from "../models/agent/aiTypes";
+import { toolCallEndMarker, toolCallStartMarker } from '../utils/prompts';
 
 interface CallOpenAiParams {
   openAiMessages: ChatCompletionMessageParam[];
@@ -271,6 +272,16 @@ function parseToolNameAndArgumentsFromToolCall(toolCall: ToolCall){
     toolName, toolArgs,
   };
 }
+
+function createToolCallRegex(toolCallStartMarker, toolCallEndMarker) {
+  // Escape special regex characters in the markers
+  const escapedStartMarker = toolCallStartMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedEndMarker = toolCallEndMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  // Create regex with escaped markers
+  return new RegExp(`${escapedStartMarker}\\s*([\\s\\S]*?)\\s*${escapedEndMarker}`, 'g');
+}
+
 /**
  *
  * NOTE!! THIS REQUIRES A CUSTOM TEMPLATE WITH LLAMA.CPP, due to <tool_call> tags not getting closed correctly.
@@ -298,8 +309,8 @@ export function parseLlamaCppToolCalls(
   // Initialize assistant response if needed
   let updatedAssistantResponse = assistantResponse;
 
-    const toolCallRegex = /\[Tool_Call_Start\]\s*([\s\S]*?)\s*\[Tool_End\]/g;
-
+    // const toolCallRegex = /\[Tool_Call_Start\]\s*([\s\S]*?)\s*\[Tool_End\]/g;
+  const toolCallRegex = createToolCallRegex(toolCallStartMarker, toolCallEndMarker);
     let match;
   let lastIndex = 0;
 

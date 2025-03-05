@@ -12,7 +12,7 @@ import { Model } from '../api/conversationApiModels';
 import { WebToolsService } from '../../services/agent/tools/webTools.service';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import InferenceSSESubject from '../InferenceSSESubject';
-import {getChatPageSystemPrompt, getToolsPrompt} from '../../utils/prompts';
+import { getChatPageSystemPrompt, getToolsPrompt, toolCallEndMarker, toolCallStartMarker } from '../../utils/prompts';
 import { CalculatorToolsService } from '../../services/agent/tools/calculatorTools.service';
 import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./aiTypes";
 
@@ -71,8 +71,8 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
 
   //Test Summary: 9/30   30.00%
   getCreatePlanPrompt(userPrompt: string){
-    const toolStartMarker = `[Tool_Call_Start]`;
-    const toolEndMarker = `[Tool_End]`;
+    const toolStartMarker = toolCallStartMarker;
+    const toolEndMarker = toolCallEndMarker;
     return `
 # Planning Agent Instructions
 
@@ -127,8 +127,11 @@ Do not guess or make up any property names.
 5. Ensure all steps are necessary and sufficient
 6. Create a complete plan with proper sequencing
 7. Format every tool call as a proper JSON object
+8. Never attempt using a functionName that begins with "exampleFunction", as those functions do not exist.
 
 # Example Scenarios with JSON-Formatted Responses
+NOTE: these examples use "functionName" that start with "exampleFunction" so you know never to use them, as they do not exist and are for example purposes _only_.
+
 
 ## SUCCESSFUL EXAMPLE 1: Web Search and Summarize
 **User prompt**: "Find the latest news about climate change and summarize it for me."
@@ -137,8 +140,8 @@ Do not guess or make up any property names.
 Note: there is a blank space after aiCompletePlan
 \`\`\`
     ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "climate_news_plan"}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "searchWeb", "functionArgs": {"query": "latest climate change news"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to gather recent information on climate change."}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "summarize", "functionArgs": {"textToSummarize": "$searchWeb.result"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to condense the search results into a readable summary."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctionsearchWeb", "functionArgs": {"query": "latest climate change news"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "The function name was clearly listed in <functionNames> which has 'searchWeb' listed inside of the tag. Need to gather recent information on climate change."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "exampleFunctionsummarize", "functionArgs": {"textToSummarize": "$searchWeb.result"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to condense the search results into a readable summary."}} ${toolEndMarker}
     ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to search for and summarize climate change news as requested."}}  ${toolEndMarker}
 \`\`\`
 
@@ -149,8 +152,8 @@ Note: there is a blank space after aiCompletePlan
 **Successful Response**:
 \`\`\`
     ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "currency_calculation_plan"}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "currencyConvert", "functionArgs": {"amount": 100, "from": "USD", "to": "EUR"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to convert USD to EUR as requested."}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculatePercentage", "functionArgs": {"value": "$currencyConvert.result", "percentage": 15}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to calculate 15% of the converted amount."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctioncurrencyConvert", "functionArgs": {"amount": 100, "from": "USD", "to": "EUR"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to convert USD to EUR as requested."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "exampleFunctioncalculatePercentage", "functionArgs": {"value": "$currencyConvert.result", "percentage": 15}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to calculate 15% of the converted amount."}} ${toolEndMarker}
     ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to convert currency and calculate percentage as requested."}} ${toolEndMarker}
 \`\`\`
 
@@ -166,7 +169,7 @@ Note: there is a blank space after aiCompletePlan
 **Corrected Response**:
 \`\`\`
     ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "paris_weather_plan"}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "getWeather", "functionArgs": {"location": "Paris"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to retrieve current weather data for Paris."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctiongetWeather", "functionArgs": {"location": "Paris"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to retrieve current weather data for Paris."}} ${toolEndMarker}
     ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides step to get weather information for Paris as requested."}}  ${toolEndMarker}
 \`\`\`
 
@@ -177,11 +180,11 @@ Note: there is a blank space after aiCompletePlan
 First response:
 \`\`\`
     ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "shopping_list_plan"}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "createShoppingList", "functionArgs": {"numItems": 5}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to create a shopping list with 5 items."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctioncreateShoppingList", "functionArgs": {"numItems": 5}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to create a shopping list with 5 items."}} ${toolEndMarker}
 \`\`\`
 Then in a second response:
 \`\`\`
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.result"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "exampleFunctioncalculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.result"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}} ${toolEndMarker}
     ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create a shopping list and calculate total cost."}} ${toolEndMarker}
 \`\`\`
 
@@ -190,20 +193,20 @@ Then in a second response:
 **Corrected Response**:
 \`\`\`
     ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "shopping_list_plan"}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "createShoppingList", "functionArgs": {"numItems": 5}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to create a shopping list with 5 items."}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "calculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.result"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctioncreateShoppingList", "functionArgs": {"numItems": 5}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to create a shopping list with 5 items."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "exampleFunctioncalculateTotalCost", "functionArgs": {"itemsList": "$createShoppingList.result"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": true, "reasonToAddStep": "Need to calculate the total cost of the shopping list."}} ${toolEndMarker}
     ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create a shopping list and calculate total cost."}} ${toolEndMarker}
 \`\`\`
 
 ## UNSUCCESSFUL EXAMPLE 3: Inventing Tools
 You should only refer to tools defined in the <tools> xml tag.
 **User prompt**: "Write an email to my boss asking for a day off."
-** Tools xml tag: <tools>{type: "function", function: {name: "getRecipe", ...} }</tools>
+** Tools xml tag: <tools>{type: "function", function: {name: "exampleFunctionGetRecipe", ...} }</tools>
 **Problematic Response**:
 \`\`\`
     ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "email_plan"}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "generateEmail", "functionArgs": {"recipient": "boss", "subject": "Request for Day Off", "purpose": "day off request"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": false, "reasonToAddStep": "Need to draft an email requesting time off."}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "sendEmail", "functionArgs": {"emailContent": "$generateEmail.result"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": false, "reasonToAddStep": "Need to send the generated email."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctiongenerateEmail", "functionArgs": {"recipient": "boss", "subject": "Request for Day Off", "purpose": "day off request"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": false, "reasonToAddStep": "Need to draft an email requesting time off."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "2", "functionName": "exampleFunctionsendEmail", "functionArgs": {"emailContent": "$generateEmail.result"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": false, "reasonToAddStep": "Need to send the generated email."}} ${toolEndMarker}
     ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "Plan provides steps to create and send an email requesting time off."}} ${toolEndMarker}
 \`\`\`
 
@@ -222,7 +225,7 @@ You should only refer to tools defined in the <tools> xml tag.
 **Problematic Response**:
 \`\`\`
     ${toolStartMarker} {"name": "aiCreatePlan", "arguments": {"id": "email_plan"}} ${toolEndMarker}
-    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "searchWeb", "functionArgs": {"query": "today's news"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": false, "reasonToAddStep": "Search the web is needed."}} ${toolEndMarker}
+    ${toolStartMarker} {"name": "aiAddFunctionStepToPlan", "arguments": {"id": "1", "functionName": "exampleFunctionsearchWeb", "functionArgs": {"query": "today's news"}, "toolIsExplicitlyDefinedInTheToolsXmlTag": false, "reasonToAddStep": "Search the web is needed."}} ${toolEndMarker}
     ${toolStartMarker} {"name": "aiCompletePlan", "arguments": {"completedReason": "There are no tools available to fulfill the request"}} ${toolEndMarker}
 \`\`\`
 
@@ -238,7 +241,7 @@ You should only refer to tools defined in the <tools> xml tag.
 <prompt>${userPrompt}</prompt>
 
 Remember: You MUST call all tools (aiCreatePlan → aiAddFunctionStepToPlan → aiCompletePlan) in ONE response, formatted as JSON objects. Do not use preamble in your response. Do not respond with anything other than tool calls. If you were not sent appropriate tools, do not respond at all.
-
+Remember: Never attempt using a functionName that begins with "exampleFunction", as those functions do not exist. They were provided as examples of successful and unsuccessful responses, merely for demonstration purposes.
 
 `;
   }
@@ -320,7 +323,7 @@ Remember: You MUST call all tools (aiCreatePlan → aiAddFunctionStepToPlan → 
             },
             reasonToAddStep: {
               type: "string",
-              description: "A justification for why this function step is necessary to fulfill the user's request.",
+              description: "Where you found the functionName in the <tools> xml tag. Also a justification for why this function step is necessary to fulfill the user's request.",
             },
             toolIsExplicitlyDefinedInTheToolsXmlTag: {
               type: "boolean",
