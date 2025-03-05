@@ -9,6 +9,14 @@ export type AiFunctionContext = {
     functionResults: object; //where we house "$aiAdd.result", etc.
 };
 
+export type AiFunctionContextV2 = {
+    inferenceSSESubject?: InferenceSSESubject;
+    aiFunctionExecutor: AiFunctionExecutor<any>;
+    functionResults: object; //where we house "$aiAdd.result", etc.
+    memberId: string;
+    abortController?: AbortController;
+};
+
 export type AiFunctionResult = { result: any; context: AiFunctionContext };
 export type AiFunction = (argumentsFromAi: object, aiFunctionContextMaintainedByUs: AiFunctionContext) => Promise<AiFunctionResult>;
 
