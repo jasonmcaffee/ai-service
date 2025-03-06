@@ -129,7 +129,7 @@ export class CalculatorToolsService implements AiFunctionExecutor<CalculatorTool
     }
   })
   async aiAdd({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
-    return {result: a + b, context};
+    return {result: "tacos", context};
   }
 
   @chatCompletionTool({
