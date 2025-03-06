@@ -91,16 +91,14 @@ It is valid to have a plan that includes no function steps.  This is particularl
 2. Analyze the functionNames tag carefully.  
 3. Create a sequential plan using ONLY the provided planning tools:
    - First call: \`aiCreatePlan\` (always first)
-   - Middle calls: 
-      -- \`aiAddFunctionStepToPlan\` (optional) - spend time deeply reasoning about if this call is valid, knowing that only functionNames that are defined in <functionNames> can be referrenced. 
-      -- \`aiMissingFunctionNameToFulfillUserRequest\` (optional) - spend time deeply reasoning about when to call this.  
+   - Middle call: \`aiAddFunctionStepToPlan\` (optional) - spend time deeply reasoning about if this call is valid, knowing that only functionNames that are defined in <functionNames> can be referrenced. 
    - Last call: \`aiCompletePlan\` (always last)
 4. When considering calling aiAddFunctionStepToPlan, understand that no functionName param values should be used, that aren't explicitly defined in the <functionNames> tag.
 5. Only respond to this request with tool calls.  Do not respond with any other preamble or text.   
 6. Make ALL tool calls for aiCreatePlan and aiCompletePlan in a SINGLE response (do not wait for results between calls). i.e. don't call on aiCreatePlan, wait for the response, then call aiCompletePlan.  
-7. After responding with tool calls, you will receive back a success response from the \`aiCompletePlan\` tool.
+7. After responding with tool calls, you will receive back a success response from the aiCompletePlan tool.
 8. After receiving a response from the tool call to aiCompletePlan, do not respond with any further tool calls. 
-Respond with "complete"
+Respond simply with "complete".
 
 ## Context
 Below is an array of functionName available to you to use when calling aiAddFunctionStepToPlan.
@@ -109,7 +107,10 @@ ${functionNames}
 </functionNames>
 
 It's important for you to spend time reasoning about these functionNames.  You continue to make calls to aiAddFunctionStepToPlan, passing in functionNames that do not exist in the provided functionNames tag.
-Why do you think that is?  
+
+For example, if functionNames contains <fuctionNames>[aiAdd]</fuctionNames>, and the user prompt is 'send a letter to July', you should recognize that there is no tool available to send a letter, and therefore should
+not attempt to call aiAddFunctionStepToPlan for that user request.
+It's imperative that you do not attempt to pass functionNames that don't exist in <functionNames>.
 
 ## Parameter Referencing Syntax
 When a step depends on a previous step's result, use this as the parameter value to indicate that the previous function result should be used: \`$previousFunctionName.result\`.  e.g. "$aiAdd.result"
@@ -172,30 +173,6 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
     };
   }
 
-  @chatCompletionTool({
-    type: "function",
-    function: {
-      name: "aiMissingFunctionNameToFulfillUserRequest",
-      description: `When the user request/prompt requires a functionName that isn't defined in <functionNames>, this should be called`,
-      parameters: {
-        type: "object",
-        properties: {
-          partOfUserRequestThatRequiresMissingFunctionName: {
-            type: "string",
-            description: `Which part of the user's request/prompt that requires a functionName that isn't defined in <functionNames>`
-          },
-          nameOfMissingFunctionName: {
-            type: "string",
-            description: "If there were to be a functionName in <functionNames> which could be used to fulfill the user's request, what would it be called? e.g. aiCreateWikipediaEntry when the user asks to create a wikipedia entry about Romans."
-          }
-        }
-      }
-    }
-  })
-  async aiMissingFunctionNameToFulfillUserRequest({partOfUserRequestThatRequiresMissingFunctionName, nameOfMissingFunctionName}: {partOfUserRequestThatRequiresMissingFunctionName: string, nameOfMissingFunctionName: string}, context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
-    console.log(`aiMissingFunctionNameToFulfillUserRequest called with prompt: ${partOfUserRequestThatRequiresMissingFunctionName}, missing function name: ${nameOfMissingFunctionName}`);
-    return {result: true, context};
-  }
 
   //{"name": "searchWeb", "arguments": {"query": "latest music industry news"}}
   static getAiAddFunctionStepToPlanMetadata(): ChatCompletionTool {
@@ -217,7 +194,7 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
             },
             functionNameIndexInFunctionNamesTag: {
               type: "number",
-              description: ``,
+              description: `The index of the array defined in <functionNames> where the functionName was found.`,
             },
             functionArgs: {
               type: "object",
@@ -225,10 +202,10 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
             },
             reasonToAddStep: {
               type: "string",
-              description: "Where you found the functionName in the provided tools. Also a justification for why this function step is necessary to fulfill the user's request.",
+              description: "Justification for why this function step is necessary to fulfill the user's request.",
             },
           },
-          required: ["id", "functionName", "functionArgs", "reasonToAddStep"],
+          required: ["id", "functionName", "functionArgs", "reasonToAddStep", "functionNameIndexInFunctionNamesTag"],
         },
       }
     };
@@ -282,3 +259,30 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
   }
 
 }
+
+
+
+// @chatCompletionTool({
+//   type: "function",
+//   function: {
+//     name: "aiMissingFunctionNameToFulfillUserRequest",
+//     description: `When the user request/prompt requires a functionName that isn't defined in <functionNames>, this should be called`,
+//     parameters: {
+//       type: "object",
+//       properties: {
+//         partOfUserRequestThatRequiresMissingFunctionName: {
+//           type: "string",
+//           description: `Which part of the user's request/prompt that requires a functionName that isn't defined in <functionNames>`
+//         },
+//         nameOfMissingFunctionName: {
+//           type: "string",
+//           description: "If there were to be a functionName in <functionNames> which could be used to fulfill the user's request, what would it be called? e.g. aiCreateWikipediaEntry when the user asks to create a wikipedia entry about Romans."
+//         }
+//       }
+//     }
+//   }
+// })
+// async aiMissingFunctionNameToFulfillUserRequest({partOfUserRequestThatRequiresMissingFunctionName, nameOfMissingFunctionName}: {partOfUserRequestThatRequiresMissingFunctionName: string, nameOfMissingFunctionName: string}, context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
+//   console.log(`aiMissingFunctionNameToFulfillUserRequest called with prompt: ${partOfUserRequestThatRequiresMissingFunctionName}, missing function name: ${nameOfMissingFunctionName}`);
+//   return {result: true, context};
+// }

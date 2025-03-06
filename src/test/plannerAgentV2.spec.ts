@@ -111,23 +111,17 @@ describe('Agent Tests', () => {
 
       }
 
-      //{ Success
+      //success rate 0.9. with 10
+      //{ success
       //   "known functions completeText": 10,
       //   "known functions doFunctionsExistToFulfillTheUserRequest": 10,
+      //   "known functions functionSteps length": 10,
       //   "unknown functions completeText": 10,
-      //   "unknown functions functionSteps length": 5,
-      //   "both functions completeText": 10,
-      //   "both functions doFunctionsExistToFulfillTheUserRequest": 9,
-      //   "known functions functionSteps length": 9,
       //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 8,
-      //   "both functions functionSteps length": 6
-      // }
-      //fails {
-      //   "known functions functionSteps length": 1,
-      //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 2,
-      //   "both functions functionSteps length": 4,
-      //   "unknown functions functionSteps length": 5,
-      //   "both functions doFunctionsExistToFulfillTheUserRequest": 1
+      //   "unknown functions functionSteps length": 9,
+      //   "both functions completeText": 10,
+      //   "both functions doFunctionsExistToFulfillTheUserRequest": 6,
+      //   "both functions functionSteps length": 8
       // }
       const successRate = totalSuccesses / (totalSuccesses + totalFails);
       expect(successRate > 0.8).toBe(true);
