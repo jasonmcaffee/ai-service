@@ -7,38 +7,41 @@
 
 import {AgentPlan, AiFunctionStep} from "./AgentPlan";
 import {ModelsService} from "../../services/models.service";
-import {OpenaiWrapperService} from "../../services/openaiWrapper.service";
+import {OpenaiWrapperServiceV2} from "../../services/openAiWrapperV2.service";
 import { Model } from '../api/conversationApiModels';
 import { WebToolsService } from '../../services/agent/tools/webTools.service';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import InferenceSSESubject from '../InferenceSSESubject';
 import { getChatPageSystemPrompt, getToolsPrompt, toolCallEndMarker, toolCallStartMarker } from '../../utils/prompts';
 import { CalculatorToolsService } from '../../services/agent/tools/calculatorTools.service';
-import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "./aiTypes";
+import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from './aiTypes';
 
 //doing this mainly to test functionality.  not really needed for this implementation.
-class PlannerAgentFunctionContext implements AiFunctionContext {
+class PlannerAgentFunctionContext implements AiFunctionContextV2 {
   public aiCreatePlanResult: AgentPlan;
   public functionResults = {};//where we house "$aiAdd.result" etc
-  constructor(public inferenceSSESubject: InferenceSSESubject | undefined, public aiFunctionExecutor: AiFunctionExecutor<PlannerAgent>) {
-  }
+  constructor(
+    public memberId: string,
+    public inferenceSSESubject: InferenceSSESubject | undefined,
+    public aiFunctionExecutor: AiFunctionExecutor<PlannerAgentV2>,
+    public abortController: AbortController,
+    ) {}
 }
 
-export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
-  constructor(private readonly model: Model, private readonly openAiWrapperService: OpenaiWrapperService,
+export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2> {
+  constructor(private readonly model: Model, private readonly openAiWrapperServiceV2: OpenaiWrapperServiceV2,
               private readonly memberId, private readonly aiFunctionExecutor: AiFunctionExecutor<any>,
-              private readonly inferenceSSESubject: InferenceSSESubject,
+              private readonly inferenceSSESubject: InferenceSSESubject | undefined,
               private readonly originalOpenAiMessages: ChatCompletionMessageParam[]
-              ) {}
+  ) {}
   agentPlan: AgentPlan;
   public isPlanCreationComplete: boolean;
 
-  //TODO MAKE THIS BETTER.  PlannerAgent should be given a AiFunctionExecutor, then iterate.
   getToolsMetadata(): ChatCompletionTool[]{
     return [
-      PlannerAgent.getAiCreatePlanToolMetadata(),
-      PlannerAgent.getAiAddFunctionStepToPlanMetadata(),
-      PlannerAgent.getAiCompletePlanMetadata(),
+      PlannerAgentV2.getAiCreatePlanToolMetadata(),
+      PlannerAgentV2.getAiAddFunctionStepToPlanMetadata(),
+      PlannerAgentV2.getAiCompletePlanMetadata(),
       ...this.aiFunctionExecutor.getToolsMetadata(),
     ]
   }
@@ -46,25 +49,24 @@ export default class PlannerAgent implements AiFunctionExecutor<PlannerAgent> {
   async createPlan(userPrompt: string){
     this.isPlanCreationComplete = false;
     const abortController = new AbortController();
-    const aiFunctionContext = new PlannerAgentFunctionContext(this.inferenceSSESubject, this);
+    const aiFunctionContext = new PlannerAgentFunctionContext(this.memberId, this.inferenceSSESubject, this, abortController);
 
-    const result = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+    const result = await this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject({
       openAiMessages: [
-          ...this.originalOpenAiMessages,
-          { role: 'system', content: getToolsPrompt(this.getToolsMetadata())}, //TODO: this might be duplicate. could do ensureGetToolsPromptExists(openAiMessages)
-          { role: 'system', content: this.getCreatePlanPrompt(userPrompt)}
+        ...this.originalOpenAiMessages,
+        // { role: 'system', content: getToolsPrompt(this.getToolsMetadata())},
+        { role: 'system', content: this.getCreatePlanPrompt(userPrompt, this.getToolsMetadata())}
       ],
-      abortController, inferenceSSESubject: this.inferenceSSESubject, model: this.model, memberId: this.memberId, tools: this.getToolsMetadata(),
-      toolService: this,
+      model: this.model,
       aiFunctionContext,
+      totalOpenAiCallsMade: 0,
     });
     return {...result, agentPlan: this.agentPlan};
   }
 
   //Test Summary: 9/30   30.00%
-  getCreatePlanPrompt(userPrompt: string){
-    const toolStartMarker = toolCallStartMarker;
-    const toolEndMarker = toolCallEndMarker;
+  getCreatePlanPrompt(userPrompt: string, toolsMetadata: ChatCompletionTool[]){
+    const functionNames = toolsMetadata.map(t => t.function.name).join(', ');
     return `
 # Planning Agent Instructions
 
@@ -73,28 +75,32 @@ You are a Planning Agent whose ONLY responsibility is to create a structured pla
 
 ## Expected Process (Follow This Exactly)
 1. Analyze the user prompt carefully
-2. Identify required tools from those provided to you in the <tools> tag.  
+2. Identify required tools from those provided to you tools. For example, if the user asks you to search the web, and a searchTheWeb tool was provided, you should create a plan that uses that tool.  
 3. If no tools exist that can be used to satisfy the user request, you should create a plan with 0 steps.
 4. Create a sequential plan using ONLY the provided planning tools:
    - First call: \`aiCreatePlan\` (always first)
    - Middle calls: \`aiAddFunctionStepToPlan\` (0 or more steps)
    - Last call: \`aiCompletePlan\` (always last)
-5. Only respond to this request with tool calls.  Do not respond with any other preamble or text.   
-6. Make ALL tool calls in a SINGLE response (do not wait for results between calls)
-7. After responding with tool calls, you will receive back a success response from the \`aiCompletePlan\` tool.
-8. After receiving \`{success: true}\` from \`aiCompletePlan\`, respond only with a blank space. e.g. ' '  This is extremely important.
+5. Before calling aiAddFunctionStepToPlan, search through the <functionNames> tag and see if the argument you want to use for functionName exists.  If it does not exist, then do not call aiAddFunctionStepToPlan.
+6. Only respond to this request with tool calls.  Do not respond with any other preamble or text.   
+7. Make ALL tool calls for aiCreatePlan and aiCompletePlan in a SINGLE response (do not wait for results between calls). i.e. don't call on aiCreatePlan, wait for the response, then call aiCompletePlan.  
+8. After responding with tool calls, you will receive back a success response from the \`aiCompletePlan\` tool.
+9. After receiving a response from the tool call to aiCompletePlan, do not respond with any further tool calls. 
+Respond with "complete"
 
 ## Critical Rules
 - For this request, Call ONLY the planning tools (aiCreatePlan, aiAddFunctionStepToPlan, aiCompletePlan)
 - Reference other provided tools ONLY as steps in your plan.
-- NEVER invent tools that weren't provided to you in the <tools> tag.
-- all functionName paramater values must exist in the <functionNames> tag.
-- You should never attempt using a functionName that isn't explicitly listed inside the <functionNames> tag.
+- NEVER invent tools that weren't explicitly provided to you.
 - Make ALL tool calls in ONE response
-- Use parameter referencing syntax \`$functionName.result\` for dependencies
+- Use parameter referencing syntax \`$functionName.result\` for dependencies between aiAddFunctionStepToPlan calls.
 - ALWAYS end your plan with aiCompletePlan
 - NO explanatory text, preambles, or dialogue - ONLY tool calls
 - Format all tool calls as proper JSON objects
+- Extremely important!! When making a call to tool aiAddFunctionStepToPlan, the arguments include a property called "functionName". The functionName you provide MUST exist in the <functionNames> tag below.  
+If not, do not attempt to call aiAddFunctionStepToPlan.
+<functionNames>${functionNames}</functionNames>
+If it does exist in the functionNames, then you should explicitly include that information as part of your reasonToAddStep text.
 
 ## Parameter Referencing Syntax
 When a step depends on a previous step's result, use this as the parameter value to indicate that the previous function result should be used: \`$previousFunctionName.result\`.  e.g. "$aiAdd.result"
@@ -103,6 +109,7 @@ When a step depends on a previous step's result, use this as the parameter value
 <prompt>${userPrompt}</prompt>
 
 Remember: You MUST call all tools (aiCreatePlan → aiAddFunctionStepToPlan → aiCompletePlan) in ONE response.
+Remember: aiAddFunctionStepToPlan can only refer to functionName found in <functionNames>.  This is extremely important.
 
 `;
   }
@@ -168,7 +175,7 @@ Remember: You MUST call all tools (aiCreatePlan → aiAddFunctionStepToPlan → 
             },
             functionName: {
               type: "string",
-              description: `The name of the function to be called in this step.  This must be explicitly defined in the <tools> xml tag.
+              description: `The name of the function to be called in this step. The value of this must be explicitly defined in the <functionNames> tag, or else it doesnt exist and there will be a bad error..
               `,
             },
             functionArgs: {
@@ -177,23 +184,23 @@ Remember: You MUST call all tools (aiCreatePlan → aiAddFunctionStepToPlan → 
             },
             reasonToAddStep: {
               type: "string",
-              description: "Where you found the functionName in the <tools> xml tag. Also a justification for why this function step is necessary to fulfill the user's request.",
+              description: "Where you found the functionName in the provided tools. Also a justification for why this function step is necessary to fulfill the user's request.",
             },
           },
-          required: ["id", "functionName", "functionArgs", "reasonToAddStep",],
+          required: ["id", "functionName", "functionArgs", "reasonToAddStep"],
         },
       }
     };
   }
   async aiAddFunctionStepToPlan({ id, functionName, functionArgs, reasonToAddStep, }:
-                                { id: string; functionName: string; functionArgs: object; reasonToAddStep: string; },
+                                  { id: string; functionName: string; functionArgs: object; reasonToAddStep: string; toolIsExplicitlyDefinedInTheToolsXmlTag: boolean;},
                                 context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
-    console.log(`aiAddFunctionStepToPlan called with: `, {id, functionName, functionArgs, reasonToAddStep, });
+    console.log(`aiAddFunctionStepToPlan called with: `, {id, functionName, functionArgs, reasonToAddStep,});
     if (!this.agentPlan) {
       throw new Error("No active plan found. Call 'aiCreatePlan' first.");
     }
 
-    const functionStep = new AiFunctionStep(id, functionName, functionArgs, reasonToAddStep, );
+    const functionStep = new AiFunctionStep(id, functionName, functionArgs, reasonToAddStep,);
     this.agentPlan.functionSteps.push(functionStep);
     return {
       result: {success: true},
@@ -213,7 +220,7 @@ Remember: You MUST call all tools (aiCreatePlan → aiAddFunctionStepToPlan → 
         1. 'aiCreatePlan' has been used to initialize a plan.
         2. 'aiAddFunctionStepToPlan' has been used to add all required function calls.
         
-        Once this function is called, you will receive a response message with {success: true}, at which point your work is done, and you should make no further tool calls.  Simply respond with 'complete'`,
+        `,
         parameters: {
           type: "object",
           properties: {

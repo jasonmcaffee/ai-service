@@ -4,6 +4,6 @@ export class AgentPlan{
 }
 
 export class AiFunctionStep {
-    constructor(readonly id: string, readonly functionName: string, readonly args: object, readonly reasonToAddStep: string, readonly toolIsExplicitlyDefinedInTheToolsXmlTag: boolean) {
+    constructor(readonly id: string, readonly functionName: string, readonly args: object, readonly reasonToAddStep: string, ) {
     }
 }

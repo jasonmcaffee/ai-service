@@ -61,7 +61,15 @@ export class OpenaiWrapperServiceV2{
         stream: false,
       }, { signal });
 
-      const toolCallsFromOpenAi = response.choices[0].message.tool_calls;
+      const assistantMessage = response.choices[0].message;
+
+      // Add the assistant's message to our conversation
+      openAiMessages.push({
+        role: 'assistant' as const,
+        content: assistantMessage.content,
+        tool_calls: assistantMessage.tool_calls
+      });
+      const toolCallsFromOpenAi = assistantMessage.tool_calls;
       if(toolCallsFromOpenAi){
 
         // Process each tool call

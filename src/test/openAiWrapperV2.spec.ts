@@ -3,9 +3,10 @@ import { Model } from '../models/api/conversationApiModels';
 import { OpenaiWrapperServiceV2 } from '../services/openAiWrapperV2.service';
 import { toolCallEndMarker, toolCallStartMarker } from '../utils/prompts';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
-import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor } from '../models/agent/aiTypes';
+import { AiFunctionContextV2, AiFunctionExecutor } from '../models/agent/aiTypes';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
+import PlannerAgentV2 from '../models/agent/PlannerAgentV2';
 
 describe("parseLlamaCppToolCalls", ()=>{
   let testingModule: TestingModule;
@@ -23,6 +24,41 @@ describe("parseLlamaCppToolCalls", ()=>{
     testingModule = await Test.createTestingModule({
       providers: [OpenaiWrapperServiceV2, CalculatorToolsService],
     }).compile();
+  });
+
+  it("should support planner agent", async ()=> {
+    const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
+    const memberId = "1";
+    const calculatorTools = testingModule.get<CalculatorToolsService>(CalculatorToolsService);
+
+    const aiFunctionContext: AiFunctionContextV2 = {
+      inferenceSSESubject: new InferenceSSESubject(),
+      memberId,
+      aiFunctionExecutor: calculatorTools, //todo make optional
+      functionResults: {},
+      abortController: new AbortController(),
+    }
+
+    async function askPlannerBot(prompt: string){
+      const originalOpenAiMessages: ChatCompletionMessageParam[] = [
+        {role: 'system', content: `
+        You are a general purpose assistant that responds to user requests.
+        Additionally, you have been provided with tools/functions that you can potentially use to respond to a user request.  
+        If no tools are applicable, simply respond as you normally would to any other request.
+        For example, if the user asks you who George Washington is, and there isn't a webSearch or biography tool, you would simply respond with information you know about George Washington.
+        `},
+      ];
+
+      const plannerAgent = new PlannerAgentV2(model, openAiWrapperService, memberId, calculatorTools, undefined, originalOpenAiMessages);
+      return await plannerAgent.createPlan(prompt);
+    }
+
+    // const r1 = await askPlannerBot( "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
+    // expect(r1.completeText == "done").toBe(true);
+
+    const r2 = await askPlannerBot( "Search the web for bitcoin news, then send a summary email to Bob@gmail.com");
+    expect(r2.completeText == "done").toBe(true);
+
   });
 
   it("should support non streamed questions with calculator tools and not call tools when not needed.", async ()=> {
@@ -58,12 +94,15 @@ describe("parseLlamaCppToolCalls", ()=>{
 
     // const result2 = await askBot("what is 2 + 2?");
     // expect(result2.completeText !== undefined).toBe(true);
-
+    // //
     // const result3 = await askBot("send an email to bob@gmail.com with subject: hi bob!");
     // expect(result3.completeText !== undefined).toBe(true);
 
-    const result4 = await askBot("what is 2 + 2, then take the result and divide by 3?");
-    expect(result4.completeText !== undefined).toBe(true);
+    const r4 = await askBot('search the web for bitcoin news then send a summary email to bob@gmail.com');
+    expect(r4.completeText !== undefined).toBe(true);
+    //
+    // const result4 = await askBot("what is 2 + 2, then take the result and divide by 3?");
+    // expect(result4.completeText !== undefined).toBe(true);
 
   });
 
