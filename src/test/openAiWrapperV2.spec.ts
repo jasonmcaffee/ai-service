@@ -3,10 +3,11 @@ import { Model } from '../models/api/conversationApiModels';
 import { OpenaiWrapperServiceV2 } from '../services/openAiWrapperV2.service';
 import { toolCallEndMarker, toolCallStartMarker } from '../utils/prompts';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
-import { AiFunctionContextV2, AiFunctionExecutor } from '../models/agent/aiTypes';
+import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from '../models/agent/aiTypes';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
 import PlannerAgentV2 from '../models/agent/PlannerAgentV2';
+import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from '../services/agent/tools/aiToolTypes';
 
 describe("parseLlamaCppToolCalls", ()=>{
   let testingModule: TestingModule;
@@ -172,6 +173,69 @@ describe("parseLlamaCppToolCalls", ()=>{
 
     const result = await openAiWrapperService.callOpenAiUsingModelAndSubject({openAiMessages, aiFunctionContext, model, totalOpenAiCallsMade: 0});
     console.log(`result: `, result);
+    expect(result.completeText !== undefined).toBe(true);
+  });
+
+
+  it("should use values from tool calls.", async ()=> {
+    const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
+    const memberId = "1";
+    class TestToolsService implements AiFunctionExecutor<TestToolsService> {
+      getToolsMetadata(): ChatCompletionTool[] {
+        const metadata = extractChatCompletionToolAnnotationValues(this);
+        return metadata;
+      }
+
+      @chatCompletionTool({
+        type: "function",
+        function: {
+          name: "aiSendMessageAndGetResponse",
+          description: "send a message to a person and get a response back",
+          parameters: {
+            type: "object",
+            properties: {
+              personName: {
+                type: "string",
+                description: "Name of the person",
+              },
+              message: {
+                type: "string",
+                description: "The message to send to the person.",
+              },
+            },
+            required: ["personName", "message"],
+          },
+        }
+      })
+      async aiSendMessageAndGetResponse({ personName, message }: { personName: string; message: string }, context: AiFunctionContext): Promise<AiFunctionResult> {
+        return {result: `${personName} says hello from australia!`, context};
+      }
+    }
+    const testToolsService = new TestToolsService();
+
+    async function askBot(prompt: string){
+      const openAiMessages: ChatCompletionMessageParam[] = [
+        {role: 'system', content: `
+        You are a general purpose assistant that responds to user requests.
+        Additionally, you have been provided with tools/functions that you can potentially use to respond to a user request.  
+        
+        If no tools are applicable, simply respond as you normally would to any other request.
+        For example, if the user asks you who George Washington is, and there isn't a webSearch or biography tool, you would simply respond with information you know about George Washington.
+        `},
+        {role: 'user', content: prompt}
+      ];
+
+      const aiFunctionContext: AiFunctionContextV2 = {
+        inferenceSSESubject: new InferenceSSESubject(),
+        memberId,
+        aiFunctionExecutor: testToolsService, //todo make optional
+        functionResults: {},
+        abortController: new AbortController(),
+      }
+
+      return openAiWrapperService.callOpenAiUsingModelAndSubject({openAiMessages, aiFunctionContext, model, totalOpenAiCallsMade: 0});
+    }
+    const result = await askBot('send a message to Bob saying hey buddy, how are you?')
     expect(result.completeText !== undefined).toBe(true);
   });
 });

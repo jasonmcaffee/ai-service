@@ -57,7 +57,7 @@ export class OpenaiWrapperServiceV2{
       const response = await openai.chat.completions.create({
         model: model.modelName,
         messages: openAiMessages,
-        tools: aiFunctionContext.aiFunctionExecutor.getToolsMetadata(),
+        tools: aiFunctionContext.aiFunctionExecutor.getToolsMetadata(), //TODO: should you be sending tools every single time? probably not.
         stream: false,
       }, { signal });
 
