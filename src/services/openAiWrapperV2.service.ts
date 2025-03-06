@@ -71,38 +71,12 @@ export class OpenaiWrapperServiceV2{
       });
       const toolCallsFromOpenAi = assistantMessage.tool_calls;
       if(toolCallsFromOpenAi){
-
-        // Process each tool call
-        for (const toolCall of toolCallsFromOpenAi) {
-          try {
-            const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall, aiFunctionContext.aiFunctionExecutor, aiFunctionContext);
-
-            if (toolResponse) {
-              // Add the tool response to messages - with correct structure
-              openAiMessages.push({
-                role: 'tool',
-                tool_call_id: toolCall.id!,
-                //@ts-ignore
-                name: toolResponse.tool_response.name,
-                content: JSON.stringify(toolResponse.tool_response.content)
-              });
-            }
-          } catch (error) {
-            console.error(`Error processing tool call: ${error}`);
-            throw error;
-          }
-        }
-
+        const newOpenAiMessages = await handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi, aiFunctionContext.aiFunctionExecutor, aiFunctionContext);
+        openAiMessages.push(...newOpenAiMessages);
         // Make a recursive call to continue the conversation and return its result
-        return this.callOpenAiUsingModelAndSubject({
-          openAiMessages,
-          model,
-          totalOpenAiCallsMade,
-          aiFunctionContext,
-        });
+        return this.callOpenAiUsingModelAndSubject({ openAiMessages, model, totalOpenAiCallsMade, aiFunctionContext, });
       }else {
         aiFunctionContext.inferenceSSESubject?.sendComplete();
-
         const completeText = response.choices[0].message.content ?? '';
         // Return the final state
         return { openAiMessages, completeText, totalOpenAiCallsMade };
@@ -114,7 +88,30 @@ export class OpenaiWrapperServiceV2{
       return { openAiMessages, completeText: `error: ${error}`, totalOpenAiCallsMade };
     }
   }
+}
 
+async function handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi: ChatCompletionMessageToolCall[], toolService: AiFunctionExecutor<any>, aiFunctionContext: AiFunctionContext): Promise<ChatCompletionMessageParam[]> {
+  const openAiMessages: ChatCompletionMessageParam[] = [];
+  for (const toolCall of toolCallsFromOpenAi) {
+    try {
+      const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall, aiFunctionContext.aiFunctionExecutor, aiFunctionContext);
+
+      if (toolResponse) {
+        // Add the tool response to messages - with correct structure
+        openAiMessages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id!,
+          //@ts-ignore
+          name: toolResponse.tool_response.name,
+          content: JSON.stringify(toolResponse.tool_response.content)
+        });
+      }
+    } catch (error) {
+      console.error(`Error processing tool call: ${error}`);
+      throw error;
+    }
+  }
+  return openAiMessages;
 }
 
 async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ChatCompletionMessageToolCall, toolService: AiFunctionExecutor<any>, aiFunctionContext: AiFunctionContext): Promise<{ tool_response: { name: string; content: any } } | null> {
