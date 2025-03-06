@@ -52,8 +52,8 @@ describe('Agent Tests', () => {
       }
 
       //works
-      // const r1 = await askPlannerBot( "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
-      // expect(r1.completeText == "done").toBe(true);
+      const r1 = await askPlannerBot( "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
+      expect(r1.completeText == "complete").toBe(true);
 
       //hallucinates functionNames
       const r2 = await askPlannerBot( "Search the web for bitcoin news, then send a summary email to Bob@gmail.com");

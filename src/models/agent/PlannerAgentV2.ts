@@ -66,7 +66,16 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
     return {...result, agentPlan: this.agentPlan};
   }
 
-  //Test Summary: 9/30   30.00%
+  /**
+   This helped stop hallucinating:
+   It's important for you to spend time reasoning about these functionNames.  You continue to make calls to aiAddFunctionStepToPlan, passing in functionNames that do not exist in the provided functionNames tag.
+   Why do you think that is?
+
+
+
+   * @param userPrompt
+   * @param toolsMetadata
+   */
   getCreatePlanPrompt(userPrompt: string, toolsMetadata: ChatCompletionTool[]){
     const functionNames = `[${toolsMetadata.map(t => t.function.name).join(', ')}]`
     return `
@@ -107,7 +116,7 @@ Create a plan using the user prompt below:
 <prompt>${userPrompt}</prompt>
 
 ## Important things to remember
-Remember: For any tool calls you decide to make, they must be done in ONE response.  ie. aiCreatePlan and aiCompletePlan calls must be made in a single response.
+Remember: For any tool calls you decide to make, they must be done in ONE response.  ie. a call to aiCreatePlan and to aiCompletePlan must be made in ONE response from you.
 Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to a functionName found in <functionNames>.
 
 `;
