@@ -123,7 +123,7 @@ describe('Agent Tests', () => {
       }
 
 
-      //
+      // 7B model results
       //success rate 0.7 30 iterations
       //{
       //   "known functions doFunctionsExistToFulfillTheUserRequest": 26,
@@ -140,6 +140,16 @@ describe('Agent Tests', () => {
       //   "unknown functions functionSteps length": 25,
       //   "both functions functionSteps length": 21,
       //   "both functions doFunctionsExistToFulfillTheUserRequest": 4
+      // }
+
+      //14B model results
+      //{
+      //   "known functions doFunctionsExistToFulfillTheUserRequest": 30,
+      //   "known functions functionSteps length": 30,
+      //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 30,
+      //   "unknown functions functionSteps length": 30,
+      //   "both functions functionSteps length": 22,
+      //   "both functions doFunctionsExistToFulfillTheUserRequest": 3
       // }
       const successRate = totalSuccesses / (totalSuccesses + totalFails);
       expect(successRate >= 0.7).toBe(true);
