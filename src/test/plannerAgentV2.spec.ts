@@ -57,7 +57,7 @@ describe('Agent Tests', () => {
 
       //hallucinates functionNames
       const r2 = await askPlannerBot( "Search the web for bitcoin news, then send a summary email to Bob@gmail.com");
-      expect(r2.completeText == "done").toBe(true);
+      expect(r2.completeText == "complete").toBe(true);
 
 
     }, 15 * 60 * 1000);

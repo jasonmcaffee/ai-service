@@ -68,50 +68,47 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
 
   //Test Summary: 9/30   30.00%
   getCreatePlanPrompt(userPrompt: string, toolsMetadata: ChatCompletionTool[]){
-    const functionNames = toolsMetadata.map(t => t.function.name).join(', ');
+    const functionNames = `[${toolsMetadata.map(t => t.function.name).join(', ')}]`
     return `
 # Planning Agent Instructions
 
 ## Your Role
 You are a Planning Agent whose ONLY responsibility is to create a structured plan of tool calls to address the user's prompt. Another agent will execute your plan, so focus exclusively on planning, not execution.
+It is valid to have a plan that includes no function steps.  This is particularly important to understand, and for you to avoid inventing functionNames that aren't explicitly provided to you.
 
 ## Expected Process (Follow This Exactly)
 1. Analyze the user prompt carefully
-2. Identify required tools from those provided to you tools. For example, if the user asks you to search the web, and a searchTheWeb tool was provided, you should create a plan that uses that tool.  
-3. If no tools exist that can be used to satisfy the user request, you should create a plan with 0 steps.
-4. Create a sequential plan using ONLY the provided planning tools:
+2. Analyze the functionNames tag carefully.  
+3. Create a sequential plan using ONLY the provided planning tools:
    - First call: \`aiCreatePlan\` (always first)
    - Middle calls: \`aiAddFunctionStepToPlan\` (0 or more steps)
    - Last call: \`aiCompletePlan\` (always last)
-5. Before calling aiAddFunctionStepToPlan, search through the <functionNames> tag and see if the argument you want to use for functionName exists.  If it does not exist, then do not call aiAddFunctionStepToPlan.
-6. Only respond to this request with tool calls.  Do not respond with any other preamble or text.   
-7. Make ALL tool calls for aiCreatePlan and aiCompletePlan in a SINGLE response (do not wait for results between calls). i.e. don't call on aiCreatePlan, wait for the response, then call aiCompletePlan.  
-8. After responding with tool calls, you will receive back a success response from the \`aiCompletePlan\` tool.
-9. After receiving a response from the tool call to aiCompletePlan, do not respond with any further tool calls. 
+4. When considering calling aiAddFunctionStepToPlan, understand that no functionName param values should be used, that aren't explicitly defined in the <functionNames> tag.
+5. Only respond to this request with tool calls.  Do not respond with any other preamble or text.   
+6. Make ALL tool calls for aiCreatePlan and aiCompletePlan in a SINGLE response (do not wait for results between calls). i.e. don't call on aiCreatePlan, wait for the response, then call aiCompletePlan.  
+7. After responding with tool calls, you will receive back a success response from the \`aiCompletePlan\` tool.
+8. After receiving a response from the tool call to aiCompletePlan, do not respond with any further tool calls. 
 Respond with "complete"
 
-## Critical Rules
-- For this request, Call ONLY the planning tools (aiCreatePlan, aiAddFunctionStepToPlan, aiCompletePlan)
-- Reference other provided tools ONLY as steps in your plan.
-- NEVER invent tools that weren't explicitly provided to you.
-- Make ALL tool calls in ONE response
-- Use parameter referencing syntax \`$functionName.result\` for dependencies between aiAddFunctionStepToPlan calls.
-- ALWAYS end your plan with aiCompletePlan
-- NO explanatory text, preambles, or dialogue - ONLY tool calls
-- Format all tool calls as proper JSON objects
-- Extremely important!! When making a call to tool aiAddFunctionStepToPlan, the arguments include a property called "functionName". The functionName you provide MUST exist in the <functionNames> tag below.  
-If not, do not attempt to call aiAddFunctionStepToPlan.
-<functionNames>${functionNames}</functionNames>
-If it does exist in the functionNames, then you should explicitly include that information as part of your reasonToAddStep text.
+## Context
+Below is an array of functionName available to you to use when calling aiAddFunctionStepToPlan.
+<functionNames>
+${functionNames}
+</functionNames>
+
+It's important for you to spend time reasoning about these functionNames.  You continue to make calls to aiAddFunctionStepToPlan, passing in functionNames that do not exist in the provided functionNames tag.
+Why do you think that is?  
 
 ## Parameter Referencing Syntax
 When a step depends on a previous step's result, use this as the parameter value to indicate that the previous function result should be used: \`$previousFunctionName.result\`.  e.g. "$aiAdd.result"
 
 ## User Prompt
+Create a plan using the user prompt below:
 <prompt>${userPrompt}</prompt>
 
-Remember: You MUST call all tools (aiCreatePlan → aiAddFunctionStepToPlan → aiCompletePlan) in ONE response.
-Remember: aiAddFunctionStepToPlan can only refer to functionName found in <functionNames>.  This is extremely important.
+## Important things to remember
+Remember: For any tool calls you decide to make, they must be done in ONE response.  ie. aiCreatePlan and aiCompletePlan calls must be made in a single response.
+Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to a functionName found in <functionNames>.
 
 `;
   }
@@ -120,16 +117,7 @@ Remember: aiAddFunctionStepToPlan can only refer to functionName found in <funct
       type: "function",
       function: {
         name: "aiCreatePlan",
-        description: `Initialize a new execution plan for fulfilling the user's request.
-        
-        This function must be called **first** before adding any function steps.
-        
-        **Usage Instructions:**
-        1. Call this function to start a new plan.
-        2. Then, use 'aiAddFunctionStepToPlan' to add each required function call.
-        3. Once all steps have been added, finalize the plan by calling 'aiCompletePlan'.
-
-        The plan serves as a structured sequence of tool calls necessary to accomplish the request.`,
+        description: `Initialize a new execution plan for fulfilling the user's request.`,
         parameters: {
           type: "object",
           properties: {
@@ -175,16 +163,7 @@ Remember: aiAddFunctionStepToPlan can only refer to functionName found in <funct
       type: "function",
       function: {
         name: "aiAddFunctionStepToPlan",
-        description: `Add a function call step to the current execution plan. 
-          
-          Each step represents a specific function call that will be executed as part of the plan.
-          
-          Guidelines:
-          - Ensure the function is necessary for fulfilling the request.
-          - Provide a clear reason for adding this function step.
-          - Define arguments precisely to avoid ambiguity.
-          
-          Call this function multiple times to add all required function steps before finalizing with 'aiCompletePlan'.`,
+        description: `Add a function call step to the current execution plan. `,
         parameters: {
           type: "object",
           properties: {
@@ -194,8 +173,11 @@ Remember: aiAddFunctionStepToPlan can only refer to functionName found in <funct
             },
             functionName: {
               type: "string",
-              description: `The name of the function to be called in this step. The value of this must be explicitly defined in the <functionNames> tag, or else it doesnt exist and there will be a bad error..
-              `,
+              description: `The name of the function to be called in this step. The value of this must be explicitly defined in the <functionNames> tag.`,
+            },
+            functionNameIndexInFunctionNamesTag: {
+              type: "number",
+              description: ``,
             },
             functionArgs: {
               type: "object",
@@ -232,20 +214,15 @@ Remember: aiAddFunctionStepToPlan can only refer to functionName found in <funct
       type: "function",
       function: {
         name: "aiCompletePlan",
-        description: `You must call this function when you have finished adding steps!  Do not skip this for any reason.  
-        Finalize the execution plan, signaling that all necessary function steps have been added. 
-        
-        This function should be called after:
-        1. 'aiCreatePlan' has been used to initialize a plan.
-        2. 'aiAddFunctionStepToPlan' has been used to add all required function calls.
-        
-        `,
+        description: `Indicate that the plan creation process is completed.`,
         parameters: {
           type: "object",
           properties: {
             completedReason: {
               type: "string",
-              description: "Reason the plan is considered complete.  e.g. All steps have been created needed to fulfill the user request.",
+              description: `Reason the plan is considered complete.  
+              e.g. Missing available functionNames to help facilitate user's request.
+              e.g. All steps have been created needed to fulfill the user request.`,
             },
           },
         },
