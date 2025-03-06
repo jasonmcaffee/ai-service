@@ -1,6 +1,6 @@
 export class AgentPlan{
     functionSteps: AiFunctionStep[] = [];
-    constructor(private readonly id: string) {}
+    constructor(private readonly id: string, public doFunctionsExistToFulfillTheUserRequest: boolean = false) {}
 }
 
 export class AiFunctionStep {

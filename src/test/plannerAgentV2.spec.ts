@@ -32,7 +32,7 @@ describe('Agent Tests', () => {
   describe('Planner Agent V2', ()=>{
 
     //100% success with 100 iterations.
-    it('It should consistently create plans', async () => {
+    it('It should create plans without hallucinating function names', async () => {
       const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
       const memberId = "1";
       const calculatorTools = testingModule.get<CalculatorToolsService>(CalculatorToolsService);
@@ -52,14 +52,22 @@ describe('Agent Tests', () => {
       }
 
       //works
-      const r1 = await askPlannerBot( "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
-      expect(r1.completeText == "complete").toBe(true);
+      // const r1 = await askPlannerBot( "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
+      // expect(r1.completeText == "complete").toBe(true);
+      // expect(r1.agentPlan.doFunctionsExistToFulfillTheUserRequest).toBe(true);
+      // expect(r1.agentPlan.functionSteps.length).toBe(4); //add, subtract, divide, multiply.
+      //
+      // //doesn't hallucinates functionNames
+      // const r2 = await askPlannerBot( "Search the web for bitcoin news, then send a summary email to Bob@gmail.com");
+      // expect(r2.completeText == "complete").toBe(true);
+      // expect(r1.agentPlan.doFunctionsExistToFulfillTheUserRequest).toBe(false);
+      // expect(r1.agentPlan.functionSteps.length).toBe(0);
 
-      //hallucinates functionNames
-      const r2 = await askPlannerBot( "Search the web for bitcoin news, then send a summary email to Bob@gmail.com");
-      expect(r2.completeText == "complete").toBe(true);
-
-
+      //this sometimes hallucinates aiSendEmail
+      const r3 = await askPlannerBot( "Send bob a message asking whether he wants to eat at Olive Garden for lunch.  Also, add 7 + 7, then divide the result by 3.");
+      expect(r3.completeText == "complete").toBe(true);
+      expect(r3.agentPlan.doFunctionsExistToFulfillTheUserRequest).toBe(true);
+      expect(r3.agentPlan.functionSteps.length).toBe(2);
     }, 15 * 60 * 1000);
 
   });
