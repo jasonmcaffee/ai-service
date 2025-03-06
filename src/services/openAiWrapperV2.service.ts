@@ -75,6 +75,98 @@ export class OpenaiWrapperServiceV2{
       return { openAiMessages, completeText: `error: ${error}`, totalOpenAiCallsMade };
     }
   }
+
+  //stream version. careful llama.cpp doesn't support stream + tools yet.
+  async callOpenAiUsingModelAndSubjectStream({
+                                         openAiMessages,
+                                         model,
+                                         totalOpenAiCallsMade = 0,
+                                         aiFunctionContext,
+                                       }: CallOpenAiParams): Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }> {
+    const apiKey = model.apiKey;
+    const baseURL = model.url;
+    const openai = new OpenAI({ apiKey, baseURL });
+    const signal = aiFunctionContext.abortController?.signal;
+    let completeText = '';
+    let assistantMessage: ChatCompletionMessageParam = {
+      role: 'assistant',
+      content: '',
+      tool_calls: []
+    };
+
+    try {
+      totalOpenAiCallsMade += 1;
+      const stream = await openai.chat.completions.create({
+        model: model.modelName,
+        messages: openAiMessages,
+        tools: aiFunctionContext.aiFunctionExecutor.getToolsMetadata(), //TODO: should you be sending tools every single time? probably not.
+        stream: true,
+      }, { signal });
+
+      for await (const chunk of stream) {
+        // Extract content from the chunk
+        const contentDelta = chunk.choices[0]?.delta?.content || '';
+        if (contentDelta) {
+          completeText += contentDelta;
+          assistantMessage.content = completeText;
+
+          // Send the chunk to the SSE subject for real-time updates
+          aiFunctionContext.inferenceSSESubject?.sendText(contentDelta);
+        }
+
+        // Handle tool calls which may come in chunks
+        if (chunk.choices[0]?.delta?.tool_calls) {
+          const toolCallsDelta = chunk.choices[0].delta.tool_calls;
+
+          // Initialize the tool_calls array if it doesn't exist
+          if (!assistantMessage.tool_calls || !Array.isArray(assistantMessage.tool_calls)) {
+            assistantMessage.tool_calls = [];
+          }
+
+          // Process each tool call in the delta
+          for (const toolCallDelta of toolCallsDelta) {
+            const { index, id, function: func } = toolCallDelta;
+
+            // If this is a new tool call, add it to our array
+            if (index !== undefined && !assistantMessage.tool_calls[index]) {
+              assistantMessage.tool_calls[index] = {
+                id: id || `call_${index}`,
+                type: 'function',
+                function: { name: '', arguments: '' }
+              };
+            }
+
+            // Update the existing tool call with new data
+            if (index !== undefined && func) {
+              const currentToolCall = assistantMessage.tool_calls[index] as any;
+              if (func.name) currentToolCall.function.name = func.name;
+              if (func.arguments) currentToolCall.function.arguments += func.arguments;
+            }
+          }
+        }
+      }
+
+      // Add the assistant's message to our conversation
+      openAiMessages.push(assistantMessage);
+
+      const toolCallsFromOpenAi = assistantMessage.tool_calls;
+      if(toolCallsFromOpenAi && toolCallsFromOpenAi.length > 0){
+        const newOpenAiMessages = await handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi, aiFunctionContext.aiFunctionExecutor, aiFunctionContext);
+        openAiMessages.push(...newOpenAiMessages);
+        // Make a recursive call to continue the conversation and return its result
+        return this.callOpenAiUsingModelAndSubject({ openAiMessages, model, totalOpenAiCallsMade, aiFunctionContext, });
+      }else {
+        aiFunctionContext.inferenceSSESubject?.sendComplete();
+        // Return the final state
+        return { openAiMessages, completeText, totalOpenAiCallsMade };
+      }
+
+    } catch (error) {
+      console.error(`LLM error: `, error);
+      aiFunctionContext.inferenceSSESubject?.sendError(error);
+      return { openAiMessages, completeText: `error: ${error}`, totalOpenAiCallsMade };
+    }
+  }
 }
 
 async function handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi: ChatCompletionMessageToolCall[], toolService: AiFunctionExecutor<any>, aiFunctionContext: AiFunctionContext): Promise<ChatCompletionMessageParam[]> {
