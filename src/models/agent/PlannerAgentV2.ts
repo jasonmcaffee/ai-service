@@ -144,9 +144,7 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
             },
             doAllFunctionsExistToFulfillTheUserRequest: {
               type: "boolean",
-              description: `indicate whether all functionNames/tools exist in order to fulfill the user reqeust.  
-              For example, the user may ask to send an email to Guadalupe@gmail.com, but a sendEmail functionName/tool may not be explicitly defined in <functionNames>, and if it isn't, this value should be false.
-              `
+              description: `boolean to indicate whether all functionNamesPlanWillCall all are explicitly defined in <functionNames>.`
             },
             functionNamesPlanWillCall: {
               type: "array",
@@ -156,6 +154,7 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
               }
             }
           },
+          required: ["id", "functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan", "doAllFunctionsExistToFulfillTheUserRequest", "functionNamesPlanWillCall"],
         },
       }
     };
@@ -242,6 +241,7 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
               e.g. All steps have been created needed to fulfill the user request.`,
             },
           },
+          required: ["completedReason"],
         },
       }
     };

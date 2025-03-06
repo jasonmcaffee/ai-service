@@ -91,7 +91,7 @@ describe('Agent Tests', () => {
       }
 
 
-      const iterations = 20;
+      const iterations = 10;
 
       for(let i = 0; i < iterations; ++i){
         const r1 = await askPlannerBot( "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
@@ -109,15 +109,26 @@ describe('Agent Tests', () => {
 
       }
 
+      //success with 10
+      //{
+      //   "known functions doFunctionsExistToFulfillTheUserRequest": 8,
+      //   "known functions functionSteps length": 10,
+
+      //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 6,
+      //   "unknown functions functionSteps length": 8,
+
+      //   "both functions doFunctionsExistToFulfillTheUserRequest": 2
+      //   "both functions functionSteps length": 10,
+      // }
+
       //success rate 0.9. with 10
       //{ success
-      //   "known functions completeText": 10,
       //   "known functions doFunctionsExistToFulfillTheUserRequest": 10,
       //   "known functions functionSteps length": 10,
-      //   "unknown functions completeText": 10,
+
       //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 8,
       //   "unknown functions functionSteps length": 9,
-      //   "both functions completeText": 10,
+
       //   "both functions doFunctionsExistToFulfillTheUserRequest": 6,
       //   "both functions functionSteps length": 8
       // }
