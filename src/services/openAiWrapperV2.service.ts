@@ -69,7 +69,6 @@ export class OpenaiWrapperServiceV2{
         // Return the final state
         return { openAiMessages, completeText, totalOpenAiCallsMade };
       }
-
     } catch (error) {
       console.error(`LLM error: `, error);
       aiFunctionContext.inferenceSSESubject?.sendError(error);
