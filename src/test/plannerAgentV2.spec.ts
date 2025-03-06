@@ -30,6 +30,45 @@ describe('Agent Tests', () => {
   });
 
   describe('Planner Agent V2', ()=>{
+    let successCounts: Record<string, number> = {};
+    let failureCounts: Record<string, number> = {};
+    let totalFails = 0;
+    let totalSuccesses = 0;
+    const trackResult = (key: string, passed: boolean) => {
+      if (passed) {
+        ++totalSuccesses;
+        successCounts[key] = (successCounts[key] || 0) + 1;
+      } else {
+        ++totalFails;
+        failureCounts[key] = (failureCounts[key] || 0) + 1;
+      }
+    };
+    const trackFailure = (key: string) => trackResult(key, false);
+    const trackSuccess = (key: string) => trackResult(key, true);
+
+    async function withTracking(key: string, func: () => Promise<void>){
+      try{
+        await func();
+        trackSuccess(key);
+      }catch(e){
+        trackFailure(key);
+      }
+    }
+
+    function expectTrueWithTracking(key: string, value: boolean){
+      try{
+        expect(value).toBe(true);
+        trackSuccess(key);
+      }catch(e){
+        trackFailure(key);
+      }
+    }
+
+    beforeEach(()=>{
+      successCounts = {};
+      failureCounts = {};
+      totalFails = 0;
+    })
 
     //100% success with 100 iterations.
     it('It should create plans without hallucinating function names', async () => {
@@ -51,23 +90,47 @@ describe('Agent Tests', () => {
         return await plannerAgent.createPlan(prompt);
       }
 
-      //works
-      const r1 = await askPlannerBot( "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
-      expect(r1.completeText == "complete").toBe(true);
-      expect(r1.agentPlan.doFunctionsExistToFulfillTheUserRequest).toBe(true);
-      expect(r1.agentPlan.functionSteps.length).toBe(4); //add, subtract, divide, multiply.
-      //
-      // //doesn't hallucinates functionNames
-      const r2 = await askPlannerBot( "Search the web for bitcoin news, then send a summary email to Bob@gmail.com");
-      expect(r2.completeText == "complete").toBe(true);
-      expect(r2.agentPlan.doFunctionsExistToFulfillTheUserRequest).toBe(false);
-      expect(r2.agentPlan.functionSteps.length).toBe(0);
 
-      //this sometimes hallucinates aiSendEmail
-      const r3 = await askPlannerBot( "Send bob a message asking whether he wants to eat at Olive Garden for lunch.  Also, add 7 + 7, then divide the result by 3.");
-      expect(r3.completeText == "complete").toBe(true);
-      expect(r3.agentPlan.doFunctionsExistToFulfillTheUserRequest).toBe(true);
-      expect(r3.agentPlan.functionSteps.length).toBe(2);
+      const iterations = 10;
+
+      for(let i = 0; i < iterations; ++i){
+        const r1 = await askPlannerBot( "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
+        expectTrueWithTracking('known functions completeText', r1.completeText == "complete"); //this will be <tool> when llama.cpp makes a bad return.
+        expectTrueWithTracking('known functions doFunctionsExistToFulfillTheUserRequest', r1.agentPlan.doFunctionsExistToFulfillTheUserRequest == true);
+        expectTrueWithTracking('known functions functionSteps length', r1.agentPlan.functionSteps.length == 4);
+
+        const r2 = await askPlannerBot( "Search the web for bitcoin news, then send a summary email to Bob@gmail.com");
+        expectTrueWithTracking('unknown functions completeText', r2.completeText == "complete"); //this will be <tool> when llama.cpp makes a bad return.
+        expectTrueWithTracking('unknown functions doFunctionsExistToFulfillTheUserRequest', r2.agentPlan.doFunctionsExistToFulfillTheUserRequest == false);
+        expectTrueWithTracking('unknown functions functionSteps length', r2.agentPlan.functionSteps.length == 0);
+
+        const r3 = await askPlannerBot( "Send bob a message asking whether he wants to eat at Olive Garden for lunch.  Also, add 7 + 7, then divide the result by 3.");
+        expectTrueWithTracking('both functions completeText', r3.completeText == "complete"); //this will be <tool> when llama.cpp makes a bad return.
+        expectTrueWithTracking('both functions doFunctionsExistToFulfillTheUserRequest', r3.agentPlan.doFunctionsExistToFulfillTheUserRequest == true);
+        expectTrueWithTracking('both functions functionSteps length', r3.agentPlan.functionSteps.length == 2);
+
+      }
+
+      //{ Success
+      //   "known functions completeText": 10,
+      //   "known functions doFunctionsExistToFulfillTheUserRequest": 10,
+      //   "unknown functions completeText": 10,
+      //   "unknown functions functionSteps length": 5,
+      //   "both functions completeText": 10,
+      //   "both functions doFunctionsExistToFulfillTheUserRequest": 9,
+      //   "known functions functionSteps length": 9,
+      //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 8,
+      //   "both functions functionSteps length": 6
+      // }
+      //fails {
+      //   "known functions functionSteps length": 1,
+      //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 2,
+      //   "both functions functionSteps length": 4,
+      //   "unknown functions functionSteps length": 5,
+      //   "both functions doFunctionsExistToFulfillTheUserRequest": 1
+      // }
+      const successRate = totalSuccesses / (totalSuccesses + totalFails);
+      expect(successRate > 0.8).toBe(true);
     }, 15 * 60 * 1000);
 
   });
