@@ -91,59 +91,47 @@ describe('Agent Tests', () => {
       }
 
 
-      const iterations = 10;
+      const iterations = 30;
 
       for(let i = 0; i < iterations; ++i){
         const r1 = await askPlannerBot( "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
-
-        expectTrueWithTracking('known functions doFunctionsExistToFulfillTheUserRequest', r1.agentPlan.doFunctionsExistToFulfillTheUserRequest == true);
-        expectTrueWithTracking('known functions functionSteps length', r1.agentPlan.functionSteps.length == 4);
+        try{
+          expectTrueWithTracking('known functions doFunctionsExistToFulfillTheUserRequest', r1.agentPlan.doFunctionsExistToFulfillTheUserRequest == true);
+          expectTrueWithTracking('known functions functionSteps length', r1.agentPlan.functionSteps.length == 4);
+        }catch(e){
+          console.error(e);
+        }
 
         const r2 = await askPlannerBot( "Search the web for bitcoin news, then send a summary email to Bob@gmail.com");
-        expectTrueWithTracking('unknown functions doFunctionsExistToFulfillTheUserRequest', r2.agentPlan.doFunctionsExistToFulfillTheUserRequest == false);
-        expectTrueWithTracking('unknown functions functionSteps length', r2.agentPlan.functionSteps.length == 0);
+        try{
+          expectTrueWithTracking('unknown functions doFunctionsExistToFulfillTheUserRequest', r2.agentPlan.doFunctionsExistToFulfillTheUserRequest == false);
+          expectTrueWithTracking('unknown functions functionSteps length', r2.agentPlan.functionSteps.length == 0);
+        }catch(e){
+          console.error(e);
+        }
+
 
         const r3 = await askPlannerBot( "Send bob a message asking whether he wants to eat at Olive Garden for lunch.  Also, add 7 + 7, then divide the result by 3.");
-        expectTrueWithTracking('both functions doFunctionsExistToFulfillTheUserRequest', r3.agentPlan.doFunctionsExistToFulfillTheUserRequest == true);
-        expectTrueWithTracking('both functions functionSteps length', r3.agentPlan.functionSteps.length == 2);
+        try{
+          expectTrueWithTracking('both functions doFunctionsExistToFulfillTheUserRequest', r3.agentPlan.doFunctionsExistToFulfillTheUserRequest == true);
+          expectTrueWithTracking('both functions functionSteps length', r3.agentPlan.functionSteps.length == 2);
+        }catch(e){
+          console.error(e);
+        }
+
 
       }
 
-      //success with 10
+
+      //
+      //success rate 0.7 30 iterations
       //{
-      //   "known functions doFunctionsExistToFulfillTheUserRequest": 8,
-      //   "known functions functionSteps length": 10,
-
-      //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 6,
-      //   "unknown functions functionSteps length": 8,
-
+      //   "known functions doFunctionsExistToFulfillTheUserRequest": 26,
+      //   "known functions functionSteps length": 30,
+      //   "unknown functions functionSteps length": 28,
+      //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 20,
+      //   "both functions functionSteps length": 20,
       //   "both functions doFunctionsExistToFulfillTheUserRequest": 2
-      //   "both functions functionSteps length": 10,
-      // }
-
-      //success rate 0.9. with 10
-      //{ success
-      //   "known functions doFunctionsExistToFulfillTheUserRequest": 10,
-      //   "known functions functionSteps length": 10,
-
-      //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 8,
-      //   "unknown functions functionSteps length": 9,
-
-      //   "both functions doFunctionsExistToFulfillTheUserRequest": 6,
-      //   "both functions functionSteps length": 8
-      // }
-
-      //20 iterattion success
-      //{
-      //   "known functions completeText": 20,
-      //   "known functions doFunctionsExistToFulfillTheUserRequest": 20,
-      //   "known functions functionSteps length": 20,
-      //   "unknown functions completeText": 20,
-      //   "unknown functions doFunctionsExistToFulfillTheUserRequest": 15,
-      //   "unknown functions functionSteps length": 17,
-      //   "both functions completeText": 20,
-      //   "both functions doFunctionsExistToFulfillTheUserRequest": 15,
-      //   "both functions functionSteps length": 13
       // }
       const successRate = totalSuccesses / (totalSuccesses + totalFails);
       expect(successRate > 0.8).toBe(true);
