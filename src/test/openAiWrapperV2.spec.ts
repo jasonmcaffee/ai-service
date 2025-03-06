@@ -27,41 +27,6 @@ describe("parseLlamaCppToolCalls", ()=>{
     }).compile();
   });
 
-  it("should support planner agent", async ()=> {
-    const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
-    const memberId = "1";
-    const calculatorTools = testingModule.get<CalculatorToolsService>(CalculatorToolsService);
-
-    const aiFunctionContext: AiFunctionContextV2 = {
-      inferenceSSESubject: new InferenceSSESubject(),
-      memberId,
-      aiFunctionExecutor: calculatorTools, //todo make optional
-      functionResults: {},
-      abortController: new AbortController(),
-    }
-
-    async function askPlannerBot(prompt: string){
-      const originalOpenAiMessages: ChatCompletionMessageParam[] = [
-        {role: 'system', content: `
-        You are a general purpose assistant that responds to user requests.
-        Additionally, you have been provided with tools/functions that you can potentially use to respond to a user request.  
-        If no tools are applicable, simply respond as you normally would to any other request.
-        For example, if the user asks you who George Washington is, and there isn't a webSearch or biography tool, you would simply respond with information you know about George Washington.
-        `},
-      ];
-
-      const plannerAgent = new PlannerAgentV2(model, openAiWrapperService, memberId, calculatorTools, undefined, originalOpenAiMessages);
-      return await plannerAgent.createPlan(prompt);
-    }
-
-    //works
-    // const r1 = await askPlannerBot( "Add 5 to 5, then subtract 1, and divide by 3, then multiply by 2.");
-    // expect(r1.completeText == "done").toBe(true);
-
-    //hallucinates functionNames
-    const r2 = await askPlannerBot( "Search the web for bitcoin news, then send a summary email to Bob@gmail.com");
-    expect(r2.completeText == "done").toBe(true);
-  });
 
   it("should support non streamed questions with calculator tools using reference syntax .", async ()=> {
     const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);

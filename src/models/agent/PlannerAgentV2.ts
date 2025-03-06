@@ -29,8 +29,10 @@ class PlannerAgentFunctionContext implements AiFunctionContextV2 {
 }
 
 export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2> {
-  constructor(private readonly model: Model, private readonly openAiWrapperServiceV2: OpenaiWrapperServiceV2,
-              private readonly memberId, private readonly aiFunctionExecutor: AiFunctionExecutor<any>,
+  constructor(private readonly model: Model,
+              private readonly openAiWrapperServiceV2: OpenaiWrapperServiceV2,
+              private readonly memberId,
+              private readonly aiFunctionExecutor: AiFunctionExecutor<any>,
               private readonly inferenceSSESubject: InferenceSSESubject | undefined,
               private readonly originalOpenAiMessages: ChatCompletionMessageParam[]
   ) {}
@@ -135,13 +137,30 @@ Remember: aiAddFunctionStepToPlan can only refer to functionName found in <funct
               type: "string",
               description: "A unique identifier for this plan",
             },
+            functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan: {
+              type: "string",
+              description: `the exact value of the <functionNames> xml tag, which was provided to you as a reference to which functions are available to you when calling aiAddFunctionStepToPlan.`,
+            },
+            doFunctionsExistToFulfillTheUserRequest: {
+              type: "boolean",
+              description: `indicate whether all functionNames/tools exist in order to fulfill the user reqeust.  
+              For example, the user may ask to send an email to Bob@gmail, but a sendEmail functionName/tool may not exist, and if it doesn't exist, this value should be false.
+              `
+            },
+            functionNamesPlanWillCall: {
+              type: "array",
+              description: `A array of all the functionNames/tools that will be called as part of this plan. i.e. the functionName parameters that will be sent to each aiAddFunctionStepToPlan call.`,
+              items: {
+                type: "string",
+              }
+            }
           },
         },
       }
     };
   }
-  async aiCreatePlan({id}: {id: string}, context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
-    console.log(`aiCreatePlan called with id: ${id}`);
+  async aiCreatePlan({id, doFunctionsExistToFulfillTheUserRequest, functionNamesPlanWillCall, functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan}: {id: string, doFunctionsExistToFulfillTheUserRequest: boolean, functionNamesPlanWillCall: string[], functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan: string}, context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
+    console.log(`aiCreatePlan called with id: ${id}, doFunctionNamesExist: ${doFunctionsExistToFulfillTheUserRequest}, functionNamesPlanWillCall: ${JSON.stringify(functionNamesPlanWillCall)}, functionNamesXmlTag: ${functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan}`);
     this.agentPlan = new AgentPlan(id);
     context.aiCreatePlanResult = this.agentPlan;
     return {
