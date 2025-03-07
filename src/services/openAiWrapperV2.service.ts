@@ -45,7 +45,7 @@ export class OpenaiWrapperServiceV2{
       const response = await openai.chat.completions.create({
         model: model.modelName,
         messages: openAiMessages,
-        tools: aiFunctionContext.aiFunctionExecutor.getToolsMetadata(), //TODO: should you be sending tools every single time? probably not.
+        tools: aiFunctionContext.aiFunctionExecutor?.getToolsMetadata(),
         stream: false,
       }, { signal });
 
@@ -59,7 +59,7 @@ export class OpenaiWrapperServiceV2{
       });
       const toolCallsFromOpenAi = assistantMessage.tool_calls;
       if(toolCallsFromOpenAi){
-        const newOpenAiMessages = await handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi, aiFunctionContext.aiFunctionExecutor, aiFunctionContext);
+        const newOpenAiMessages = await handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi, aiFunctionContext);
         openAiMessages.push(...newOpenAiMessages);
         // Make a recursive call to continue the conversation and return its result
         return this.callOpenAiUsingModelAndSubject({ openAiMessages, model, totalOpenAiCallsMade, aiFunctionContext, });
@@ -99,7 +99,7 @@ export class OpenaiWrapperServiceV2{
       const stream = await openai.chat.completions.create({
         model: model.modelName,
         messages: openAiMessages,
-        tools: aiFunctionContext.aiFunctionExecutor.getToolsMetadata(), //TODO: should you be sending tools every single time? probably not.
+        tools: aiFunctionContext.aiFunctionExecutor?.getToolsMetadata(), //TODO: should you be sending tools every single time? probably not.
         stream: true,
       }, { signal });
 
@@ -151,7 +151,7 @@ export class OpenaiWrapperServiceV2{
 
       const toolCallsFromOpenAi = assistantMessage.tool_calls;
       if(toolCallsFromOpenAi && toolCallsFromOpenAi.length > 0){
-        const newOpenAiMessages = await handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi, aiFunctionContext.aiFunctionExecutor, aiFunctionContext);
+        const newOpenAiMessages = await handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi, aiFunctionContext);
         openAiMessages.push(...newOpenAiMessages);
         // Make a recursive call to continue the conversation and return its result
         return this.callOpenAiUsingModelAndSubject({ openAiMessages, model, totalOpenAiCallsMade, aiFunctionContext, });
@@ -169,11 +169,11 @@ export class OpenaiWrapperServiceV2{
   }
 }
 
-async function handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi: ChatCompletionMessageToolCall[], toolService: AiFunctionExecutor<any>, aiFunctionContext: AiFunctionContext): Promise<ChatCompletionMessageParam[]> {
+async function handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi: ChatCompletionMessageToolCall[], aiFunctionContext: AiFunctionContextV2): Promise<ChatCompletionMessageParam[]> {
   const openAiMessages: ChatCompletionMessageParam[] = [];
   for (const toolCall of toolCallsFromOpenAi) {
     try {
-      const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall, aiFunctionContext.aiFunctionExecutor, aiFunctionContext);
+      const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall, aiFunctionContext);
 
       if (toolResponse) {
         // Add the tool response to messages - with correct structure
@@ -193,8 +193,11 @@ async function handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(
   return openAiMessages;
 }
 
-async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ChatCompletionMessageToolCall, toolService: AiFunctionExecutor<any>, aiFunctionContext: AiFunctionContext): Promise<{ tool_response: { name: string; content: any } } | null> {
-  const {inferenceSSESubject: subject} = aiFunctionContext;
+async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ChatCompletionMessageToolCall, aiFunctionContext: AiFunctionContextV2): Promise<{ tool_response: { name: string; content: any } } | null> {
+  const {inferenceSSESubject: subject, aiFunctionExecutor: toolService} = aiFunctionContext;
+  if(!toolService){
+    throw new Error('no toolsService/aiFunctionExecutor');
+  }
   try {
     const { toolName, toolArgs } = parseToolNameAndArgumentsFromToolCall(toolCall);
     // console.log(`Handling tool call: ${toolName} with args:`, toolArgs);

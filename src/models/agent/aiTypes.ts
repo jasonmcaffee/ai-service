@@ -11,7 +11,7 @@ export type AiFunctionContext = {
 
 export type AiFunctionContextV2 = {
     inferenceSSESubject?: InferenceSSESubject;
-    aiFunctionExecutor: AiFunctionExecutor<any>;
+    aiFunctionExecutor?: AiFunctionExecutor<any>; //optional so we can stream
     functionResults: object; //where we house "$aiAdd.result", etc.
     memberId: string;
     abortController?: AbortController;
