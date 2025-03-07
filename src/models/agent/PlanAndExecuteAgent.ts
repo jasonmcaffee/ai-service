@@ -25,8 +25,9 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
 
   async createAndExecutePlanUsingTools<TAiFunctionExecutor>(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[]){
     try{
+      //planner agent's result will be the original messages + the tool call results.
       const plannerAgent = new PlannerAgentV2(this.model, this.openAiWrapperServiceV2, this.memberId, this.aiFunctionExecutor, this.inferenceSSESubject, originalOpenAiMessages);
-      const { openAiMessages, completeText, totalOpenAiCallsMade, agentPlan } = await plannerAgent.createPlan(prompt);
+      const { openAiMessages: originalAiMessagesPlusPlannerAgentMessagesAndResults, completeText, totalOpenAiCallsMade, agentPlan } = await plannerAgent.askAiToCreateAnAgentPlan(prompt);
       const aiFunctionContext: AiFunctionContextV2 = {
         functionResults: {},
         aiFunctionExecutor: this.aiFunctionExecutor,
@@ -42,13 +43,13 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
       try{
         await planExecutor.executePlan();
       }catch(e){
-        const r2 = await this.handleToolError(e, prompt, plannerAgent, originalOpenAiMessages, aiFunctionContext);
+        const r2 = await this.handleToolError(e, prompt, plannerAgent, originalAiMessagesPlusPlannerAgentMessagesAndResults, aiFunctionContext);
         return {planFinalResult: undefined, finalResponseFromLLM: r2.completeText, plannerAgent, planExecutor};
       }
 
       const planFinalResult = await planExecutor.getFinalResultFromPlan();
       //note: send the original openAi messages, not the one for executing the plan again.
-      const r2 = await this.sendPlanFinalResultToLLM(prompt, plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext);
+      const r2 = await this.sendPlanFinalResultToLLM(prompt, plannerAgent, planFinalResult, originalAiMessagesPlusPlannerAgentMessagesAndResults, aiFunctionContext);
       return {planFinalResult, finalResponseFromLLM: r2.completeText, plannerAgent, planExecutor};
     }catch(e){
       console.error(`PlanAndExecuteAgent error: `, e);
@@ -72,10 +73,10 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
     });
   }
 
-  async sendPlanFinalResultToLLM(userPrompt: string, plannerAgent: PlannerAgentV2, planFinalResult: any, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2){
+  async sendPlanFinalResultToLLM(userPrompt: string, plannerAgent: PlannerAgentV2, planFinalResult: any, originalAiMessagesPlusPlannerAgentMessagesAndResults: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2){
     const newPrompt = getPromptToTellLLMAboutTheUserPromptAndPlanAndResult(userPrompt, plannerAgent, planFinalResult);
     const newOpenAiMessages: ChatCompletionMessageParam[] = [
-      ...originalOpenAiMessages,
+      ...originalAiMessagesPlusPlannerAgentMessagesAndResults,
       {role: 'system', content: newPrompt},
     ];
 
@@ -103,34 +104,15 @@ function getPromptToTellLLMAboutTheUserPromptAndPlanAndResult(
 
   return `
     # Instructions
-    For this request your job is to simply print out exactly what is inside of the <final_result> tag.
-    Respond with the exact text inside the final_result.  Do not add any other text.
+    The user had a request, for which aiCreatePlan was called, with a series of function steps to run.
+    You are an expert at evaluating the results of the function steps in the plan.
     
-    <user_request>${userPrompt}</user_request>
-    
-    An ai agent has intercepted the above user_reqest and responded with the final_result below:
+    The results from running the steps in the plan can be found below in the <final_result> tag.
     <final_result>
       ${planFinalResultAsString}
     </final_result>
     
-    ## SUCCESSFUL EXAMPLE #1
-    A response of "19" when the final_result is: <final_result>19</final_result>
-    
-    ## SUCCESSFUL EXAMPLE #2
-    A response of "Abraham Lincoln was a Teenage Mutant Ninja Turtle!" when the final_result is: <final_result>Abraham Lincoln was a Teenage Mutant Ninja Turtle!</final_result>
-    
-    ## SUCCESSFUL EXAMPLE #3
-    A response of "<div>one two three</div>" when the final_result is: <final_result><div>one two three</div></final_result>
-    
-    ## UNSUCCESSFUL EXAMPLE #1
-    A response of "The latest bitcoin price is $84" when the final_result is <final_result></final_result>
-    
-    **Why it fails** The final_result was empty, and therefore you should respond with an empty response.
-    
-    ## UNSUCCESSFUL EXAMPLE #2
-    A response of "## Heading 1 \n Christopher Columbus was a man who sailed the ocean." when the final_result is <final_result><h1> \n Christopher Columbus was a man who sailed the ocean.</h1></final_result>
-    
-    **Why it fails** The final_result had html formatting, but the response modified the formatting.
+    Answer the user's request using the information found in the final_result.
   `;
 }
 

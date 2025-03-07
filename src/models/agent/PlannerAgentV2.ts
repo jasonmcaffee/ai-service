@@ -49,7 +49,7 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
     ]
   }
 
-  async createPlan(userPrompt: string){
+  async askAiToCreateAnAgentPlan(userPrompt: string){
     this.isPlanCreationComplete = false;
     const abortController = new AbortController();
     const aiFunctionContext = new PlannerAgentFunctionContext(this.memberId, this.inferenceSSESubject, this, abortController);
@@ -57,7 +57,6 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
     const result = await this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject({
       openAiMessages: [
         ...this.originalOpenAiMessages,
-        // { role: 'system', content: getToolsPrompt(this.getToolsMetadata())},
         { role: 'system', content: this.getCreatePlanPrompt(userPrompt, this.getToolsMetadata())}
       ],
       model: this.model,

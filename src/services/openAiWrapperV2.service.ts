@@ -60,8 +60,6 @@ export class OpenaiWrapperServiceV2{
         assistantMessage.tool_calls = parsedToolCalls;
       }
 
-
-
       // Add the assistant's message to our conversation
       openAiMessages.push({
         role: 'assistant' as const,

@@ -87,7 +87,7 @@ describe('Agent Tests', () => {
         ];
 
         const plannerAgent = new PlannerAgentV2(model, openAiWrapperService, memberId, calculatorTools, undefined, originalOpenAiMessages);
-        return await plannerAgent.createPlan(prompt);
+        return await plannerAgent.askAiToCreateAnAgentPlan(prompt);
       }
 
 
