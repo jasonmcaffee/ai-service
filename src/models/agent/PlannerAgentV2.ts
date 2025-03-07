@@ -57,7 +57,7 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
     const result = await this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject({
       openAiMessages: [
         ...this.originalOpenAiMessages,
-        { role: 'system', content: this.getCreatePlanPrompt(userPrompt, this.getToolsMetadata())}
+        { role: 'system', content: this.getCreatePlanPrompt(userPrompt, this.aiFunctionExecutor.getToolsMetadata())}
       ],
       model: this.model,
       aiFunctionContext,

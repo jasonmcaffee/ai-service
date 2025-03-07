@@ -181,10 +181,12 @@ describe('Plan and Execute agent', () => {
       return result;
     }
 
-    const result2 = await askWebBot("search the web for latest news headlines.");
-    expect(result2.planFinalResult instanceof SearchResultWithMarkdownContentResponse).toBe(true); // 3^4 = 81, then 81 + 10 = 91
-
-
+    const iterations = 20;
+    for(let i = 0; i < iterations; ++i){
+      const result2 = await askWebBot("search the web for latest news headlines and summarize them.");
+      expect(result2.planFinalResult instanceof SearchResultWithMarkdownContentResponse).toBe(true); // 3^4 = 81, then 81 + 10 = 91
+      expect(result2.finalResponseFromLLM.length > 0).toBe(true);
+    }
 
   }, 5 * 60 * 1000);
 });
