@@ -22,8 +22,9 @@ import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
 import {WebToolsService} from "./agent/tools/webTools.service";
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
-import { OpenaiWrapperService } from './openaiWrapper.service';
+import { OpenaiWrapperServiceV2 } from './openAiWrapperV2.service';
 import { CalculatorToolsService } from './agent/tools/calculatorTools.service';
+import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 
 @Injectable()
 export class ChatService {
@@ -33,7 +34,7 @@ export class ChatService {
   constructor(private readonly conversationService: ConversationService,
               private readonly modelsService: ModelsService,
               private readonly webToolsService: WebToolsService,
-              private readonly openAiWrapperService: OpenaiWrapperService,
+              private readonly openAiWrapperService: OpenaiWrapperServiceV2,
               private readonly calculatorToolsService: CalculatorToolsService) {}
 
 
@@ -100,13 +101,13 @@ export class ChatService {
     conversation.messages?.filter(m => m.sentByMemberId === memberId)
       .forEach(m => m.messageText = extractMessageContextFromMessage(m.messageText).textWithoutTags)
 
-    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : this.calculatorToolsService.getToolsMetadata();
-    const toolService = shouldSearchWeb ? this.webToolsService : this.calculatorToolsService;
+    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : undefined;
+    const toolService = shouldSearchWeb ? this.webToolsService : undefined;
 
     // let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
     let openAiMessages: ChatCompletionMessageParam[] = [
       { role: 'system', content: getChatPageSystemPrompt()},
-      {role: "system", content: getToolsPrompt(toolService.getToolsMetadata())},
+      // {role: "system", content: getToolsPrompt(toolService.getToolsMetadata())},
       ...createOpenAIMessagesFromMessages(conversation.messages!)
     ];
     if(model.initialMessage){
@@ -120,15 +121,15 @@ export class ChatService {
     console.log(`sending messages: `, openAiMessages);
     console.log(`sending tools: `, tools);
 
-    const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
-      openAiMessages,
-      model,
-      memberId,
-      inferenceSSESubject,
+    const aiFunctionContext: AiFunctionContextV2 = {
+      functionResults: {},
       abortController,
-      toolService,
-      tools,
-    });
+      memberId,
+      aiFunctionExecutor: undefined,
+      inferenceSSESubject,
+    };
+
+    const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({ openAiMessages, model, aiFunctionContext, });
     promise.then(({openAiMessages, completeText}) => {
       console.log(`all openai interaction complete: ${completeText}`, openAiMessages);
       this.abortControllers.delete(memberId);
@@ -158,19 +159,19 @@ export class ChatService {
         ...openAiMessages
       ];
     }
+    //todo:
 
-
-    this.openAiWrapperService.callOpenAiUsingModelAndSubject({
-      openAiMessages,
-      model,
-      memberId,
-      inferenceSSESubject,
-      abortController,
-      toolService: this.webToolsService,
-      tools,
-    }).finally(()=>{
-      this.abortControllers.delete(memberId);
-    });
+    // this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+    //   openAiMessages,
+    //   model,
+    //   memberId,
+    //   inferenceSSESubject,
+    //   abortController,
+    //   toolService: this.webToolsService,
+    //   tools,
+    // }).finally(()=>{
+    //   this.abortControllers.delete(memberId);
+    // });
     // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, handleOnComplete, handleError, model, memberId, inferenceSSESubject, abortController, this.webToolsService, tools);
   }
 
