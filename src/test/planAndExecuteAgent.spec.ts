@@ -1,12 +1,15 @@
 import { AiFunctionExecutor } from '../models/agent/aiTypes';
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Model } from '../models/api/conversationApiModels';
+import { Model, SearchResultWithMarkdownContentResponse } from '../models/api/conversationApiModels';
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import { getChatPageSystemPrompt } from '../utils/prompts';
 import { OpenaiWrapperServiceV2 } from '../services/openAiWrapperV2.service';
+import { WebToolsService } from '../services/agent/tools/webTools.service';
+import { DuckduckgoSearchService } from '../services/duckduckgoSearch.service';
+import { PageScraperService } from '../services/pageScraper.service';
 
 describe('Plan and Execute agent', () => {
   let testingModule: TestingModule;
@@ -21,7 +24,7 @@ describe('Plan and Execute agent', () => {
 
   beforeAll(async () => {
     testingModule = await Test.createTestingModule({
-      providers: [OpenaiWrapperServiceV2, CalculatorToolsService],
+      providers: [OpenaiWrapperServiceV2, CalculatorToolsService, WebToolsService, DuckduckgoSearchService, PageScraperService],
     }).compile();
   });
 
@@ -157,6 +160,31 @@ describe('Plan and Execute agent', () => {
 
     const result14 = await askMathBot('what is 10 mod 4?');
     expect(result14.planFinalResult).toBe(2);
+
+  }, 5 * 60 * 1000);
+
+
+  it('should create and execute a plan that searches the web and summarizes.', async ()=> {
+    const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
+    const webToolsService = testingModule.get<WebToolsService>(WebToolsService);
+    const inferenceSSESubject = new InferenceSSESubject();
+    const memberId = "1";
+    const abortController = new AbortController();
+    const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, webToolsService, inferenceSSESubject, abortController);
+
+    const originalOpenAiMessages: ChatCompletionMessageParam[] = [
+      {role: 'system', content: getChatPageSystemPrompt()}
+    ]
+
+    async function askWebBot(webQuestion: string){
+      const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(webQuestion, originalOpenAiMessages);
+      return result;
+    }
+
+    const result2 = await askWebBot("search the web for latest news headlines.");
+    expect(result2.planFinalResult instanceof SearchResultWithMarkdownContentResponse).toBe(true); // 3^4 = 81, then 81 + 10 = 91
+
+
 
   }, 5 * 60 * 1000);
 });

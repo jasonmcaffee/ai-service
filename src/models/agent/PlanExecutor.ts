@@ -45,7 +45,7 @@ async function executeAiFunctionStep(aiFunctionStep: AiFunctionStep, aiFunctionC
   const functionArgs = aiFunctionStep.args;
   const functionArgsWithReferencesToFunctionResultsSwappedOutWithValues = swapFunctionArgsWithStorageDataIfNeeded(functionArgs, aiFunctionContext.functionResults);
   const aiFunctionExecutor = aiFunctionContext.aiFunctionExecutor;
-  const aiFunctionResult = await aiFunctionExecutor[functionNameToExecute](functionArgsWithReferencesToFunctionResultsSwappedOutWithValues);
+  const aiFunctionResult = await aiFunctionExecutor[functionNameToExecute](functionArgsWithReferencesToFunctionResultsSwappedOutWithValues, aiFunctionContext);
   //store the result of the function in our functionResults so other functions can access the result.
   const resultStorageKey = `$${functionNameToExecute}.result`;
   aiFunctionContext.functionResults[resultStorageKey] = aiFunctionResult.result;
