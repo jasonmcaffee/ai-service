@@ -1,7 +1,7 @@
 import {AgentPlan, AiFunctionStep} from "./AgentPlan";
 import {ModelsService} from "../../services/models.service";
 import {OpenaiWrapperService} from "../../services/openaiWrapper.service";
-import { AiFunction, AiFunctionContext } from './aiTypes';
+import { AiFunction, AiFunctionContext, AiFunctionContextV2 } from './aiTypes';
 
 const lastResultKey = "$$lastResult$$";
 
@@ -11,7 +11,7 @@ export class PlanExecutor {
    * @param agentPlan - list of functions to be called by the executor
    * @param aiFunctionContext - the context to use with each function context.
    */
-  constructor(private readonly agentPlan: AgentPlan, private readonly aiFunctionContext: AiFunctionContext) {
+  constructor(private readonly agentPlan: AgentPlan, private readonly aiFunctionContext: AiFunctionContextV2) {
   }
 
   async executePlan(){
@@ -39,7 +39,8 @@ export class PlanExecutor {
  * @param aiFunctionStep
  * @param aiFunctionContext
  */
-async function executeAiFunctionStep(aiFunctionStep: AiFunctionStep, aiFunctionContext: AiFunctionContext){
+async function executeAiFunctionStep(aiFunctionStep: AiFunctionStep, aiFunctionContext: AiFunctionContextV2){
+  if(!aiFunctionContext.aiFunctionExecutor){ throw new Error('Plan executor attempted to execute an ai function step, but there was not aiFunctionExecutor defined'); }
   const functionNameToExecute = aiFunctionStep.functionName;
   const functionArgs = aiFunctionStep.args;
   const functionArgsWithReferencesToFunctionResultsSwappedOutWithValues = swapFunctionArgsWithStorageDataIfNeeded(functionArgs, aiFunctionContext.functionResults);

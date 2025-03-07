@@ -1,14 +1,12 @@
-import { AgentPlan, AiFunctionStep } from '../models/agent/AgentPlan';
-import { AiFunctionContext, AiFunctionExecutor } from '../models/agent/aiTypes';
+import { AiFunctionExecutor } from '../models/agent/aiTypes';
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
-import { PlanExecutor } from '../models/agent/PlanExecutor';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from '../models/api/conversationApiModels';
-import { OpenaiWrapperService } from '../services/openaiWrapper.service';
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import { getChatPageSystemPrompt } from '../utils/prompts';
+import { OpenaiWrapperServiceV2 } from '../services/openAiWrapperV2.service';
 
 describe('Plan and Execute agent', () => {
   let testingModule: TestingModule;
@@ -23,12 +21,12 @@ describe('Plan and Execute agent', () => {
 
   beforeAll(async () => {
     testingModule = await Test.createTestingModule({
-      providers: [OpenaiWrapperService, CalculatorToolsService],
+      providers: [OpenaiWrapperServiceV2, CalculatorToolsService],
     }).compile();
   });
 
   it('should acknowledge what tools are available', async ()=>{
-    const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
+    const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
     class NoToolsService implements AiFunctionExecutor<NoToolsService> {
 
       getToolsMetadata(): ChatCompletionTool[] {
@@ -54,8 +52,14 @@ describe('Plan and Execute agent', () => {
       const result = await openAiWrapperService.callOpenAiUsingModelAndSubject({
         openAiMessages: [...originalOpenAiMessages, {role: 'user', content: question}],
         model,
-        memberId, aiFunctionContext: {inferenceSSESubject, aiFunctionExecutor:noToolsService, functionResults: {}, },
-        abortController, inferenceSSESubject, totalOpenAiCallsMade: 0, tools: noToolsService.getToolsMetadata(), toolService: noToolsService
+        aiFunctionContext: {
+          inferenceSSESubject,
+          aiFunctionExecutor:noToolsService,
+          functionResults: {},
+          memberId,
+          abortController,
+        },
+        totalOpenAiCallsMade: 0,
       });
       return result;
     }
@@ -63,16 +67,13 @@ describe('Plan and Execute agent', () => {
     const result = await askNoToolsLlm('What tools are available to you?');
     expect(result.completeText.length > 0).toBe(true);
 
-    const result1 = await askNoToolsPlannerBot("What tools are available to you?");
-    expect(result1.planFinalResult).toBe(undefined);
-
 
     // const result2 = await askNoToolsPlannerBot("What is the capital of France?");
     // expect(result2.planFinalResult).toBe(undefined);
   });
 
   it('should create and execute a plan with no tools', async ()=>{
-    const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
+    const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
     class NoToolsService implements AiFunctionExecutor<NoToolsService> {
       getToolsMetadata(): ChatCompletionTool[] {
         return [];
@@ -93,15 +94,15 @@ describe('Plan and Execute agent', () => {
       return result;
     }
 
-    // const result1 = await askNoToolsBot("compute 3 raised to the power of 4, then add 10");
-    // expect(result1.planFinalResult).toBe(undefined);
+    const result1 = await askNoToolsBot("compute 3 raised to the power of 4, then add 10");
+    expect(result1.planFinalResult).toBe(undefined);
 
     const result2 = await askNoToolsBot("Call my dentist and schedule an appointment for the 5th of May, then text my Mom hello");
     expect(result2.planFinalResult).toBe(undefined);
   });
 
   it('should create and execute a plan that returns correct calculations.', async ()=> {
-    const openAiWrapperService = testingModule.get<OpenaiWrapperService>(OpenaiWrapperService);
+    const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
     const calculatorToolsService = testingModule.get<CalculatorToolsService>(CalculatorToolsService);
     const inferenceSSESubject = new InferenceSSESubject();
     const memberId = "1";

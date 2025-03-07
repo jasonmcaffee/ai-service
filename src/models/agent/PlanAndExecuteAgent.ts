@@ -2,9 +2,11 @@ import PlannerAgent from './PlannerAgent';
 import { Model } from '../api/conversationApiModels';
 import { OpenaiWrapperService } from '../../services/openaiWrapper.service';
 import { PlanExecutor } from './PlanExecutor';
-import { AiFunctionContext, AiFunctionExecutor } from './aiTypes';
+import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor } from './aiTypes';
 import InferenceSSESubject from '../InferenceSSESubject';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
+import PlannerAgentV2 from './PlannerAgentV2';
+import { OpenaiWrapperServiceV2 } from '../../services/openAiWrapperV2.service';
 
 /**
  * Primarily responsible for:
@@ -13,7 +15,7 @@ import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources
  * - telling the llm about the result.
  */
 export class PlanAndExecuteAgent<TAiFunctionExecutor>{
-  constructor(private readonly model: Model, private readonly openAiWrapperService: OpenaiWrapperService,
+  constructor(private readonly model: Model, private readonly openAiWrapperServiceV2: OpenaiWrapperServiceV2,
               private readonly memberId: string,
               private readonly aiFunctionExecutor: AiFunctionExecutor<TAiFunctionExecutor>,
               private readonly inferenceSSESubject: InferenceSSESubject,  //needed so we can tell the llm about the results of executing the plan.
@@ -23,9 +25,15 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
 
   async createAndExecutePlanUsingTools<TAiFunctionExecutor>(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[]){
     try{
-      const plannerAgent = new PlannerAgent(this.model, this.openAiWrapperService, this.memberId, this.aiFunctionExecutor, this.inferenceSSESubject, originalOpenAiMessages);
+      const plannerAgent = new PlannerAgentV2(this.model, this.openAiWrapperServiceV2, this.memberId, this.aiFunctionExecutor, this.inferenceSSESubject, originalOpenAiMessages);
       const { openAiMessages, completeText, totalOpenAiCallsMade, agentPlan } = await plannerAgent.createPlan(prompt);
-      const aiFunctionContext: AiFunctionContext = {functionResults: {}, aiFunctionExecutor: this.aiFunctionExecutor};
+      const aiFunctionContext: AiFunctionContextV2 = {
+        functionResults: {},
+        aiFunctionExecutor: this.aiFunctionExecutor,
+        abortController: this.abortController,
+        inferenceSSESubject: this.inferenceSSESubject,
+        memberId: this.memberId,
+      };
       const planExecutor = new PlanExecutor(agentPlan, aiFunctionContext);
       if(!plannerAgent.agentPlan){
         console.error(`agentPlan is missing!`, plannerAgent);
@@ -48,44 +56,34 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
     }
   }
 
-  async handleToolError(error: any, userPrompt: string, plannerAgent: PlannerAgent, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContext,){
-    const newPrompt = getPromptToTellLlmItMadeAnErrorWhenTryingToCallTools(error, userPrompt, plannerAgent, aiFunctionContext.aiFunctionExecutor.getToolsMetadata());
+  async handleToolError(error: any, userPrompt: string, plannerAgent: PlannerAgentV2, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2,){
+    const newPrompt = getPromptToTellLlmItMadeAnErrorWhenTryingToCallTools(error, userPrompt, plannerAgent, aiFunctionContext.aiFunctionExecutor?.getToolsMetadata());
     const newOpenAiMessages: ChatCompletionMessageParam[] = [
       ...originalOpenAiMessages,
       {role: 'user', content: newPrompt},
     ];
 
-    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(originalOpenAiMessages, this.model, this.memberId, this.inferenceSSESubject, this.abortController, this.aiFunctionExecutor, this.aiFunctionExecutor.getToolsMetadata, 0, context);
-    return this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+    // this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject(originalOpenAiMessages, this.model, this.memberId, this.inferenceSSESubject, this.abortController, this.aiFunctionExecutor, this.aiFunctionExecutor.getToolsMetadata, 0, context);
+    return this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject({
       openAiMessages: newOpenAiMessages,
-      toolService: this.aiFunctionExecutor,
-      tools: this.aiFunctionExecutor.getToolsMetadata(),
       totalOpenAiCallsMade: 0,
-      memberId: this.memberId,
       model: this.model,
-      inferenceSSESubject: this.inferenceSSESubject,
-      abortController: this.abortController,
       aiFunctionContext,
     });
   }
 
-  async sendPlanFinalResultToLLM(userPrompt: string, plannerAgent: PlannerAgent, planFinalResult: any, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContext){
+  async sendPlanFinalResultToLLM(userPrompt: string, plannerAgent: PlannerAgentV2, planFinalResult: any, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2){
     const newPrompt = getPromptToTellLLMAboutTheUserPromptAndPlanAndResult(userPrompt, plannerAgent, planFinalResult);
     const newOpenAiMessages: ChatCompletionMessageParam[] = [
       ...originalOpenAiMessages,
       {role: 'system', content: newPrompt},
     ];
 
-    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(originalOpenAiMessages, this.model, this.memberId, this.inferenceSSESubject, this.abortController, this.aiFunctionExecutor, this.aiFunctionExecutor.getToolsMetadata, 0, context);
-    return this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+    // this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject(originalOpenAiMessages, this.model, this.memberId, this.inferenceSSESubject, this.abortController, this.aiFunctionExecutor, this.aiFunctionExecutor.getToolsMetadata, 0, context);
+    return this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject({
       openAiMessages: newOpenAiMessages,
-      toolService: this.aiFunctionExecutor,
-      tools: this.aiFunctionExecutor.getToolsMetadata(),
       totalOpenAiCallsMade: 0,
-      memberId: this.memberId,
       model: this.model,
-      inferenceSSESubject: this.inferenceSSESubject,
-      abortController: this.abortController,
       aiFunctionContext,
     });
   }
@@ -95,7 +93,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
 
 function getPromptToTellLLMAboutTheUserPromptAndPlanAndResult(
   userPrompt: string,
-  plannerAgent: PlannerAgent,
+  plannerAgent: PlannerAgentV2,
   planFinalResult: any
 ): string {
   // Convert final result to a string for consistent handling
@@ -136,8 +134,8 @@ function getPromptToTellLLMAboutTheUserPromptAndPlanAndResult(
   `;
 }
 
-function getPromptToTellLlmItMadeAnErrorWhenTryingToCallTools(error: any, userPrompt: string, plannerAgent: PlannerAgent, tools: ChatCompletionTool[]){
-  let toolFunctionNames = tools.map(t => t.function.name).join(', ');
+function getPromptToTellLlmItMadeAnErrorWhenTryingToCallTools(error: any, userPrompt: string, plannerAgent: PlannerAgentV2, tools?: ChatCompletionTool[]){
+  let toolFunctionNames = tools?.map(t => t.function.name).join(', ');
   const functionNamesAttempted = plannerAgent.agentPlan.functionSteps.map(fs => fs.functionName).join(', ');
   return `
     Agent, you recently tried to call a tool that resulted in an error.  e.g. you probably referenced a tool that was not in the <tools> xml tag.

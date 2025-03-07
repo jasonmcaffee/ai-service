@@ -197,10 +197,10 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
         parameters: {
           type: "object",
           properties: {
-            id: {
-              type: "string",
-              description: "A unique identifier for this function step.",
-            },
+            // id: {
+            //   type: "string",
+            //   description: "A unique identifier for this function step.",
+            // },
             functionName: {
               type: "string",
               description: `The name of the function to be called in this step. The value of this must be explicitly defined in the <functionNames> tag.`,
@@ -218,14 +218,15 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
               description: "Justification for why this function step is necessary to fulfill the user's request.",
             },
           },
-          required: ["id", "functionName", "functionArgs", "reasonToAddStep", "functionNameIndexInFunctionNamesTag"],
+          required: ["functionName", "functionArgs", "reasonToAddStep", "functionNameIndexInFunctionNamesTag"],
         },
       }
     };
   }
-  async aiAddFunctionStepToPlan({ id, functionName, functionArgs, reasonToAddStep, }:
-                                  { id: string; functionName: string; functionArgs: object; reasonToAddStep: string; toolIsExplicitlyDefinedInTheToolsXmlTag: boolean;},
+  async aiAddFunctionStepToPlan({ functionName, functionArgs, reasonToAddStep, }:
+                                  { functionName: string; functionArgs: object; reasonToAddStep: string; toolIsExplicitlyDefinedInTheToolsXmlTag: boolean;},
                                 context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
+    const id = "not used";
     console.log(`aiAddFunctionStepToPlan called with: `, {id, functionName, functionArgs, reasonToAddStep,});
     if (!this.agentPlan) {
       throw new Error("No active plan found. Call 'aiCreatePlan' first.");
