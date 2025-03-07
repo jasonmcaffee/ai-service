@@ -1,17 +1,22 @@
-update the chat api to add messages to existing conversation
-- when conversation id is passed, you must fetch all messages from the db, and document, then pass as messages array to llm.
-- use model ip address/type, etc when communicating in conversation.service.ts
+tool plan:
+first ask planning agent to come up with a plan.
+- it gives you function steps.
+-- validate.
+- call tool
 
-datasource wireup.
+option 1: tool call only allowed 1 iteration, 2nd iteration is stream result.  we know this will be problematic due to plannerAgent not returning all tools in one response, but could be fixable.
 
-ConversationController:
-- HaveAINameTheConversationResponse,
-- GetAtAutoCompleteSuggestionsResponse
+option 2: Executor agent: executes all tools, final response is streamed.
+- original prompt: search web, summarize
+- plannerAgent:
+    0. validate. remove steps that don't exist.
+    1. search web query: xyz
+    2. summarize $searchWeb.result
+- executorAgent
+    1. execute steps. if 0 steps, no issue.
+    2. response phase (stream with no tools) "The user asked to xyx.  Use the information <summarized>"
 
-Pass a system prompt, or perhaps have it be a conversation mode.
-- return all data in markdown.  no preamble.  example response.
 
-models controller
 
 google sign in
 member creation.
