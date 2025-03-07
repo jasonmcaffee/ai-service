@@ -98,6 +98,7 @@ describe('Agent Tests', () => {
         try{
           expectTrueWithTracking('known functions doFunctionsExistToFulfillTheUserRequest', r1.agentPlan.doFunctionsExistToFulfillTheUserRequest == true);
           expectTrueWithTracking('known functions functionSteps length', r1.agentPlan.functionSteps.length == 4);
+          expectTrueWithTracking('known functions total openai calls', r1.totalOpenAiCallsMade == 2);
         }catch(e){
           console.error(e);
         }
@@ -106,6 +107,7 @@ describe('Agent Tests', () => {
         try{
           expectTrueWithTracking('unknown functions doFunctionsExistToFulfillTheUserRequest', r2.agentPlan.doFunctionsExistToFulfillTheUserRequest == false);
           expectTrueWithTracking('unknown functions functionSteps length', r2.agentPlan.functionSteps.length == 0);
+          expectTrueWithTracking('unknown functions total openai calls', r2.totalOpenAiCallsMade == 2);
         }catch(e){
           console.error(e);
         }
@@ -115,6 +117,7 @@ describe('Agent Tests', () => {
         try{
           expectTrueWithTracking('both functions doFunctionsExistToFulfillTheUserRequest', r3.agentPlan.doFunctionsExistToFulfillTheUserRequest == true);
           expectTrueWithTracking('both functions functionSteps length', r3.agentPlan.functionSteps.length == 2);
+          expectTrueWithTracking('both functions total openai calls', r3.totalOpenAiCallsMade == 2);
         }catch(e){
           console.error(e);
         }

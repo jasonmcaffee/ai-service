@@ -90,12 +90,26 @@ It is valid to have a plan that includes no function steps.  This is particularl
 1. Analyze the user prompt carefully
 2. Analyze the functionNames tag carefully.  
 3. Create a sequential plan using ONLY the provided planning tools:
-   - First call: \`aiCreatePlan\` (always first)
-   - Middle call: \`aiAddFunctionStepToPlan\` (optional) - spend time deeply reasoning about if this call is valid, knowing that only functionNames that are defined in <functionNames> can be referrenced. 
-   - Last call: \`aiCompletePlan\` (always last)
+   - First create a plan: \`aiCreatePlan\` 
+   - Next, optionally add function steps to the plan: \`aiAddFunctionStepToPlan\` (optional) - spend time deeply reasoning about if this call is valid, knowing that only functionNames that are defined in <functionNames> can be referrenced. 
+   - Finally, mark the plan as complete: \`aiCompletePlan\` 
 4. When considering calling aiAddFunctionStepToPlan, understand that no functionName param values should be used, that aren't explicitly defined in the <functionNames> tag.
 5. Only respond to this request with tool calls.  Do not respond with any other preamble or text.   
-6. Make ALL tool calls for aiCreatePlan and aiCompletePlan in a SINGLE response (do not wait for results between calls). i.e. don't call on aiCreatePlan, wait for the response, then call aiCompletePlan.  
+6. All tool calls made by you should be done in ONE response.  ie. You should call all tools needed for a user prompt directly after a user prompt is received.
+7. Since all tool calls must happen at once, when a tool call depends on the result of a previous tool call, use parameter referencing syntax \`$functionName.result\` for dependencies.   
+  ### Example of a good tool execution flow
+  user prompt: "find the email address for member id 1, then send them a welcome email"
+  your response: 2 tool calls in a single response.
+    1. aiCreatePlan
+    2. aiCompletePlan
+  
+  ### Example of a bad tool execution flow
+  user prompt: "find the email address for member id 1, then send them a welcome email"
+  your response: 1 tool call in the first response.
+    1. aiCreatePlan
+  client: sends result of findEmail back to you
+  your response: 1 tool call in the second response  
+    1. aiCompletePlan
 7. After responding with tool calls, you will receive back a success response from the aiCompletePlan tool.
 8. After receiving a response from the tool call to aiCompletePlan, do not respond with any further tool calls. 
 Respond simply with "complete".
