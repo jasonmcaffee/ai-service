@@ -11,6 +11,7 @@ import OpenAI from 'openai';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor } from '../models/agent/aiTypes';
 import { toolCallEndMarker, toolCallStartMarker } from '../utils/prompts';
+import { InvalidToolCallJsonFromLLM } from '../models/Exceptions';
 
 interface CallOpenAiParams {
   openAiMessages: ChatCompletionMessageParam[];
@@ -50,6 +51,16 @@ export class OpenaiWrapperServiceV2{
       }, { signal });
 
       const assistantMessage = response.choices[0].message;
+      if(assistantMessage.content !== null){
+        console.log('assistant message content not null.')
+      }
+      const parsedToolCalls = parseToolCallsDueToOccasionalIssueOfLlamaCppNotRespondingWithJson(assistantMessage.content);
+      if(parsedToolCalls){
+        assistantMessage.content = null;
+        assistantMessage.tool_calls = parsedToolCalls;
+      }
+
+
 
       // Add the assistant's message to our conversation
       openAiMessages.push({
@@ -70,6 +81,8 @@ export class OpenaiWrapperServiceV2{
         return { openAiMessages, completeText, totalOpenAiCallsMade };
       }
     } catch (error) {
+      //TODO: retry InvalidToolCallJsonFromLLM.
+
       console.error(`LLM error: `, error);
       aiFunctionContext.inferenceSSESubject?.sendError(error);
       return { openAiMessages, completeText: `error: ${error}`, totalOpenAiCallsMade };
@@ -191,6 +204,31 @@ async function handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(
     }
   }
   return openAiMessages;
+}
+
+function parseToolCallsDueToOccasionalIssueOfLlamaCppNotRespondingWithJson(assistantContentResponse: string | null): ChatCompletionMessageToolCall[] | undefined {
+  if(!assistantContentResponse){ return undefined; }
+  // const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs; // doesn't match when there are new lines.
+  const toolCallRegex = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g; // Matches everything inside <tool_call>...</tool_call>, including newlines
+  const toolCalls: ChatCompletionMessageToolCall[] = [];
+
+  // Find all tool_calls within the response content
+  const matches = assistantContentResponse.match(toolCallRegex);
+
+  if (matches) {
+    // For each match, extract the JSON and parse it
+    matches.forEach((match) => {
+      const jsonStr = match.replace(/<tool_call>|<\/tool_call>/g, ''); // remove the <tool_call> tags
+      try {
+        const parsedJson =  JSON.parse(jsonStr); // parse the JSON string
+        toolCalls.push(parsedJson); // add to the tool_calls array
+      } catch (e) {
+        console.error('Error parsing tool_call JSON:', e);
+        throw new InvalidToolCallJsonFromLLM(e.message); //TODO: retry.
+      }
+    });
+  }
+  return toolCalls.length > 0 ? toolCalls : undefined;
 }
 
 async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ChatCompletionMessageToolCall, aiFunctionContext: AiFunctionContextV2): Promise<{ tool_response: { name: string; content: any } } | null> {

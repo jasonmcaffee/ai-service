@@ -4,3 +4,10 @@ export class ClientAbortedError extends Error{
     this.name = "ClientAbortedError";
   }
 }
+
+export class InvalidToolCallJsonFromLLM extends Error{
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidToolCallJsonFromLLM";
+  }
+}

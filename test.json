@@ -1,0 +1,125 @@
+{
+  "name": "aiCreatePlan",
+  "arguments": {
+    "id": "web_search_plan",
+    "functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan": "[\"aiExponentiation\", \"aiModulo\", \"aiSquareRoot\", \"aiFactorial\", \"aiAdd\", \"aiSubtract\", \"aiMultiply\", \"aiDivide\", \"aiCreatePlan\"]",
+    "doAllFunctionsExistToFulfillTheUserRequest": false,
+    "functionNamesPlanWillCall": [
+      "aiExponentiation",
+      "aiModulo",
+      "aiSquareRoot",
+      "aiFactorial",
+      "aiAdd",
+      "aiSubtract",
+      "aiMultiply",
+      "aiDivide",
+      "aiCreatePlan"
+    ],
+    "functionSteps": [
+      {
+        "functionName": "aiExponentiation",
+        "functionNameIndexInFunctionNamesTag": 0,
+        "functionArgs": {
+          "base": 2,
+          "exponent": 3
+        },
+        "reasonToAddStep": "To demonstrate basic exponentiation functionality."
+      },
+      {
+        "functionName": "aiModulo",
+        "functionNameIndexInFunctionNamesTag": 1,
+        "functionArgs": {
+          "dividend": 10,
+          "divisor": 3
+        },
+        "reasonToAddStep": "To show modulo operation functionality."
+      },
+      {
+        "functionName": "aiSquareRoot",
+        "functionNameIndexInFunctionNamesTag": 2,
+        "functionArgs": {
+          "value": 16
+        },
+        "reasonToAddStep": "To show square root functionality."
+      },
+      {
+        "functionName": "aiFactorial",
+        "functionNameIndexInFunctionNamesTag": 3,
+        "functionArgs": {
+          "n": 5
+        },
+        "reasonToAddStep": "To show factorial functionality."
+      },
+      {
+        "functionName": "aiAdd",
+        "functionNameIndexInFunctionNamesTag": 4,
+        "functionArgs": {
+          "a": 5,
+          "b": 3
+        },
+        "reasonToAddStep": "To show addition functionality."
+      },
+      {
+        "functionName": "aiSubtract",
+        "functionNameIndexInFunctionNamesTag": 5,
+        "functionArgs": {
+          "a": 10,
+          "b": 4
+        },
+        "reasonToAddStep": "To demonstrate subtraction functionality."
+      },
+      {
+        "functionName": "aiMultiply",
+        "functionNameIndexInFunctionNamesTag": 6,
+        "functionArgs": {
+          "a": 6,
+          "b": 7
+        },
+        "reasonToAddStep": "To show multiplication functionality."
+      },
+      {
+        "functionName": "aiDivide",
+        "functionNameIndexInFunctionNamesTag": 7,
+        "functionArgs": {
+          "a": 20,
+          "b": 5
+        },
+        "reasonToAddStep": "To show division functionality."
+      },
+      {
+        "functionName": "aiCreatePlan",
+        "functionNameIndexInFunctionNamesTag": 8,
+        "functionArgs": {
+          "id": "web_search_plan",
+          "functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan": "[\"webSearch\", \"emailSend\"]",
+          "doAllFunctionsExistToFulfillTheUserRequest": false,
+          "functionNamesPlanWillCall": [
+            "webSearch",
+            "emailSend"
+          ],
+          "functionSteps": [
+            {
+              "functionName": "webSearch",
+              "functionNameIndexInFunctionNamesTag": 0,
+              "functionArgs": {
+                "query": "bitcoin news"
+              },
+              "reasonToAddStep": "To search the web for the latest news on Bitcoin."
+            },
+            {
+              "functionName": "emailSend",
+              "functionNameIndexInFunctionNamesTag": 1,
+              "functionArgs": {
+                "to": "Bob@gmail.com",
+                "subject": "Bitcoin News Update",
+                "body": "$webSearch.result"
+              },
+              "reasonToAddStep": "To send the summary email to Bob."
+            }
+          ]
+        },
+        "reasonToAddStep": "To create a plan that includes searching for Bitcoin news and sending an email summary to Bob."
+      }
+      }
+    ]
+  }
