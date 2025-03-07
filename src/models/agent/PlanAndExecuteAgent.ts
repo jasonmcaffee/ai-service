@@ -81,14 +81,13 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
     ];
 
     // this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject(originalOpenAiMessages, this.model, this.memberId, this.inferenceSSESubject, this.abortController, this.aiFunctionExecutor, this.aiFunctionExecutor.getToolsMetadata, 0, context);
-    return this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject({
+    return this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubjectStream({
       openAiMessages: newOpenAiMessages,
       totalOpenAiCallsMade: 0,
       model: this.model,
       aiFunctionContext,
     });
   }
-
 }
 
 

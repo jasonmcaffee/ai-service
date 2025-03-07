@@ -15,6 +15,7 @@ export type AiFunctionContextV2 = {
     functionResults: object; //where we house "$aiAdd.result", etc.
     memberId: string;
     abortController?: AbortController;
+    // continueToAllowRecursiveCallsToOpenAi: boolean; //after aiCompletePlan executed, we don't want to send the result back to openAi
 };
 
 export type AiFunctionResult = { result: any; context: AiFunctionContext };

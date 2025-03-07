@@ -93,7 +93,7 @@ export class OpenaiWrapperServiceV2{
                                          model,
                                          totalOpenAiCallsMade = 0,
                                          aiFunctionContext,
-                                       }: CallOpenAiParams): Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }> {
+                                       }: CallOpenAiParams, allowToolCalls = false): Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }> {
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL });
@@ -110,7 +110,7 @@ export class OpenaiWrapperServiceV2{
       const stream = await openai.chat.completions.create({
         model: model.modelName,
         messages: openAiMessages,
-        tools: aiFunctionContext.aiFunctionExecutor?.getToolsMetadata(), //TODO: should you be sending tools every single time? probably not.
+        tools: allowToolCalls ? aiFunctionContext.aiFunctionExecutor?.getToolsMetadata() : undefined,
         stream: true,
       }, { signal });
 

@@ -1,3 +1,6 @@
+optimization:
+continueToAllowRecursiveCallsToOpenAi should be set to false after aiCompletePlan.
+
 tool plan:
 first ask planning agent to come up with a plan.
 - it gives you function steps.
