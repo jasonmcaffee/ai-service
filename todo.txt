@@ -17,6 +17,8 @@ option 2: Executor agent: executes all tools, final response is streamed.
     2. response phase (stream with no tools) "The user asked to xyx.  Use the information <summarized>"
 
 
+confirm plan UI
+
 
 google sign in
 member creation.
