@@ -152,7 +152,8 @@ function convertAiFunctionStepToOpenAiToolCallMessageAndToolCallResultMessage(ai
     type: "function",
     function: {
       name: aiFunctionStep.functionName,
-      arguments: JSON.stringify(aiFunctionStep.functionArgumentsUsedDuringExecution),
+      // arguments: JSON.stringify(aiFunctionStep.functionArgumentsUsedDuringExecution), <-- don't pass this as there might be a getSearchResults, then summarize("all the search") bloat.
+      arguments: JSON.stringify(aiFunctionStep.functionArgumentsPassedByLLM),
     }
   };
   //Errors don't serialize to JSON, so we need special handling.
