@@ -14,8 +14,15 @@ export class PlanExecutor {
   constructor(private readonly agentPlan: AgentPlan, private readonly aiFunctionContext: AiFunctionContextV2) {
   }
 
-  async executePlan(){
-    for (let aiFunctionStep of this.agentPlan.functionSteps){
+  async executePlanIgnoringHallucinatedFunctions(){
+    if(!this.aiFunctionContext.aiFunctionExecutor){
+      throw new Error(`PlanExecutor cannot execute a plan without an aiFunctionExecutor`);
+    }
+    // for (let aiFunctionStep of this.agentPlan.functionSteps){
+    //   await executeAiFunctionStep(aiFunctionStep, this.aiFunctionContext);
+    // }
+    const functionStepsForFunctionsThatExist = getOnlyFunctionStepsThatExistOnFunctionExecutor(this.aiFunctionContext, this.agentPlan);
+    for (let aiFunctionStep of functionStepsForFunctionsThatExist){
       await executeAiFunctionStep(aiFunctionStep, this.aiFunctionContext);
     }
   }
@@ -23,8 +30,10 @@ export class PlanExecutor {
   async getFinalResultFromPlan(){
     return this.aiFunctionContext.functionResults[lastResultKey];
   }
+}
 
-
+function getOnlyFunctionStepsThatExistOnFunctionExecutor(aiFunctionContext: AiFunctionContextV2, agentPlan: AgentPlan){
+  return agentPlan.functionSteps.filter(f => typeof aiFunctionContext.aiFunctionExecutor![f.functionName] == 'function');
 }
 
 /**

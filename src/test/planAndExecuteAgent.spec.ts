@@ -1,4 +1,4 @@
-import { AiFunctionExecutor } from '../models/agent/aiTypes';
+import { AiFunctionContext, AiFunctionExecutor, AiFunctionResult } from '../models/agent/aiTypes';
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model, SearchResultWithMarkdownContentResponse } from '../models/api/conversationApiModels';
@@ -10,6 +10,7 @@ import { OpenaiWrapperServiceV2 } from '../services/openAiWrapperV2.service';
 import { WebToolsService } from '../services/agent/tools/webTools.service';
 import { DuckduckgoSearchService } from '../services/duckduckgoSearch.service';
 import { PageScraperService } from '../services/pageScraper.service';
+import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from '../services/agent/tools/aiToolTypes';
 
 describe('Plan and Execute agent', () => {
   let testingModule: TestingModule;
@@ -189,4 +190,97 @@ describe('Plan and Execute agent', () => {
     }
 
   }, 5 * 60 * 1000);
+
+
+  it('should handle tool errors', async ()=> {
+    const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
+    class ErrorToolService implements AiFunctionExecutor<ErrorToolService> {
+
+      @chatCompletionTool({
+        type: "function",
+        function: {
+          name: "aiAdd",
+          description: "Add two numbers and return the sum.",
+          parameters: {
+            type: "object",
+            properties: {
+              a: {
+                type: "number",
+                description: "The first number.",
+              },
+              b: {
+                type: "number",
+                description: "The second number.",
+              },
+            },
+            required: ["a", "b"],
+          },
+        }
+      })
+      async aiAdd({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+        throw new Error("Calculation misfired!");
+        return {result: a + b, context};
+      }
+
+      @chatCompletionTool({
+        type: "function",
+        function: {
+          name: "aiGetStateCapital",
+          description: "Get the capital of a state",
+          parameters: {
+            type: "object",
+            properties: {
+              state: {
+                type: "string",
+                description: "The state to get a capital for",
+              },
+            },
+            required: ["state"],
+          },
+        }
+      })
+      async aiGetStateCapital({ state}: { state: string }, context: AiFunctionContext): Promise<AiFunctionResult> {
+        throw new Error(`Error getting capital for state: ${state}`);
+        return {result: "Paris", context};
+      }
+
+      getToolsMetadata(): ChatCompletionTool[] {
+        return extractChatCompletionToolAnnotationValues(this);
+      }
+    }
+
+    const errorToolService = new ErrorToolService();
+    const inferenceSSESubject = new InferenceSSESubject();
+    const memberId = "1";
+    const abortController = new AbortController();
+    const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, errorToolService, inferenceSSESubject, abortController);
+
+    const originalOpenAiMessages: ChatCompletionMessageParam[] = [
+      {role: 'system', content: getChatPageSystemPrompt()},
+      {role: 'system', content: `
+        # Tool Calling
+        If you call a tool, you must use it's response as part of your answer, even if you feel the answer is incorrect or not needed.
+        Check to see if the tool resulted in an error.  If so, display that error to the user.
+      `},
+    ]
+
+    async function askWebBot(webQuestion: string){
+      const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(webQuestion, originalOpenAiMessages);
+      return result;
+    }
+
+    const iterations = 1;
+    for(let i = 0; i < iterations; ++i){
+      const result2 = await askWebBot("add 490,234,352,643 + 5,000,000,325,235");
+      expect(result2.planFinalResult instanceof Error).toBe(true);
+      expect(result2.finalResponseFromLLM.length > 0).toBe(true);  //NOTE this still provides an answer even though we errored.
+
+      const result3 = await askWebBot("What is the capital of Utah?");
+      expect(result3.planFinalResult instanceof Error).toBe(true);
+      expect(result3.finalResponseFromLLM.length > 0).toBe(true);
+    }
+
+  }, 5 * 60 * 1000);
 });
+
+
