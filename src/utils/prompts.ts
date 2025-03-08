@@ -29,6 +29,9 @@ Current context:
 - Maintain awareness of current temporal context
 - Adapt responses using available contextual information
 
+### 4. Tool Calling
+If you call a tool, you must use it's response as part of your answer, even if you feel the answer is incorrect or not needed.
+Check to see if the tool resulted in an error.  If so, display that error to the user.
 `;
 
 

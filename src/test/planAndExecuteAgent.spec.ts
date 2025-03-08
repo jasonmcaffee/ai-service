@@ -257,11 +257,6 @@ describe('Plan and Execute agent', () => {
 
     const originalOpenAiMessages: ChatCompletionMessageParam[] = [
       {role: 'system', content: getChatPageSystemPrompt()},
-      {role: 'system', content: `
-        # Tool Calling
-        If you call a tool, you must use it's response as part of your answer, even if you feel the answer is incorrect or not needed.
-        Check to see if the tool resulted in an error.  If so, display that error to the user.
-      `},
     ]
 
     async function askWebBot(webQuestion: string){
