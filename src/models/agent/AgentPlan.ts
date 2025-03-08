@@ -4,6 +4,11 @@ export class AgentPlan{
 }
 
 export class AiFunctionStep {
-    constructor(readonly id: string, readonly functionName: string, readonly args: object, readonly reasonToAddStep: string, ) {
+    public result: any;//this is set after the function is executed.
+    constructor(
+      readonly id: string,
+      readonly functionName: string,
+      readonly args: object,
+      readonly reasonToAddStep: string, ) {
     }
 }

@@ -98,8 +98,6 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
       content: toolResultContent,
     };
 
-
-    // const newPrompt = getPromptToTellLLMAboutTheUserPromptAndPlanAndResult(userPrompt, plannerAgent, planFinalResult);
     const newOpenAiMessages: ChatCompletionMessageParam[] = [
       ...originalOpenAiMessages,
       userMessage,
@@ -107,7 +105,6 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
       toolResultMessage,
     ];
 
-    // this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject(originalOpenAiMessages, this.model, this.memberId, this.inferenceSSESubject, this.abortController, this.aiFunctionExecutor, this.aiFunctionExecutor.getToolsMetadata, 0, context);
     return this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubjectStream({
       openAiMessages: newOpenAiMessages,
       totalOpenAiCallsMade: 0,

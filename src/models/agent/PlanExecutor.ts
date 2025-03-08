@@ -1,5 +1,5 @@
 import {AgentPlan, AiFunctionStep} from "./AgentPlan";
-import { AiFunctionContextV2 } from './aiTypes';
+import { AiFunctionContextV2, AiFunctionResult } from './aiTypes';
 
 const lastResultKey = "$$lastResult$$";
 
@@ -39,10 +39,10 @@ function getOnlyFunctionStepsThatExistOnFunctionExecutor(aiFunctionContext: AiFu
  * provide useful functionality:
  * - such as parameter reference swapping with actual values.
  * -- e.g. aiAdd(5, 5) -> aiSubtract("$aiAdd.result", 1)    <- we will replace "$aiAdd.result" with 10.
- * - store results in context
+ * - store results in context under `$functionName.result`
  * -- e.g. aiAdd(5, 5) <- we will store result in context["$aiAdd.result"]
- * - store errors in context
- * -- e.g. aiAdd("x", 1)  <- will store error in context["$aiAdd.error"]
+ * -- errors are stored in result as well.
+ * - store results in context under `$$lastResult$$` - this probably isn't needed any longer.
  * @param aiFunctionStep
  * @param aiFunctionContext
  */
@@ -52,11 +52,20 @@ async function executeAiFunctionStep(aiFunctionStep: AiFunctionStep, aiFunctionC
   const functionArgs = aiFunctionStep.args;
   const functionArgsWithReferencesToFunctionResultsSwappedOutWithValues = swapFunctionArgsWithStorageDataIfNeeded(functionArgs, aiFunctionContext.functionResults);
   const aiFunctionExecutor = aiFunctionContext.aiFunctionExecutor;
-  const aiFunctionResult = await aiFunctionExecutor[functionNameToExecute](functionArgsWithReferencesToFunctionResultsSwappedOutWithValues, aiFunctionContext);
+  let aiFunctionResult: AiFunctionResult;
+  let result: any;
+  try{
+    aiFunctionResult = await aiFunctionExecutor[functionNameToExecute](functionArgsWithReferencesToFunctionResultsSwappedOutWithValues, aiFunctionContext);
+    result = aiFunctionResult.result;
+  }catch(e){
+    result = e;
+  }
+
   //store the result of the function in our functionResults so other functions can access the result.
   const resultStorageKey = `$${functionNameToExecute}.result`;
-  aiFunctionContext.functionResults[resultStorageKey] = aiFunctionResult.result;
-  aiFunctionContext.functionResults[lastResultKey] = aiFunctionResult.result;
+  aiFunctionContext.functionResults[resultStorageKey] = result;
+  aiFunctionContext.functionResults[lastResultKey] = result;
+  aiFunctionStep.result = result;
 }
 
 /**
