@@ -240,7 +240,7 @@ describe('Plan and Execute agent', () => {
         }
       })
       async aiGetStateCapital({ state}: { state: string }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
-        throw new Error(`Error getting capital for state: ${state}`);
+
         return {result: "Paris", context};
       }
 
@@ -268,9 +268,9 @@ describe('Plan and Execute agent', () => {
     for(let i = 0; i < iterations; ++i){
       const result2 = await askWebBot("add 490,234,352,643 + 5,000,000,325,235");
       expect(result2.planFinalResult instanceof Error).toBe(true);
-      expect(result2.finalResponseFromLLM.length > 0).toBe(true);  //NOTE this still provides an answer even though we errored.
+      expect(result2.finalResponseFromLLM.length > 0).toBe(true);
 
-      const result3 = await askWebBot("What is the capital of Utah?");
+      const result3 = await askWebBot("What is the capital of Utah? What is 9 + 7?");
       expect(result3.planFinalResult instanceof Error).toBe(true);
       expect(result3.finalResponseFromLLM.length > 0).toBe(true);
     }
