@@ -260,7 +260,7 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
       }
     };
   }
-  async aiCompletePlan({completedReason}: {completedReason: string}, context: AiFunctionContext): Promise<AiFunctionResult> {
+  async aiCompletePlan({completedReason}: {completedReason: string}, context: AiFunctionContextV2): Promise<AiFunctionResult> {
     console.log(`aiCompletePlan called with: `, {completedReason});
     if (!this.agentPlan) {
       throw new Error("No active plan found. Call 'aiCreatePlan' first.");

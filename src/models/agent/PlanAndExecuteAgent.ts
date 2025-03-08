@@ -1,6 +1,5 @@
-import PlannerAgent from './PlannerAgent';
 import { Model } from '../api/conversationApiModels';
-import { OpenaiWrapperService } from '../../services/openaiWrapper.service';
+import { OpenaiWrapperService } from '../../_junk/openaiWrapper.service';
 import { PlanExecutor } from './PlanExecutor';
 import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor } from './aiTypes';
 import InferenceSSESubject from '../InferenceSSESubject';
@@ -55,7 +54,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
         planFinalResult = e;
       }
       //note: send the original openAi messages, not the one for executing the plan again.
-      const r2 = await this.sendPlanFinalResultToLLM(prompt, plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext);
+      const r2 = await this.convertAiFunctionStepsToToolsAndSendToLLM(prompt, plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext);
       return {planFinalResult, finalResponseFromLLM: r2.completeText, plannerAgent, planExecutor};
     }catch(e){
       console.error(`PlanAndExecuteAgent error: `, e);
@@ -63,7 +62,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
     }
   }
 
-  async sendPlanFinalResultToLLM(userPrompt: string, plannerAgent: PlannerAgentV2, planFinalResult: any, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2){
+  async convertAiFunctionStepsToToolsAndSendToLLM(userPrompt: string, plannerAgent: PlannerAgentV2, planFinalResult: any, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2){
     const userMessage: ChatCompletionMessageParam = {role: 'user', content: userPrompt};
 
     const toolName = "workRelatedToUserPrompt";

@@ -18,8 +18,8 @@ export type AiFunctionContextV2 = {
     // continueToAllowRecursiveCallsToOpenAi: boolean; //after aiCompletePlan executed, we don't want to send the result back to openAi
 };
 
-export type AiFunctionResult = { result: any; context: AiFunctionContext };
-export type AiFunction = (argumentsFromAi: object, aiFunctionContextMaintainedByUs: AiFunctionContext) => Promise<AiFunctionResult>;
+export type AiFunctionResult = { result: any; context: AiFunctionContextV2 };
+export type AiFunction = (argumentsFromAi: object, aiFunctionContextMaintainedByUs: AiFunctionContextV2) => Promise<AiFunctionResult>;
 
 interface AiFunctionExecutorMethods {
     getToolsMetadata: () => ChatCompletionTool[]

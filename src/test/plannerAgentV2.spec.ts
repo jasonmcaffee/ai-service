@@ -1,7 +1,7 @@
 import {Test, TestingModule} from "@nestjs/testing";
 import {ModelsService} from "../services/models.service";
 import {ModelsRepository} from "../repositories/models.repository";
-import { OpenaiWrapperService } from '../services/openaiWrapper.service';
+import { OpenaiWrapperService } from '../_junk/openaiWrapper.service';
 import PlannerAgentV2 from '../models/agent/PlannerAgentV2';
 import { Model } from '../models/api/conversationApiModels';
 import { ChatCompletionChunk, ChatCompletionMessageParam } from 'openai/resources/chat/completions';

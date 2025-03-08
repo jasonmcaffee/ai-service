@@ -1,6 +1,6 @@
 import {AgentPlan, AiFunctionStep} from "./AgentPlan";
 import {ModelsService} from "../../services/models.service";
-import {OpenaiWrapperService} from "../../services/openaiWrapper.service";
+import {OpenaiWrapperService} from "../../_junk/openaiWrapper.service";
 import { AiFunction, AiFunctionContext, AiFunctionContextV2 } from './aiTypes';
 
 const lastResultKey = "$$lastResult$$";
