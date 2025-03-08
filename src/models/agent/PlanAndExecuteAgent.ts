@@ -2,17 +2,11 @@ import { Model } from '../api/conversationApiModels';
 import { PlanExecutor } from './PlanExecutor';
 import { AiFunctionContextV2, AiFunctionExecutor } from './aiTypes';
 import InferenceSSESubject from '../InferenceSSESubject';
-import {
-  ChatCompletionMessageParam,
-  ChatCompletionMessageToolCall,
-  ChatCompletionTool,
-} from 'openai/resources/chat/completions';
+import { ChatCompletionMessageParam, ChatCompletionMessageToolCall, } from 'openai/resources/chat/completions';
 import PlannerAgentV2 from './PlannerAgentV2';
 import { OpenaiWrapperServiceV2 } from '../../services/openAiWrapperV2.service';
 import { ChatCompletionToolMessageParam } from 'openai/src/resources/chat/completions';
 import { AiFunctionStep } from './AgentPlan';
-
-const { v4: uuidv4 } = require('uuid');
 
 /**
  * Planner Executor Architecture is a two phase approach to responding to a prompt when using tools/functions the AI can call.
@@ -20,20 +14,21 @@ const { v4: uuidv4 } = require('uuid');
  * - creates a plan with a series of functions to call.
  * -- e.g. "What is 5 + 5, then subtract 7?" would result in a plan of aiFunctionSteps [{name: "aiAdd", arguments: {a: 5, b: 5}}, {name: "aiSubtract", arguments: {a: "$aiAdd.result", b: 7}}]
  * Executor
- * -
- * Primarily responsible for:
- * - creating a plan based on user prompt and available tools.
- * - executing the plan to get the final result
- * - telling the llm about the result.
+ * - iterates over each function step, subbing out variable references with actual values. e.g. param value "$aiAdd.result" gets replaced with 5.
+ * - passes each function a context, and stores the results.
+ * Agent
+ * - after executing, convert the aiFunctionSteps into 'Assistant' tool calls, and tool call result messages.
+ * -- essentially we're modifying the messages/state in such a way as the LLM is not aware of Planner Related messages, but is aware of all the tool call and tool call results.
+ * - send the new state of messages to the LLM, and have it stream the response back.
  */
 export class PlanAndExecuteAgent<TAiFunctionExecutor>{
-  constructor(private readonly model: Model, private readonly openAiWrapperServiceV2: OpenaiWrapperServiceV2,
+  constructor(private readonly model: Model,
+              private readonly openAiWrapperServiceV2: OpenaiWrapperServiceV2,
               private readonly memberId: string,
               private readonly aiFunctionExecutor: AiFunctionExecutor<TAiFunctionExecutor>,
               private readonly inferenceSSESubject: InferenceSSESubject,  //needed so we can tell the llm about the results of executing the plan.
               private readonly abortController: AbortController,
-  ) {
-  }
+  ) {}
 
   /**
    * This allows us to have one AI create a plan with a series of functions to call, then have another AI execute the functions.
