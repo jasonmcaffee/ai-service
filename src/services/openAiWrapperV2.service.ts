@@ -11,7 +11,7 @@ import OpenAI from 'openai';
 import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor } from '../models/agent/aiTypes';
 import { toolCallEndMarker, toolCallStartMarker } from '../utils/prompts';
-import { InvalidToolCallJsonFromLLM } from '../models/Exceptions';
+import { InvalidToolCallJsonFromLLM } from '../models/errors/errors';
 
 interface CallOpenAiParams {
   openAiMessages: ChatCompletionMessageParam[];

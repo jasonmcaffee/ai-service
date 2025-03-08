@@ -15,7 +15,7 @@ import InferenceSSESubject from '../InferenceSSESubject';
 import { getChatPageSystemPrompt, getToolsPrompt, toolCallEndMarker, toolCallStartMarker } from '../../utils/prompts';
 import { CalculatorToolsService } from '../../services/agent/tools/calculatorTools.service';
 import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from './aiTypes';
-import { chatCompletionTool } from '../../services/agent/tools/aiToolTypes';
+import { chatCompletionTool } from '../../services/agent/tools/aiToolAnnotations';
 
 //doing this mainly to test functionality.  not really needed for this implementation.
 class PlannerAgentFunctionContext implements AiFunctionContextV2 {

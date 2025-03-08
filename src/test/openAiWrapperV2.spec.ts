@@ -7,7 +7,7 @@ import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor, AiFunctionR
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
 import PlannerAgentV2 from '../models/agent/PlannerAgentV2';
-import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from '../services/agent/tools/aiToolTypes';
+import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from '../services/agent/tools/aiToolAnnotations';
 
 describe("parseLlamaCppToolCalls", ()=>{
   let testingModule: TestingModule;

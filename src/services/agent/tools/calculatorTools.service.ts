@@ -4,7 +4,7 @@ import {
   AiFunctionExecutor,
   AiFunctionResult,
 } from '../../../models/agent/aiTypes';
-import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from './aiToolTypes';
+import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from './aiToolAnnotations';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

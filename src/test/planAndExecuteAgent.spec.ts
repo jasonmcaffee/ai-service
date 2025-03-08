@@ -10,7 +10,7 @@ import { OpenaiWrapperServiceV2 } from '../services/openAiWrapperV2.service';
 import { WebToolsService } from '../services/agent/tools/webTools.service';
 import { DuckduckgoSearchService } from '../services/duckduckgoSearch.service';
 import { PageScraperService } from '../services/pageScraper.service';
-import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from '../services/agent/tools/aiToolTypes';
+import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from '../services/agent/tools/aiToolAnnotations';
 
 describe('Plan and Execute agent', () => {
   let testingModule: TestingModule;

@@ -9,7 +9,7 @@ import InferenceSSESubject from '../models/InferenceSSESubject';
 import {DuckduckgoSearchService} from "./duckduckgoSearch.service";
 import { getWordAndTokenCount } from '../utils/utils';
 import { PageScraperService } from './pageScraper.service';
-import { ClientAbortedError } from '../models/Exceptions';
+import { ClientAbortedError } from '../models/errors/errors';
 
 @Injectable()
 export class WebsearchService {
