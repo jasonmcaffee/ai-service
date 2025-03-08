@@ -1,5 +1,9 @@
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
-import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../../../models/agent/aiTypes";
+import {
+  AiFunctionContextV2,
+  AiFunctionExecutor,
+  AiFunctionResult,
+} from '../../../models/agent/aiTypes';
 import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from './aiToolTypes';
 import { Injectable } from '@nestjs/common';
 
@@ -28,7 +32,7 @@ export class CalculatorToolsService implements AiFunctionExecutor<CalculatorTool
       },
     }
   })
-  async aiExponentiation({ base, exponent }: { base: number; exponent: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+  async aiExponentiation({ base, exponent }: { base: number; exponent: number }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
     return { result: Math.pow(base, exponent), context };
   }
 
@@ -54,7 +58,7 @@ export class CalculatorToolsService implements AiFunctionExecutor<CalculatorTool
       },
     }
   })
-  async aiModulo({ dividend, divisor }: { dividend: number; divisor: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+  async aiModulo({ dividend, divisor }: { dividend: number; divisor: number }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
     return { result: dividend % divisor, context };
   }
 
@@ -76,7 +80,7 @@ export class CalculatorToolsService implements AiFunctionExecutor<CalculatorTool
       },
     }
   })
-  async aiSquareRoot({ value }: { value: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+  async aiSquareRoot({ value }: { value: number }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
     return { result: Math.sqrt(value), context };
   }
 
@@ -98,7 +102,7 @@ export class CalculatorToolsService implements AiFunctionExecutor<CalculatorTool
       },
     }
   })
-  async aiFactorial({ n }: { n: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+  async aiFactorial({ n }: { n: number }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
     let result = 1;
     for (let i = 2; i <= n; i++) {
       result *= i;
@@ -128,7 +132,7 @@ export class CalculatorToolsService implements AiFunctionExecutor<CalculatorTool
       },
     }
   })
-  async aiAdd({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+  async aiAdd({ a, b }: { a: number; b: number }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
     return {result: a + b, context};
   }
 
@@ -153,7 +157,7 @@ export class CalculatorToolsService implements AiFunctionExecutor<CalculatorTool
       },
     }
   })
-  async aiSubtract({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+  async aiSubtract({ a, b }: { a: number; b: number }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
     return {result: a - b, context};
   }
 
@@ -178,7 +182,7 @@ export class CalculatorToolsService implements AiFunctionExecutor<CalculatorTool
       },
     }
   })
-  async aiMultiply({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+  async aiMultiply({ a, b }: { a: number; b: number }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
     return {result: a * b, context};
   }
 
@@ -203,7 +207,7 @@ export class CalculatorToolsService implements AiFunctionExecutor<CalculatorTool
       },
     }
   })
-  async aiDivide({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+  async aiDivide({ a, b }: { a: number; b: number }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
     if (b === 0) {
       throw new Error("Division by zero is not allowed.");
     }

@@ -207,7 +207,7 @@ describe("parseLlamaCppToolCalls", ()=>{
           },
         }
       })
-      async aiSendMessageAndGetResponse({ personName, message }: { personName: string; message: string }, context: AiFunctionContext): Promise<AiFunctionResult> {
+      async aiSendMessageAndGetResponse({ personName, message }: { personName: string; message: string }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
         return {result: `${personName} says hello from australia!`, context};
       }
     }

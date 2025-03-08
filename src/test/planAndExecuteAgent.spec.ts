@@ -1,4 +1,4 @@
-import { AiFunctionContext, AiFunctionExecutor, AiFunctionResult } from '../models/agent/aiTypes';
+import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from '../models/agent/aiTypes';
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model, SearchResultWithMarkdownContentResponse } from '../models/api/conversationApiModels';
@@ -217,7 +217,7 @@ describe('Plan and Execute agent', () => {
           },
         }
       })
-      async aiAdd({ a, b }: { a: number; b: number }, context: AiFunctionContext): Promise<AiFunctionResult> {
+      async aiAdd({ a, b }: { a: number; b: number }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
         throw new Error("Calculation misfired!");
         return {result: a + b, context};
       }
@@ -239,7 +239,7 @@ describe('Plan and Execute agent', () => {
           },
         }
       })
-      async aiGetStateCapital({ state}: { state: string }, context: AiFunctionContext): Promise<AiFunctionResult> {
+      async aiGetStateCapital({ state}: { state: string }, context: AiFunctionContextV2): Promise<AiFunctionResult> {
         throw new Error(`Error getting capital for state: ${state}`);
         return {result: "Paris", context};
       }

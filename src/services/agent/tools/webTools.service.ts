@@ -5,7 +5,12 @@ import { PageScraperService } from '../../pageScraper.service';
 import { getWordAndTokenCount } from '../../../utils/utils';
 import InferenceSSESubject from "../../../models/InferenceSSESubject";
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
-import {AiFunctionContext, AiFunctionExecutor, AiFunctionResult} from "../../../models/agent/aiTypes";
+import {
+    AiFunctionContext,
+    AiFunctionContextV2,
+    AiFunctionExecutor,
+    AiFunctionResult,
+} from '../../../models/agent/aiTypes';
 import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from './aiToolTypes';
 
 
@@ -33,7 +38,7 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
             },
         }
     })
-    async aiSearchWeb({query}: {query?: string} = {query: undefined}, context: AiFunctionContext, )
+    async aiSearchWeb({query}: {query?: string} = {query: undefined}, context: AiFunctionContextV2, )
         : Promise<AiFunctionResult>{
         const {inferenceSSESubject: subject} = context;
 
