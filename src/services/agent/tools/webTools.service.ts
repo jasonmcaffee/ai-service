@@ -5,14 +5,8 @@ import { PageScraperService } from '../../pageScraper.service';
 import { getWordAndTokenCount } from '../../../utils/utils';
 import InferenceSSESubject from "../../../models/InferenceSSESubject";
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
-import {
-    AiFunctionContext,
-    AiFunctionContextV2,
-    AiFunctionExecutor,
-    AiFunctionResult,
-} from '../../../models/agent/aiTypes';
+import { AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult, } from '../../../models/agent/aiTypes';
 import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from './aiToolAnnotations';
-
 
 @Injectable()
 export class WebToolsService implements AiFunctionExecutor<WebToolsService>{

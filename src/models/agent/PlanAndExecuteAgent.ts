@@ -1,7 +1,6 @@
 import { Model } from '../api/conversationApiModels';
-import { OpenaiWrapperService } from '../../_junk/openaiWrapper.service';
 import { PlanExecutor } from './PlanExecutor';
-import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor } from './aiTypes';
+import { AiFunctionContextV2, AiFunctionExecutor } from './aiTypes';
 import InferenceSSESubject from '../InferenceSSESubject';
 import {
   ChatCompletionMessageParam,

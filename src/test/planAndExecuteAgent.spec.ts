@@ -1,4 +1,4 @@
-import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from '../models/agent/aiTypes';
+import { AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from '../models/agent/aiTypes';
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model, SearchResultWithMarkdownContentResponse } from '../models/api/conversationApiModels';

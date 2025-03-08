@@ -6,16 +6,11 @@
 //https://github.com/user-attachments/files/18814154/Qwen2.5-1.5B-Instruct.jinja.txt
 
 import {AgentPlan, AiFunctionStep} from "./AgentPlan";
-import {ModelsService} from "../../services/models.service";
 import {OpenaiWrapperServiceV2} from "../../services/openAiWrapperV2.service";
 import { Model } from '../api/conversationApiModels';
-import { WebToolsService } from '../../services/agent/tools/webTools.service';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import InferenceSSESubject from '../InferenceSSESubject';
-import { getChatPageSystemPrompt, getToolsPrompt, toolCallEndMarker, toolCallStartMarker } from '../../utils/prompts';
-import { CalculatorToolsService } from '../../services/agent/tools/calculatorTools.service';
-import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from './aiTypes';
-import { chatCompletionTool } from '../../services/agent/tools/aiToolAnnotations';
+import {  AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from './aiTypes';
 
 //doing this mainly to test functionality.  not really needed for this implementation.
 class PlannerAgentFunctionContext implements AiFunctionContextV2 {

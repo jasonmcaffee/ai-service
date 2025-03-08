@@ -3,11 +3,11 @@ import { ChatCompletionTool } from 'openai/resources/chat/completions';
 
 //the function context allows us to store values from other tools, so they can be referenced in other tool calls.
 //it's passed to the openaiWrapper, who then passes it to every tool call/aiFunction
-export type AiFunctionContext = {
-    inferenceSSESubject?: InferenceSSESubject;
-    aiFunctionExecutor: AiFunctionExecutor<any>;
-    functionResults: object; //where we house "$aiAdd.result", etc.
-};
+// export type AiFunctionContext = {
+//     inferenceSSESubject?: InferenceSSESubject;
+//     aiFunctionExecutor: AiFunctionExecutor<any>;
+//     functionResults: object; //where we house "$aiAdd.result", etc.
+// };
 
 export type AiFunctionContextV2 = {
     inferenceSSESubject?: InferenceSSESubject;

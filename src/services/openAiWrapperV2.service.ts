@@ -1,16 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import {
-  ChatCompletionAssistantMessageParam, ChatCompletionChunk,
-  ChatCompletionMessageParam, ChatCompletionMessageToolCall,
-  ChatCompletionTool,
-} from 'openai/resources/chat/completions';
-
+import { ChatCompletionMessageParam, ChatCompletionMessageToolCall, } from 'openai/resources/chat/completions';
 import { Model } from '../models/api/conversationApiModels';
-import InferenceSSESubject from '../models/InferenceSSESubject';
 import OpenAI from 'openai';
-import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
-import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor } from '../models/agent/aiTypes';
-import { toolCallEndMarker, toolCallStartMarker } from '../utils/prompts';
+import { AiFunctionContextV2, AiFunctionExecutor } from '../models/agent/aiTypes';
 import { InvalidToolCallJsonFromLLM } from '../models/errors/errors';
 
 interface CallOpenAiParams {
