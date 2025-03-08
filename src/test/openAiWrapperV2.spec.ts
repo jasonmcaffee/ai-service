@@ -38,7 +38,7 @@ describe("parseLlamaCppToolCalls", ()=>{
       inferenceSSESubject: new InferenceSSESubject(),
       memberId,
       aiFunctionExecutor: calculatorTools, //todo make optional
-      functionResults: {},
+      functionResultsStorage: {},
       abortController: new AbortController(),
     }
 
@@ -77,7 +77,7 @@ describe("parseLlamaCppToolCalls", ()=>{
       inferenceSSESubject: new InferenceSSESubject(),
       memberId,
       aiFunctionExecutor: calculatorTools, //todo make optional
-      functionResults: {},
+      functionResultsStorage: {},
       abortController: new AbortController(),
     }
 
@@ -167,7 +167,7 @@ describe("parseLlamaCppToolCalls", ()=>{
       inferenceSSESubject: new InferenceSSESubject(),
       memberId,
       aiFunctionExecutor: noToolsService, //todo make optional
-      functionResults: {},
+      functionResultsStorage: {},
       abortController: new AbortController(),
     }
 
@@ -229,7 +229,7 @@ describe("parseLlamaCppToolCalls", ()=>{
         inferenceSSESubject: new InferenceSSESubject(),
         memberId,
         aiFunctionExecutor: testToolsService, //todo make optional
-        functionResults: {},
+        functionResultsStorage: {},
         abortController: new AbortController(),
       }
 

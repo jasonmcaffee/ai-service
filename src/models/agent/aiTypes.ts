@@ -12,7 +12,7 @@ import { ChatCompletionTool } from 'openai/resources/chat/completions';
 export type AiFunctionContextV2 = {
     inferenceSSESubject?: InferenceSSESubject;
     aiFunctionExecutor?: AiFunctionExecutor<any>; //optional so we can stream
-    functionResults: object; //where we house "$aiAdd.result", etc.
+    functionResultsStorage: object; //where we house "$aiAdd.result", etc.
     memberId: string;
     abortController?: AbortController;
     // continueToAllowRecursiveCallsToOpenAi: boolean; //after aiCompletePlan executed, we don't want to send the result back to openAi

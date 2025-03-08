@@ -59,7 +59,7 @@ describe('Plan and Execute agent', () => {
         aiFunctionContext: {
           inferenceSSESubject,
           aiFunctionExecutor:noToolsService,
-          functionResults: {},
+          functionResultsStorage: {},
           memberId,
           abortController,
         },

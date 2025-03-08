@@ -11,14 +11,14 @@ describe('Executor Tests', () => {
     agentPlan.functionSteps = [functionStep1, functionStep2];
 
     const aiFunctionExecutor: AiFunctionExecutor<CalculatorToolsService> = new CalculatorToolsService();
-    const aiFunctionContext: AiFunctionContextV2 = {aiFunctionExecutor, functionResults: {}, memberId: "1"};
+    const aiFunctionContext: AiFunctionContextV2 = {aiFunctionExecutor, functionResultsStorage: {}, memberId: "1"};
 
     const planExecutor = new PlanExecutor(agentPlan, aiFunctionContext);
 
     await planExecutor.executePlanIgnoringHallucinatedFunctions();
 
-    expect(aiFunctionContext.functionResults["$aiAdd.result"]).toBe(3);
-    expect(aiFunctionContext.functionResults["$aiSubtract.result"]).toBe(2);
+    expect(aiFunctionContext.functionResultsStorage["$aiAdd.result"]).toBe(3);
+    expect(aiFunctionContext.functionResultsStorage["$aiSubtract.result"]).toBe(2);
 
   });
 });

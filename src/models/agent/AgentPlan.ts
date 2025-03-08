@@ -4,11 +4,17 @@ export class AgentPlan{
 }
 
 export class AiFunctionStep {
-    public result: any;//this is set after the function is executed.
+    //this is set by PlanExecutor after the function is executed.
+    public result: any;
+
+    //what the PlanExecutor actually passed when calling the function.
+    //Can be different than functionArgumentsPassedByLLM due to variable swapping. e.g. $aiAdd.result
+    public functionArgumentsUsedDuringExecution: any;
+
     constructor(
       readonly id: string,
       readonly functionName: string,
-      readonly args: object,
+      readonly functionArgumentsPassedByLLM: object,
       readonly reasonToAddStep: string, ) {
     }
 }

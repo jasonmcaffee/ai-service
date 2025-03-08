@@ -122,7 +122,7 @@ export class ChatService {
     console.log(`sending tools: `, tools);
 
     const aiFunctionContext: AiFunctionContextV2 = {
-      functionResults: {},
+      functionResultsStorage: {},
       abortController,
       memberId,
       aiFunctionExecutor: undefined,

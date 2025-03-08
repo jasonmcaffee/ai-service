@@ -26,7 +26,7 @@ export class PlanExecutor {
   }
 
   async getFinalResultFromPlan(){
-    return this.aiFunctionContext.functionResults[lastResultKey];
+    return this.aiFunctionContext.functionResultsStorage[lastResultKey];
   }
 }
 
@@ -49,8 +49,11 @@ function getOnlyFunctionStepsThatExistOnFunctionExecutor(aiFunctionContext: AiFu
 async function executeAiFunctionStep(aiFunctionStep: AiFunctionStep, aiFunctionContext: AiFunctionContextV2){
   if(!aiFunctionContext.aiFunctionExecutor){ throw new Error('Plan executor attempted to execute an ai function step, but there was not aiFunctionExecutor defined'); }
   const functionNameToExecute = aiFunctionStep.functionName;
-  const functionArgs = aiFunctionStep.args;
-  const functionArgsWithReferencesToFunctionResultsSwappedOutWithValues = swapFunctionArgsWithStorageDataIfNeeded(functionArgs, aiFunctionContext.functionResults);
+  const functionArgs = aiFunctionStep.functionArgumentsPassedByLLM;
+
+  const functionArgsWithReferencesToFunctionResultsSwappedOutWithValues = swapFunctionArgsWithStorageDataIfNeeded(functionArgs, aiFunctionContext.functionResultsStorage);
+  aiFunctionStep.functionArgumentsUsedDuringExecution = functionArgsWithReferencesToFunctionResultsSwappedOutWithValues;
+
   const aiFunctionExecutor = aiFunctionContext.aiFunctionExecutor;
   let aiFunctionResult: AiFunctionResult;
   let result: any;
@@ -63,8 +66,8 @@ async function executeAiFunctionStep(aiFunctionStep: AiFunctionStep, aiFunctionC
 
   //store the result of the function in our functionResults so other functions can access the result.
   const resultStorageKey = `$${functionNameToExecute}.result`;
-  aiFunctionContext.functionResults[resultStorageKey] = result;
-  aiFunctionContext.functionResults[lastResultKey] = result;
+  aiFunctionContext.functionResultsStorage[resultStorageKey] = result;
+  aiFunctionContext.functionResultsStorage[lastResultKey] = result;
   aiFunctionStep.result = result;
 }
 

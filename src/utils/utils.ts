@@ -3,6 +3,11 @@ import {Message, MessageContext, ModelOrDatasource} from '../models/api/conversa
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { Observable } from 'rxjs';
 import { encoding_for_model } from 'tiktoken';
+const { v4: uuidv4 } = require('uuid');
+
+export function uuid(){
+  return uuidv4();
+}
 
 export function createOpenAIMessagesFromMessages(messages: Message[]){
   return messages.map((m) => {
