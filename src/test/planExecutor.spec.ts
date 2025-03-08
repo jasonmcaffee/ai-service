@@ -15,7 +15,7 @@ describe('Executor Tests', () => {
 
     const planExecutor = new PlanExecutor(agentPlan, aiFunctionContext);
 
-    await planExecutor.executePlanIgnoringHallucinatedFunctions();
+    await planExecutor.executePlan();
 
     expect(aiFunctionContext.functionResultsStorage["$aiAdd.result"]).toBe(3);
     expect(aiFunctionContext.functionResultsStorage["$aiSubtract.result"]).toBe(2);

@@ -13,7 +13,14 @@ import { ChatCompletionToolMessageParam } from 'openai/src/resources/chat/comple
 import { AiFunctionStep } from './AgentPlan';
 
 const { v4: uuidv4 } = require('uuid');
+
 /**
+ * Planner Executor Architecture is a two phase approach to responding to a prompt when using tools/functions the AI can call.
+ * Planner
+ * - creates a plan with a series of functions to call.
+ * -- e.g. "What is 5 + 5, then subtract 7?" would result in a plan of aiFunctionSteps [{name: "aiAdd", arguments: {a: 5, b: 5}}, {name: "aiSubtract", arguments: {a: "$aiAdd.result", b: 7}}]
+ * Executor
+ * -
  * Primarily responsible for:
  * - creating a plan based on user prompt and available tools.
  * - executing the plan to get the final result
@@ -28,7 +35,16 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
   ) {
   }
 
-  async createAndExecutePlanUsingTools<TAiFunctionExecutor>(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[]){
+  /**
+   * This allows us to have one AI create a plan with a series of functions to call, then have another AI execute the functions.
+   * e.g. we might have a complicated workflow that needs a big AI model to reason about, but then we might want to save money by using a smaller AI model perform the work.
+   * Uses a PlannerAgent to first have AI provide all the functions it would call, and arguments it would pass, in order to fulfill the user's request/prompt.
+   * Then executes the functions, as if the AI had called tool_calls for each function, and passes the tool call results to the AI, then streams the response.
+   *
+   * @param prompt
+   * @param originalOpenAiMessages
+   */
+  async createAndExecutePlanUsingTools(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[]){
     try{
       //planner agent's result will be the original messages + the tool call results.
       const plannerAgent = new PlannerAgentV2(this.model, this.openAiWrapperServiceV2, this.memberId, this.aiFunctionExecutor, this.inferenceSSESubject, originalOpenAiMessages);
@@ -48,7 +64,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
 
       let planFinalResult; //can be error
       try{
-        await planExecutor.executePlanIgnoringHallucinatedFunctions();
+        await planExecutor.executePlan();
         planFinalResult = await planExecutor.getFinalResultFromPlan();
       }catch(e){
         planFinalResult = e;

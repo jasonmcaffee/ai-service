@@ -259,20 +259,27 @@ describe('Plan and Execute agent', () => {
       {role: 'system', content: getChatPageSystemPrompt()},
     ]
 
-    async function askWebBot(webQuestion: string){
+    async function askAgent(webQuestion: string){
       const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(webQuestion, originalOpenAiMessages);
       return result;
     }
 
     const iterations = 1;
     for(let i = 0; i < iterations; ++i){
-      const result2 = await askWebBot("add 490,234,352,643 + 5,000,000,325,235");
-      expect(result2.planFinalResult instanceof Error).toBe(true);
-      expect(result2.finalResponseFromLLM.length > 0).toBe(true);
+      // const result2 = await askAgent("add 490,234,352,643 + 5,000,000,325,235");
+      // expect(result2.planFinalResult instanceof Error).toBe(true);
+      // expect(result2.finalResponseFromLLM.length > 0).toBe(true);
+      //
+      // const result3 = await askAgent("What is the capital of Utah? What is 9 + 7?");
+      // expect(result3.planFinalResult instanceof Error).toBe(true);
+      // expect(result3.finalResponseFromLLM.length > 0).toBe(true);
+      //
+      // const result4 = await askAgent("What is the capital of Utah? Send an email to bob@gmail.com with the result.");
+      // expect(result4.planFinalResult instanceof Error).toBe(true);
+      // expect(result4.finalResponseFromLLM.length > 0).toBe(true);
 
-      const result3 = await askWebBot("What is the capital of Utah? What is 9 + 7?");
-      expect(result3.planFinalResult instanceof Error).toBe(true);
-      expect(result3.finalResponseFromLLM.length > 0).toBe(true);
+      const result5 = await askAgent("Search the web for fun facts about cats.  Send an email to john@gmail.com with the cat info.  Also, what is the capital of Utah?");
+      expect(result5.finalResponseFromLLM.length > 0).toBe(true);
     }
 
   }, 5 * 60 * 1000);

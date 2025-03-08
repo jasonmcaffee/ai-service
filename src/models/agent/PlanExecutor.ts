@@ -12,17 +12,17 @@ export class PlanExecutor {
   constructor(private readonly agentPlan: AgentPlan, private readonly aiFunctionContext: AiFunctionContextV2) {
   }
 
-  async executePlanIgnoringHallucinatedFunctions(){
+  async executePlan(){
     if(!this.aiFunctionContext.aiFunctionExecutor){
       throw new Error(`PlanExecutor cannot execute a plan without an aiFunctionExecutor`);
     }
-    // for (let aiFunctionStep of this.agentPlan.functionSteps){
-    //   await executeAiFunctionStep(aiFunctionStep, this.aiFunctionContext);
-    // }
-    const functionStepsForFunctionsThatExist = getOnlyFunctionStepsThatExistOnFunctionExecutor(this.aiFunctionContext, this.agentPlan);
-    for (let aiFunctionStep of functionStepsForFunctionsThatExist){
+    for (let aiFunctionStep of this.agentPlan.functionSteps){
       await executeAiFunctionStep(aiFunctionStep, this.aiFunctionContext);
     }
+    // const functionStepsForFunctionsThatExist = getOnlyFunctionStepsThatExistOnFunctionExecutor(this.aiFunctionContext, this.agentPlan);
+    // for (let aiFunctionStep of functionStepsForFunctionsThatExist){
+    //   await executeAiFunctionStep(aiFunctionStep, this.aiFunctionContext);
+    // }
   }
 
   async getFinalResultFromPlan(){
@@ -58,6 +58,9 @@ async function executeAiFunctionStep(aiFunctionStep: AiFunctionStep, aiFunctionC
   let aiFunctionResult: AiFunctionResult;
   let result: any;
   try{
+    if(typeof aiFunctionExecutor[functionNameToExecute] !== 'function'){
+      throw new Error(`This AI does not have a function named ${functionNameToExecute}, and therefore lacks the ability to perform this request.`)
+    }
     aiFunctionResult = await aiFunctionExecutor[functionNameToExecute](functionArgsWithReferencesToFunctionResultsSwappedOutWithValues, aiFunctionContext);
     result = aiFunctionResult.result;
   }catch(e){
