@@ -25,6 +25,8 @@ import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import { OpenaiWrapperServiceV2 } from './openAiWrapperV2.service';
 import { CalculatorToolsService } from './agent/tools/calculatorTools.service';
 import { AiFunctionContextV2 } from '../models/agent/aiTypes';
+import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
+import { NoToolsService } from './agent/tools/NoToolsService';
 
 @Injectable()
 export class ChatService {
@@ -35,7 +37,8 @@ export class ChatService {
               private readonly modelsService: ModelsService,
               private readonly webToolsService: WebToolsService,
               private readonly openAiWrapperService: OpenaiWrapperServiceV2,
-              private readonly calculatorToolsService: CalculatorToolsService) {}
+              private readonly calculatorToolsService: CalculatorToolsService,
+              private readonly noToolsService: NoToolsService) {}
 
 
   /**
@@ -101,15 +104,14 @@ export class ChatService {
     conversation.messages?.filter(m => m.sentByMemberId === memberId)
       .forEach(m => m.messageText = extractMessageContextFromMessage(m.messageText).textWithoutTags)
 
-    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : undefined;
-    const toolService = shouldSearchWeb ? this.webToolsService : undefined;
+    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : this.noToolsService.getToolsMetadata();
+    const toolService = shouldSearchWeb ? this.webToolsService : this.noToolsService;
 
-    // let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages!);
     let openAiMessages: ChatCompletionMessageParam[] = [
       { role: 'system', content: getChatPageSystemPrompt()},
-      // {role: "system", content: getToolsPrompt(toolService.getToolsMetadata())},
       ...createOpenAIMessagesFromMessages(conversation.messages!)
     ];
+
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [
@@ -117,9 +119,6 @@ export class ChatService {
         ...openAiMessages
       ]
     }
-
-    console.log(`sending messages: `, openAiMessages);
-    console.log(`sending tools: `, tools);
 
     const aiFunctionContext: AiFunctionContextV2 = {
       functionResultsStorage: {},
@@ -129,7 +128,10 @@ export class ChatService {
       inferenceSSESubject,
     };
 
+    const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
+
     const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({ openAiMessages, model, aiFunctionContext, });
+    // const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack()
     promise.then(({openAiMessages, completeText}) => {
       console.log(`all openai interaction complete: ${completeText}`, openAiMessages);
       this.abortControllers.delete(memberId);

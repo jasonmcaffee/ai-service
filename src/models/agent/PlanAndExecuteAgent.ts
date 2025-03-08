@@ -39,7 +39,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
    * @param prompt
    * @param originalOpenAiMessages
    */
-  async createAndExecutePlanUsingTools(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[]){
+  async planAndExecuteThenStreamResultsBack(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[], addUserPromptToMessagesBeforeSending: boolean){
     try{
       //planner agent's result will be the original messages + the tool call results.
       const plannerAgent = new PlannerAgentV2(this.model, this.openAiWrapperServiceV2, this.memberId, this.aiFunctionExecutor, this.inferenceSSESubject, originalOpenAiMessages);
@@ -65,7 +65,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
         planFinalResult = e;
       }
       //note: send the original openAi messages, not the one for executing the plan again.
-      const r2 = await this.convertAiFunctionStepsToToolsAndSendToLLM(prompt, plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext);
+      const r2 = await this.convertAiFunctionStepsToToolsAndSendToLLM(prompt, plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext, addUserPromptToMessagesBeforeSending);
       return {planFinalResult, finalResponseFromLLM: r2.completeText, plannerAgent, planExecutor};
     }catch(e){
       console.error(`PlanAndExecuteAgent error: `, e);
@@ -73,16 +73,19 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
     }
   }
 
-  async convertAiFunctionStepsToToolsAndSendToLLM(userPrompt: string, plannerAgent: PlannerAgentV2, planFinalResult: any, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2){
+  async convertAiFunctionStepsToToolsAndSendToLLM(userPrompt: string, plannerAgent: PlannerAgentV2,
+                                                  planFinalResult: any, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2, addUserPromptToMessagesBeforeSending: boolean){
     const userMessage: ChatCompletionMessageParam = {role: 'user', content: userPrompt};
 
     const assistantMessageWithToolCallsAndToolCallResultMessages = convertAiFunctionStepsToAssistantMessageWithToolCallsAndToolResultMessages(plannerAgent);
 
-    const newOpenAiMessages: ChatCompletionMessageParam[] = [
-      ...originalOpenAiMessages,
-      userMessage,
-      ...assistantMessageWithToolCallsAndToolCallResultMessages,
-    ];
+    const newOpenAiMessages: ChatCompletionMessageParam[] = [...originalOpenAiMessages,];
+
+    if(addUserPromptToMessagesBeforeSending){
+      newOpenAiMessages.push(userMessage);
+    }
+
+    newOpenAiMessages.push(...assistantMessageWithToolCallsAndToolCallResultMessages);
 
     return this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubjectStream({
       openAiMessages: newOpenAiMessages,

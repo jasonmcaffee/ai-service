@@ -32,7 +32,6 @@ describe('Plan and Execute agent', () => {
   it('should acknowledge what tools are available', async ()=>{
     const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
     class NoToolsService implements AiFunctionExecutor<NoToolsService> {
-
       getToolsMetadata(): ChatCompletionTool[] {
         return [];
       }
@@ -48,7 +47,7 @@ describe('Plan and Execute agent', () => {
     ];
 
     async function askNoToolsPlannerBot(mathQuestion: string){
-      const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(mathQuestion, originalOpenAiMessages);
+      const result = await planAndExecuteAgent.planAndExecuteThenStreamResultsBack(mathQuestion, originalOpenAiMessages, true);
       return result;
     }
 
@@ -94,7 +93,7 @@ describe('Plan and Execute agent', () => {
     ];
 
     async function askNoToolsBot(mathQuestion: string){
-      const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(mathQuestion, originalOpenAiMessages);
+      const result = await planAndExecuteAgent.planAndExecuteThenStreamResultsBack(mathQuestion, originalOpenAiMessages, true);
       return result;
     }
 
@@ -118,7 +117,7 @@ describe('Plan and Execute agent', () => {
     ]
 
     async function askMathBot(mathQuestion: string){
-      const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(mathQuestion, originalOpenAiMessages);
+      const result = await planAndExecuteAgent.planAndExecuteThenStreamResultsBack(mathQuestion, originalOpenAiMessages, true);
       return result;
     }
 
@@ -178,7 +177,7 @@ describe('Plan and Execute agent', () => {
     ]
 
     async function askWebBot(webQuestion: string){
-      const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(webQuestion, originalOpenAiMessages);
+      const result = await planAndExecuteAgent.planAndExecuteThenStreamResultsBack(webQuestion, originalOpenAiMessages, true);
       return result;
     }
 
@@ -260,7 +259,7 @@ describe('Plan and Execute agent', () => {
     ]
 
     async function askAgent(webQuestion: string){
-      const result = await planAndExecuteAgent.createAndExecutePlanUsingTools(webQuestion, originalOpenAiMessages);
+      const result = await planAndExecuteAgent.planAndExecuteThenStreamResultsBack(webQuestion, originalOpenAiMessages, true);
       return result;
     }
 
