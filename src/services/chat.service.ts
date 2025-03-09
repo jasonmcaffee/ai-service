@@ -102,7 +102,6 @@ export class ChatService {
     conversation.messages?.filter(m => m.sentByMemberId === memberId)
       .forEach(m => m.messageText = extractMessageContextFromMessage(m.messageText).textWithoutTags)
 
-    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : undefined;
     const toolService = shouldSearchWeb ? this.webToolsService : undefined;
 
     let openAiMessages: ChatCompletionMessageParam[] = [
@@ -118,17 +117,7 @@ export class ChatService {
       ]
     }
 
-    // const aiFunctionContext: AiFunctionContextV2 = {
-    //   functionResultsStorage: {},
-    //   abortController,
-    //   memberId,
-    //   aiFunctionExecutor: undefined,
-    //   inferenceSSESubject,
-    // };
-
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
-
-    // const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({ openAiMessages, model, aiFunctionContext, });
     const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false);
     // promise.then(({openAiMessages, completeText}) => {
     promise.then(({finalResponseFromLLM}) => {
@@ -143,8 +132,7 @@ export class ChatService {
     promise.finally(() => {
       this.abortControllers.delete(memberId);
       inferenceSSESubject.sendCompleteOnNextTick();
-    })
-    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.webToolsService, tools);
+    });
   }
 
   async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,
