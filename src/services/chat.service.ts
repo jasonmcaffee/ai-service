@@ -26,7 +26,6 @@ import { OpenaiWrapperServiceV2 } from './openAiWrapperV2.service';
 import { CalculatorToolsService } from './agent/tools/calculatorTools.service';
 import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
-import { NoToolsService } from './agent/tools/NoToolsService';
 
 @Injectable()
 export class ChatService {
@@ -37,8 +36,7 @@ export class ChatService {
               private readonly modelsService: ModelsService,
               private readonly webToolsService: WebToolsService,
               private readonly openAiWrapperService: OpenaiWrapperServiceV2,
-              private readonly calculatorToolsService: CalculatorToolsService,
-              private readonly noToolsService: NoToolsService) {}
+              private readonly calculatorToolsService: CalculatorToolsService,) {}
 
 
   /**
@@ -104,8 +102,8 @@ export class ChatService {
     conversation.messages?.filter(m => m.sentByMemberId === memberId)
       .forEach(m => m.messageText = extractMessageContextFromMessage(m.messageText).textWithoutTags)
 
-    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : this.noToolsService.getToolsMetadata();
-    const toolService = shouldSearchWeb ? this.webToolsService : this.noToolsService;
+    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : undefined;
+    const toolService = shouldSearchWeb ? this.webToolsService : undefined;
 
     let openAiMessages: ChatCompletionMessageParam[] = [
       { role: 'system', content: getChatPageSystemPrompt()},
@@ -120,47 +118,52 @@ export class ChatService {
       ]
     }
 
-    const aiFunctionContext: AiFunctionContextV2 = {
-      functionResultsStorage: {},
-      abortController,
-      memberId,
-      aiFunctionExecutor: undefined,
-      inferenceSSESubject,
-    };
+    // const aiFunctionContext: AiFunctionContextV2 = {
+    //   functionResultsStorage: {},
+    //   abortController,
+    //   memberId,
+    //   aiFunctionExecutor: undefined,
+    //   inferenceSSESubject,
+    // };
 
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
 
-    const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({ openAiMessages, model, aiFunctionContext, });
-    // const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack()
-    promise.then(({openAiMessages, completeText}) => {
-      console.log(`all openai interaction complete: ${completeText}`, openAiMessages);
-      this.abortControllers.delete(memberId);
+    // const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({ openAiMessages, model, aiFunctionContext, });
+    const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false);
+    // promise.then(({openAiMessages, completeText}) => {
+    promise.then(({finalResponseFromLLM}) => {
+      const completeText = finalResponseFromLLM;
       console.log('handle response completed got: ', completeText);
       const formattedResponse = completeText;
       this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
     });
     promise.catch(e => {
+
+    });
+    promise.finally(() => {
       this.abortControllers.delete(memberId);
+      inferenceSSESubject.sendCompleteOnNextTick();
     })
     // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, handleOnText, handleResponseCompleted, handleError, model, memberId, inferenceSSESubject, abortController, this.webToolsService, tools);
   }
 
   async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,
                                            inferenceSSESubject: InferenceSSESubject, abortController: AbortController,
-                                           shouldSearchWeb: boolean){
-    const prompt = messageContext.textWithoutTags;
-    const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
-    let openAiMessages: ChatCompletionMessageParam[] = [{ role: 'system', content: getChatPageSystemPrompt()}, ...createOpenAIMessagesFromMessages([userMessage])];
-
-    const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : [];
-    if(model.initialMessage){
-      const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
-      openAiMessages = [
-        {role: "system", content: getToolsPrompt(tools)},
-        ...createOpenAIMessagesFromMessages([modelInitialMessage]),
-        ...openAiMessages
-      ];
-    }
+                                           shouldSearchWeb: boolean) {
+    throw new Error('not supported yet');
+    // const prompt = messageContext.textWithoutTags;
+    // const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
+    // let openAiMessages: ChatCompletionMessageParam[] = [{ role: 'system', content: getChatPageSystemPrompt()}, ...createOpenAIMessagesFromMessages([userMessage])];
+    //
+    // const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : [];
+    // if(model.initialMessage){
+    //   const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
+    //   openAiMessages = [
+    //     {role: "system", content: getToolsPrompt(tools)},
+    //     ...createOpenAIMessagesFromMessages([modelInitialMessage]),
+    //     ...openAiMessages
+    //   ];
+    //}
     //todo:
 
     // this.openAiWrapperService.callOpenAiUsingModelAndSubject({
@@ -175,8 +178,8 @@ export class ChatService {
     //   this.abortControllers.delete(memberId);
     // });
     // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, handleOnComplete, handleError, model, memberId, inferenceSSESubject, abortController, this.webToolsService, tools);
+    // }
   }
-
 }
 
 

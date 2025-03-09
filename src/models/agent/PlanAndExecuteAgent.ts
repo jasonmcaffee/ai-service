@@ -5,7 +5,7 @@ import InferenceSSESubject from '../InferenceSSESubject';
 import { ChatCompletionMessageParam, ChatCompletionMessageToolCall, } from 'openai/resources/chat/completions';
 import PlannerAgentV2 from './PlannerAgentV2';
 import { OpenaiWrapperServiceV2 } from '../../services/openAiWrapperV2.service';
-import { ChatCompletionToolMessageParam } from 'openai/src/resources/chat/completions';
+import { ChatCompletionToolMessageParam } from 'openai/resources/chat/completions';
 import { AiFunctionStep } from './AgentPlan';
 
 /**
@@ -40,6 +40,8 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
    * @param originalOpenAiMessages
    */
   async planAndExecuteThenStreamResultsBack(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[], addUserPromptToMessagesBeforeSending: boolean){
+    //@ts-ignore
+    this.inferenceSSESubject.taco = "hi";
     if(!this.aiFunctionExecutor){
         const r2 = await this.callLlmWithoutUsingPlanOrTools(prompt, originalOpenAiMessages, addUserPromptToMessagesBeforeSending);
         return {planFinalResult: undefined, finalResponseFromLLM: r2.completeText, plannerAgent: undefined, planExecutor: undefined};

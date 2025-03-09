@@ -65,7 +65,7 @@ export class OpenaiWrapperServiceV2{
         // Make a recursive call to continue the conversation and return its result
         return this.callOpenAiUsingModelAndSubject({ openAiMessages, model, totalOpenAiCallsMade, aiFunctionContext, });
       }else {
-        aiFunctionContext.inferenceSSESubject?.sendComplete();
+        // aiFunctionContext.inferenceSSESubject?.sendComplete();  <-- don' tdo this. it's too early and other things might need it.
         const completeText = response.choices[0].message.content ?? '';
         // Return the final state
         return { openAiMessages, completeText, totalOpenAiCallsMade };
@@ -159,7 +159,7 @@ export class OpenaiWrapperServiceV2{
         // Make a recursive call to continue the conversation and return its result
         return this.callOpenAiUsingModelAndSubject({ openAiMessages, model, totalOpenAiCallsMade, aiFunctionContext, });
       }else {
-        aiFunctionContext.inferenceSSESubject?.sendComplete();
+        // aiFunctionContext.inferenceSSESubject?.sendComplete();
         // Return the final state
         return { openAiMessages, completeText, totalOpenAiCallsMade };
       }
