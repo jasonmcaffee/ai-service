@@ -25,7 +25,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
   constructor(private readonly model: Model,
               private readonly openAiWrapperServiceV2: OpenaiWrapperServiceV2,
               private readonly memberId: string,
-              private readonly aiFunctionExecutor: AiFunctionExecutor<TAiFunctionExecutor>,
+              private readonly aiFunctionExecutor: AiFunctionExecutor<TAiFunctionExecutor> | undefined,
               private readonly inferenceSSESubject: InferenceSSESubject,  //needed so we can tell the llm about the results of executing the plan.
               private readonly abortController: AbortController,
   ) {}
@@ -40,6 +40,10 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
    * @param originalOpenAiMessages
    */
   async planAndExecuteThenStreamResultsBack(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[], addUserPromptToMessagesBeforeSending: boolean){
+    if(!this.aiFunctionExecutor){
+        const r2 = await this.callLlmWithoutUsingPlanOrTools(prompt, originalOpenAiMessages, addUserPromptToMessagesBeforeSending);
+        return {planFinalResult: undefined, finalResponseFromLLM: r2.completeText, plannerAgent: undefined, planExecutor: undefined};
+    }
     try{
       //planner agent's result will be the original messages + the tool call results.
       const plannerAgent = new PlannerAgentV2(this.model, this.openAiWrapperServiceV2, this.memberId, this.aiFunctionExecutor, this.inferenceSSESubject, originalOpenAiMessages);
@@ -73,6 +77,26 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
     }
   }
 
+  async callLlmWithoutUsingPlanOrTools(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[], addUserPromptToMessagesBeforeSending: boolean){
+    const newOpenAiMessages: ChatCompletionMessageParam[] = addUserPromptToMessagesBeforeSending ? [
+      {role: 'user', content: prompt},
+      ...originalOpenAiMessages
+    ] : originalOpenAiMessages;
+
+    const aiFunctionContext: AiFunctionContextV2 = {
+      functionResultsStorage: {},
+      aiFunctionExecutor: this.aiFunctionExecutor,
+      abortController: this.abortController,
+      inferenceSSESubject: this.inferenceSSESubject,
+      memberId: this.memberId,
+    };
+
+    return this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubjectStream({
+      openAiMessages: newOpenAiMessages,
+      aiFunctionContext,
+      model: this.model,
+    });
+  }
   async convertAiFunctionStepsToToolsAndSendToLLM(userPrompt: string, plannerAgent: PlannerAgentV2,
                                                   planFinalResult: any, originalOpenAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2, addUserPromptToMessagesBeforeSending: boolean){
     const userMessage: ChatCompletionMessageParam = {role: 'user', content: userPrompt};
@@ -80,11 +104,9 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
     const assistantMessageWithToolCallsAndToolCallResultMessages = convertAiFunctionStepsToAssistantMessageWithToolCallsAndToolResultMessages(plannerAgent);
 
     const newOpenAiMessages: ChatCompletionMessageParam[] = [...originalOpenAiMessages,];
-
     if(addUserPromptToMessagesBeforeSending){
       newOpenAiMessages.push(userMessage);
     }
-
     newOpenAiMessages.push(...assistantMessageWithToolCallsAndToolCallResultMessages);
 
     return this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubjectStream({

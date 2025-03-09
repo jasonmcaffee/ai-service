@@ -190,6 +190,28 @@ describe('Plan and Execute agent', () => {
 
   }, 5 * 60 * 1000);
 
+  it('should avoid creating and executing a plan when no tools are provided, but still stream result.', async ()=> {
+    const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
+    const webToolsService = undefined;
+    const inferenceSSESubject = new InferenceSSESubject();
+    const memberId = "1";
+    const abortController = new AbortController();
+    const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, webToolsService, inferenceSSESubject, abortController);
+
+    const originalOpenAiMessages: ChatCompletionMessageParam[] = [
+      {role: 'system', content: getChatPageSystemPrompt()}
+    ]
+
+    async function askWebBot(webQuestion: string){
+      const result = await planAndExecuteAgent.planAndExecuteThenStreamResultsBack(webQuestion, originalOpenAiMessages, true);
+      return result;
+    }
+
+    const result2 = await askWebBot("What is the capital of France?");
+    expect(result2.finalResponseFromLLM.length > 0).toBe(true);
+
+  });
+
 
   it('should handle tool errors', async ()=> {
     const openAiWrapperService = testingModule.get<OpenaiWrapperServiceV2>(OpenaiWrapperServiceV2);
