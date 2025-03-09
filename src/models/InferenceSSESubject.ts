@@ -1,5 +1,6 @@
 import { Subject } from "rxjs";
-import { wait } from '../utils/utils';
+import { uuid, wait } from '../utils/utils';
+import { AiStatusUpdate } from './api/conversationApiModels';
 
 /**
  * A class used in conjunction with nextjs SSE to stream communications back to the client.
@@ -13,8 +14,9 @@ export default class InferenceSSESubject{
     this.subject.next(textSignal);
   }
 
-  sendStatus(title: string, content?: string){
-    const statusSignal = JSON.stringify({ status: {title, content} });
+  sendStatus(aiStatusUpdate: AiStatusUpdate){
+    aiStatusUpdate.id = aiStatusUpdate.id ? aiStatusUpdate.id : uuid();
+    const statusSignal = JSON.stringify({ status: aiStatusUpdate });
     this.subject.next(statusSignal);
   }
 

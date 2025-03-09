@@ -49,7 +49,8 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
     this.isPlanCreationComplete = false;
     const abortController = new AbortController();
     const aiFunctionContext = new PlannerAgentFunctionContext(this.memberId, this.inferenceSSESubject, this, abortController);
-
+    const statusId = uuid();
+    this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planning', displayText: `Creating a plan to determine which tools to use.`, streamable: true});
     const result = await this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubject({
       openAiMessages: [
         ...this.originalOpenAiMessages,
@@ -59,6 +60,7 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
       aiFunctionContext,
       totalOpenAiCallsMade: 0,
     });
+    this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planning', displayText: `Created a plan to use tools: ${this.agentPlan.functionSteps.map(f => f.functionName).join(', ')}`, streamable: true, streamingComplete: true});
     return {...result, agentPlan: this.agentPlan};
   }
 

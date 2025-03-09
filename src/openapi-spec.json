@@ -88,7 +88,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/components/schemas/AiStatusUpdate"
                   }
                 }
               }
@@ -1323,6 +1323,41 @@
   "servers": [],
   "components": {
     "schemas": {
+      "AiStatusUpdate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "displayText": {
+            "type": "string"
+          },
+          "streamable": {
+            "type": "boolean"
+          },
+          "isError": {
+            "type": "boolean"
+          },
+          "streamingComplete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "data",
+          "displayText",
+          "streamable",
+          "isError",
+          "streamingComplete"
+        ]
+      },
       "ModelOrDatasource": {
         "type": "object",
         "properties": {

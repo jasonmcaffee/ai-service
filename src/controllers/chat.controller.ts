@@ -2,6 +2,7 @@ import { Controller, Post, Body, Sse, Get, Query } from '@nestjs/common';
 import { ChatService } from '../services/chat.service';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { AuthenticationService } from '../services/authentication.service';
+import { AiStatusUpdate } from '../models/api/conversationApiModels';
 
 @ApiTags('Chat')
 @Controller('chat')
@@ -47,8 +48,8 @@ export class ChatController {
 
   @ApiOperation({summary: 'get statuses'})
   @Get('aiStatusUpdates')
-  @ApiResponse({ status: 200, type: [String]})
+  @ApiResponse({ status: 200, type: [AiStatusUpdate]})
   async getStatusUpdates(){
-
+    return [];
   }
 }

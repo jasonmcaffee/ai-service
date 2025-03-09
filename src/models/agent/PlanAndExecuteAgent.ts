@@ -7,6 +7,7 @@ import PlannerAgentV2 from './PlannerAgentV2';
 import { OpenaiWrapperServiceV2 } from '../../services/openAiWrapperV2.service';
 import { ChatCompletionToolMessageParam } from 'openai/resources/chat/completions';
 import { AiFunctionStep } from './AgentPlan';
+import { uuid } from '../../utils/utils';
 
 /**
  * Planner Executor Architecture is a two phase approach to responding to a prompt when using tools/functions the AI can call.
@@ -40,16 +41,18 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
    * @param originalOpenAiMessages
    */
   async planAndExecuteThenStreamResultsBack(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[], addUserPromptToMessagesBeforeSending: boolean){
-    //@ts-ignore
-    this.inferenceSSESubject.taco = "hi";
     if(!this.aiFunctionExecutor){
         const r2 = await this.callLlmWithoutUsingPlanOrTools(prompt, originalOpenAiMessages, addUserPromptToMessagesBeforeSending);
         return {planFinalResult: undefined, finalResponseFromLLM: r2.completeText, plannerAgent: undefined, planExecutor: undefined};
     }
+    const statusId = uuid();
     try{
+      this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Asking planning agent to create a plan to use tools based on user's request.`, streamable: true});
       //planner agent's result will be the original messages + the tool call results.
       const plannerAgent = new PlannerAgentV2(this.model, this.openAiWrapperServiceV2, this.memberId, this.aiFunctionExecutor, this.inferenceSSESubject, originalOpenAiMessages);
       const { openAiMessages: originalAiMessagesPlusPlannerAgentMessagesAndResults, completeText, totalOpenAiCallsMade, agentPlan } = await plannerAgent.askAiToCreateAnAgentPlan(prompt);
+
+
       const aiFunctionContext: AiFunctionContextV2 = {
         functionResultsStorage: {},
         aiFunctionExecutor: this.aiFunctionExecutor,
@@ -59,22 +62,27 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
       };
       const planExecutor = new PlanExecutor(agentPlan, aiFunctionContext);
       if(!plannerAgent.agentPlan){
+        this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Error encountered creating plan: no was created.`, streamable: true, isError: true, streamingComplete: true});
         console.error(`agentPlan is missing!`, plannerAgent);
         throw new Error('agentPlan is missing'); //todo: sometimes the closing tag isn't supplied.  We should add retry plan N times.
       }
 
       let planFinalResult; //can be error
       try{
+        this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Executing plan.`, streamable: true});
         await planExecutor.executePlan();
         planFinalResult = await planExecutor.getFinalResultFromPlan();
       }catch(e){
+        this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Error encountered executing plan: ${e.message}`, streamable: true, isError: true});
         planFinalResult = e;
       }
       //note: send the original openAi messages, not the one for executing the plan again.
+      this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Sending executed plan results to AI.`, streamable: true, streamingComplete: true});
       const r2 = await this.convertAiFunctionStepsToToolsAndSendToLLM(prompt, plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext, addUserPromptToMessagesBeforeSending);
       return {planFinalResult, finalResponseFromLLM: r2.completeText, plannerAgent, planExecutor};
     }catch(e){
       console.error(`PlanAndExecuteAgent error: `, e);
+      this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Error encountered sending results to AI: ${e.message}`, streamable: true, isError: true, streamingComplete: true});
       throw e;
     }
   }

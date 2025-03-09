@@ -341,9 +341,18 @@ export class GetPageContentsResponse {
 }
 
 export class AiStatusUpdate {
-  statusType: string; //e.g. reasoning, tool, responding.
+  @ApiProperty()
+  id?: string; //for streaming/updates
+  @ApiProperty()
+  type: 'planningAndExecuting' | 'planning' | 'executing' | 'reasoning' | 'web' | 'responding';
+  @ApiProperty()
   data?: object;
+  @ApiProperty()
   displayText?: string;
-  streamable: boolean;
-
+  @ApiProperty()
+  streamable?: boolean;
+  @ApiProperty()
+  isError?: boolean;
+  @ApiProperty()
+  streamingComplete?: boolean;
 }
