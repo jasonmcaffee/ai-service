@@ -1326,10 +1326,10 @@
       "AiStatusUpdate": {
         "type": "object",
         "properties": {
-          "id": {
+          "topicId": {
             "type": "string"
           },
-          "type": {
+          "topic": {
             "type": "string"
           },
           "data": {
@@ -1338,24 +1338,20 @@
           "displayText": {
             "type": "string"
           },
-          "streamable": {
-            "type": "boolean"
-          },
           "isError": {
             "type": "boolean"
           },
-          "streamingComplete": {
+          "topicCompleted": {
             "type": "boolean"
           }
         },
         "required": [
-          "id",
-          "type",
+          "topicId",
+          "topic",
           "data",
           "displayText",
-          "streamable",
           "isError",
-          "streamingComplete"
+          "topicCompleted"
         ]
       },
       "ModelOrDatasource": {

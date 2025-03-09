@@ -32,13 +32,13 @@ const openAiMessages: ChatCompletionMessageParam[] = [
         - Since all tool calls must happen at once, when a tool call depends on the result of a previous tool call, use parameter referencing syntax \`$functionName.result\` for dependencies.
         
         ### Example of a good tool execution flow
-        user prompt: "find the email address for member id 1, then send them a welcome email"
+        user prompt: "find the email address for member topicId 1, then send them a welcome email"
         your response: 2 tool calls in a single response.
           1. {name: "findEmail", params: { memberId: 1} }
           2. {name: "sendEmail", params: { email: "$findEmail.result", body: "Welcome!" }
         
         ### Example of a bad tool execution flow
-        user prompt: "find the email address for member id 1, then send them a welcome email"
+        user prompt: "find the email address for member topicId 1, then send them a welcome email"
         your response: 1 tool call in the first response.
           1. {name: "findEmail", params: { memberId: 1} }
         client: sends result of findEmail back to you

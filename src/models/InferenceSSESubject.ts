@@ -15,7 +15,7 @@ export default class InferenceSSESubject{
   }
 
   sendStatus(aiStatusUpdate: AiStatusUpdate){
-    aiStatusUpdate.id = aiStatusUpdate.id ? aiStatusUpdate.id : uuid();
+    aiStatusUpdate.topicId = aiStatusUpdate.topicId ? aiStatusUpdate.topicId : uuid();
     const statusSignal = JSON.stringify({ status: aiStatusUpdate });
     this.subject.next(statusSignal);
   }

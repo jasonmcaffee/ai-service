@@ -342,17 +342,17 @@ export class GetPageContentsResponse {
 
 export class AiStatusUpdate {
   @ApiProperty()
-  id?: string; //for streaming/updates
+  topicId?: string; //for streaming/updates
   @ApiProperty()
-  type: 'planningAndExecuting' | 'planning' | 'executing' | 'reasoning' | 'web' | 'responding';
+  topic: 'planningAndExecuting' | 'planning' | 'executing' | 'reasoning' | 'web' | 'responding';
   @ApiProperty()
   data?: object;
   @ApiProperty()
   displayText?: string;
-  @ApiProperty()
-  streamable?: boolean;
+  // @ApiProperty()
+  // streamable?: boolean;
   @ApiProperty()
   isError?: boolean;
   @ApiProperty()
-  streamingComplete?: boolean;
+  topicCompleted?: boolean; //lets the ui know that this set of work is complete.
 }

@@ -45,9 +45,9 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
         const r2 = await this.callLlmWithoutUsingPlanOrTools(prompt, originalOpenAiMessages, addUserPromptToMessagesBeforeSending);
         return {planFinalResult: undefined, finalResponseFromLLM: r2.completeText, plannerAgent: undefined, planExecutor: undefined};
     }
-    const statusId = uuid();
+    const topicId = uuid();
     try{
-      this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Asking planning agent to create a plan to use tools based on user's request.`, streamable: true});
+      this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `Asking planning agent to create a plan to use tools based on user's request.`, });
       //planner agent's result will be the original messages + the tool call results.
       const plannerAgent = new PlannerAgentV2(this.model, this.openAiWrapperServiceV2, this.memberId, this.aiFunctionExecutor, this.inferenceSSESubject, originalOpenAiMessages);
       const { openAiMessages: originalAiMessagesPlusPlannerAgentMessagesAndResults, completeText, totalOpenAiCallsMade, agentPlan } = await plannerAgent.askAiToCreateAnAgentPlan(prompt);
@@ -62,27 +62,27 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
       };
       const planExecutor = new PlanExecutor(agentPlan, aiFunctionContext);
       if(!plannerAgent.agentPlan){
-        this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Error encountered creating plan: no was created.`, streamable: true, isError: true, streamingComplete: true});
+        this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `Error encountered creating plan: no was created.`, isError: true, topicCompleted: true});
         console.error(`agentPlan is missing!`, plannerAgent);
         throw new Error('agentPlan is missing'); //todo: sometimes the closing tag isn't supplied.  We should add retry plan N times.
       }
 
       let planFinalResult; //can be error
       try{
-        this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Executing plan.`, streamable: true});
+        this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `Executing plan.`, });
         await planExecutor.executePlan();
         planFinalResult = await planExecutor.getFinalResultFromPlan();
       }catch(e){
-        this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Error encountered executing plan: ${e.message}`, streamable: true, isError: true});
+        this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `Error encountered executing plan: ${e.message}`, isError: true});
         planFinalResult = e;
       }
       //note: send the original openAi messages, not the one for executing the plan again.
-      this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Sending executed plan results to AI.`, streamable: true, streamingComplete: true});
+      this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `Sending executed plan results to AI.`, });
       const r2 = await this.convertAiFunctionStepsToToolsAndSendToLLM(prompt, plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext, addUserPromptToMessagesBeforeSending);
       return {planFinalResult, finalResponseFromLLM: r2.completeText, plannerAgent, planExecutor};
     }catch(e){
       console.error(`PlanAndExecuteAgent error: `, e);
-      this.inferenceSSESubject?.sendStatus({id: statusId, type: 'planningAndExecuting', displayText: `Error encountered sending results to AI: ${e.message}`, streamable: true, isError: true, streamingComplete: true});
+      this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `Error encountered sending results to AI: ${e.message}`, isError: true, topicCompleted: true});
       throw e;
     }
   }
