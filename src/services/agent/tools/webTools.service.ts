@@ -45,9 +45,9 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
         const searchResultResponse = await this.duckduckgoSearchService.searchDuckDuckGo(query, maxPages, startPage);
 
         const urls1 = searchResultResponse.searchResults.map(r => r.url);
-        const urls = urls1.slice(0, 1);
+        const urls = urls1;//urls1.slice(0, 1);
 
-        subject?.sendStatus(`retrieving contents of ${searchResultResponse.searchResults.length} pages.`);
+        subject?.sendStatus(`retrieving contents of ${urls.length} search results.`);
         //fetch all pages in the results
         const markdownContentsForAllPagesInTheSearchResults = await this.pageScraperService.getContentsOfWebpagesAsMarkdown(
           {urls, removeScriptsAndStyles: true, shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true, });
