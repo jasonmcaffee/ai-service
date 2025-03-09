@@ -1,30 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
-import OpenAI from 'openai';
 import { ConversationService } from './conversation.service';
-import {Message, MessageContext, Model} from '../models/api/conversationApiModels';
-// import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
-import {
-  ChatCompletionAssistantMessageParam,
-  ChatCompletionChunk,
-  ChatCompletionMessageParam,
-  ChatCompletionTool,
-} from 'openai/resources/chat/completions';
-
-import config from '../config/config';
-import {
-  createOpenAIMessagesFromMessages,
-  extractMessageContextFromMessage,
-  formatDeepSeekResponse
-} from '../utils/utils';
-import { getChatPageSystemPrompt, getToolsPrompt } from '../utils/prompts';
+import {MessageContext, Model} from '../models/api/conversationApiModels';
+import { ChatCompletionMessageParam, } from 'openai/resources/chat/completions';
+import { createOpenAIMessagesFromMessages, extractMessageContextFromMessage, } from '../utils/utils';
+import { getChatPageSystemPrompt } from '../utils/prompts';
 import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
 import {WebToolsService} from "./agent/tools/webTools.service";
-import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import { OpenaiWrapperServiceV2 } from './openAiWrapperV2.service';
 import { CalculatorToolsService } from './agent/tools/calculatorTools.service';
-import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 
 @Injectable()
