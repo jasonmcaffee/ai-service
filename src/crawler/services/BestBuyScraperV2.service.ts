@@ -1,5 +1,5 @@
 import { PlaywrightCrawler } from 'crawlee';
-import { Browser } from 'playwright';
+import { Browser, Page } from 'playwright';
 require('dotenv').config();
 const { chromium } = require("playwright-extra");
 const stealth = require("puppeteer-extra-plugin-stealth")();
@@ -92,7 +92,7 @@ export class BestBuyScraperService {
     await this.signIn(page,);
     console.log('done signing in');
 
-    await page.goto(this.url);
+    await page.goto(this.url, {timeout: 1 * 60 * 1000});
     console.log('Reloading the page until ADD TO CART is available or max retries reached...');
     let shouldExit = await this.reloadThePageUntilAddToCartIsAvailableOrMaxRetriesIsReached(page);
     if (shouldExit) {
@@ -303,7 +303,7 @@ export class BestBuyScraperService {
     return false;
   }
 
-  private async reloadThePageUntilAddToCartIsAvailableOrMaxRetriesIsReached(page) {
+  private async reloadThePageUntilAddToCartIsAvailableOrMaxRetriesIsReached(page: Page) {
     let retryCount = 0;
     let addToCartButton;
 
@@ -313,8 +313,8 @@ export class BestBuyScraperService {
         return true;
       }
 
-      await page.reload();
-      await page.waitForLoadState('domcontentloaded', 60 * 1 * 1000);
+      await page.reload({timeout: 1 * 60 * 1000});
+      await page.waitForLoadState('domcontentloaded', {timeout: 60 * 1 * 1000});
 
       addToCartButton = await page.$('.fulfillment-add-to-cart-button button.add-to-cart-button');
       if (!addToCartButton) {
