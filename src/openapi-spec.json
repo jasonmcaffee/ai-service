@@ -76,6 +76,31 @@
         ]
       }
     },
+    "/chat/aiStatusUpdates": {
+      "get": {
+        "operationId": "getStatusUpdates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "get statuses",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
     "/conversations/conversation/{conversationId}": {
       "get": {
         "operationId": "getConversation",

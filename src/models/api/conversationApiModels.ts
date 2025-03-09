@@ -339,3 +339,11 @@ export class GetPageContentsResponse {
   @ApiProperty()
   tokenCount: number;
 }
+
+export class AiStatusUpdate {
+  statusType: string; //e.g. reasoning, tool, responding.
+  data?: object;
+  displayText?: string;
+  streamable: boolean;
+
+}

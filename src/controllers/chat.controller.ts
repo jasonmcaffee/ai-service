@@ -44,4 +44,11 @@ export class ChatController {
     const memberId = this.authenticationService.getMemberId();
     return this.chatService.stop(memberId);
   }
+
+  @ApiOperation({summary: 'get statuses'})
+  @Get('aiStatusUpdates')
+  @ApiResponse({ status: 200, type: [String]})
+  async getStatusUpdates(){
+
+  }
 }
