@@ -61,7 +61,7 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
       totalOpenAiCallsMade: 0,
     });
     this.inferenceSSESubject?.sendStatus({topicId, topic: 'planning', displayText: `Created a plan using function steps: `,
-      data: {functionSteps: this.agentPlan.functionSteps.map(fs => { return {functionName: fs.functionName}; })}, topicCompleted: true});
+      data: {functionSteps: this.agentPlan.functionSteps.map(fs => { return {functionName: fs.functionName, functionArgs: fs.functionArgumentsPassedByLLM, reasonToAddStep: fs.reasonToAddStep}; })}, topicCompleted: true});
     return {...result, agentPlan: this.agentPlan};
   }
 

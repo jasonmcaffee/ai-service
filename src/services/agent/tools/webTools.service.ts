@@ -23,7 +23,7 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
                 properties: {
                     url: {
                         type: "string",
-                        description: "The url to use in order to get the contents of a webpage. e.g. wikipedia.com",
+                        description: "The url to use in order to get the contents of a webpage.  Urls must begin with http or https e.g. https://wikipedia.com",
                     }
                 }
             }
@@ -33,10 +33,10 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
         if(!url){ throw new Error('no url provided to aiGetContentsOfWebPage'); }
         const topicId = uuid();
         const {inferenceSSESubject: subject} = context;
-        subject?.sendStatus({topicId, topic: 'web', displayText: `Getting contents of url: ${url}`});
+        subject?.sendStatus({topicId, topic: 'web', displayText: `Page scraper is getting contents of url: ${url}`});
         const { markdown } = await this.pageScraperService.getContentsOfWebpageAsMarkdown({url: url, removeScriptsAndStyles: true, shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true, });
         const {tokenCount} = getWordAndTokenCount(markdown);
-        subject?.sendStatus({topicId, topic: 'web', displayText: `Done getting contents of url. Token count: ${tokenCount}`});
+        subject?.sendStatus({topicId, topic: 'web', displayText: `Page scraper is done getting contents of url. Token count: ${tokenCount}`});
         return {result: markdown, context};
     }
 

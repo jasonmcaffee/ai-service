@@ -346,7 +346,7 @@ export class AiStatusUpdate {
   @ApiProperty()
   topic: 'planningAndExecuting' | 'planning' | 'executing' | 'reasoning' | 'web' | 'responding';
   @ApiProperty()
-  data?: object;
+  data?: object | AiStatusSearchResultsData;
   @ApiProperty()
   displayText?: string;
   // @ApiProperty()
@@ -355,4 +355,18 @@ export class AiStatusUpdate {
   isError?: boolean;
   @ApiProperty()
   topicCompleted?: boolean; //lets the ui know that this set of work is complete.
+}
+
+export class AiStatusSearchResultWebUrl {
+  @ApiProperty()
+  url: string;
+  @ApiProperty()
+  title: string;
+  @ApiProperty()
+  blurb: string;
+}
+
+export class AiStatusSearchResultsData {
+  @ApiProperty({type: [AiStatusSearchResultWebUrl]})
+  webUrls: AiStatusSearchResultWebUrl[];
 }
