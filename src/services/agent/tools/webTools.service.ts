@@ -12,9 +12,34 @@ import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from '.
 export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
     constructor(private readonly duckduckgoSearchService: DuckduckgoSearchService,
                 private readonly pageScraperService: PageScraperService) {}
-    /**
-     * Returns metadata describing the `searchWeb` function for OpenAI function calling.
-     */
+
+    @chatCompletionTool({
+        type: "function",
+        function: {
+            name: 'aiGetContentsOfWebPage',
+            description: 'Retrieves the contents of a web page via url so that an AI agent can do things like summarize, read, etc',
+            parameters: {
+                type: "object",
+                properties: {
+                    url: {
+                        type: "string",
+                        description: "The url to use in order to get the contents of a webpage. e.g. wikipedia.com",
+                    }
+                }
+            }
+        }
+    })
+    async aiGetContentsOfWebPage({url}: {url?: string} = {url: undefined}, context: AiFunctionContextV2, ): Promise<AiFunctionResult>{
+        if(!url){ throw new Error('no url provided to aiGetContentsOfWebPage'); }
+        const topicId = uuid();
+        const {inferenceSSESubject: subject} = context;
+        subject?.sendStatus({topicId, topic: 'web', displayText: `Getting contents of url: ${url}`});
+        const { markdown } = await this.pageScraperService.getContentsOfWebpageAsMarkdown({url: url, removeScriptsAndStyles: true, shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true, });
+        const {tokenCount} = getWordAndTokenCount(markdown);
+        subject?.sendStatus({topicId, topic: 'web', displayText: `Done getting contents of url. Token count: ${tokenCount}`});
+        return {result: markdown, context};
+    }
+
     @chatCompletionTool({
         type: "function",
         function: {
@@ -32,8 +57,7 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
             },
         }
     })
-    async aiSearchWeb({query}: {query?: string} = {query: undefined}, context: AiFunctionContextV2, )
-        : Promise<AiFunctionResult>{
+    async aiSearchWeb({query}: {query?: string} = {query: undefined}, context: AiFunctionContextV2, ): Promise<AiFunctionResult>{
         const topicId = uuid();
         const {inferenceSSESubject: subject} = context;
 
