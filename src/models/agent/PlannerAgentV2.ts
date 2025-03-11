@@ -72,6 +72,9 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
    It's important for you to spend time reasoning about these functionNames.  You continue to make calls to aiAddFunctionStepToPlan, passing in functionNames that do not exist in the provided functionNames tag.
    Why do you think that is?
 
+   You are not allowed to attempt to access properties on the $previousFunctionName.result.
+   e.g. never pass a parameter reference of $aiWebScraper.webpages.result.url[0].
+   If a function step cannot be called directly with the .result property from a previous step, then the function step cannot be called.
 
 
    * @param userPrompt
@@ -139,6 +142,7 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
 
 `;
   }
+
 
   @chatCompletionTool({
     type: "function",
@@ -262,31 +266,39 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
     };
   }
 
+  // @chatCompletionTool({
+  //   type: "function",
+  //   function: {
+  //     name: "aiAskAgentToEvaluateResultsSoFarAndCreateNewPlan",
+  //     description: `
+  //       There are some scenarios where a plan cannot be fully created for a user prompt, without there being a step for an AI to process the results so far, then create a sub plan to continue processing.
+  //       e.g. If the user prompt is "create a list of random numbers, then take the first three numbers and add 8 to each one",
+  //       a plan might have steps:
+  //       aiAddFunctionStepToPlan - { functionName: "aiGenerateRandomNumbers" }
+  //       aiAddFunctionStepToPlan - { functionName: "aiAskAgentToEvaluateResultsSoFarAndCreateNewPlan", functionArgs: "
+  //     `,
+  //     parameters: {
+  //       type: "object",
+  //       properties: {
+  //         partOfUserRequestThatRequiresMissingFunctionName: {
+  //           type: "string",
+  //           description: `Which part of the user's request/prompt that requires a functionName that isn't defined in <functionNames>`
+  //         },
+  //         nameOfMissingFunctionName: {
+  //           type: "string",
+  //           description: "If there were to be a functionName in <functionNames> which could be used to fulfill the user's request, what would it be called? e.g. aiCreateWikipediaEntry when the user asks to create a wikipedia entry about Romans."
+  //         }
+  //       }
+  //     }
+  //   }
+  // })
+  // async aiMissingFunctionNameToFulfillUserRequest({partOfUserRequestThatRequiresMissingFunctionName, nameOfMissingFunctionName}: {partOfUserRequestThatRequiresMissingFunctionName: string, nameOfMissingFunctionName: string}, context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
+  //   console.log(`aiMissingFunctionNameToFulfillUserRequest called with prompt: ${partOfUserRequestThatRequiresMissingFunctionName}, missing function name: ${nameOfMissingFunctionName}`);
+  //   return {result: true, context};
+  // }
+
 }
 
 
 
-// @chatCompletionTool({
-//   type: "function",
-//   function: {
-//     name: "aiMissingFunctionNameToFulfillUserRequest",
-//     description: `When the user request/prompt requires a functionName that isn't defined in <functionNames>, this should be called`,
-//     parameters: {
-//       type: "object",
-//       properties: {
-//         partOfUserRequestThatRequiresMissingFunctionName: {
-//           type: "string",
-//           description: `Which part of the user's request/prompt that requires a functionName that isn't defined in <functionNames>`
-//         },
-//         nameOfMissingFunctionName: {
-//           type: "string",
-//           description: "If there were to be a functionName in <functionNames> which could be used to fulfill the user's request, what would it be called? e.g. aiCreateWikipediaEntry when the user asks to create a wikipedia entry about Romans."
-//         }
-//       }
-//     }
-//   }
-// })
-// async aiMissingFunctionNameToFulfillUserRequest({partOfUserRequestThatRequiresMissingFunctionName, nameOfMissingFunctionName}: {partOfUserRequestThatRequiresMissingFunctionName: string, nameOfMissingFunctionName: string}, context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
-//   console.log(`aiMissingFunctionNameToFulfillUserRequest called with prompt: ${partOfUserRequestThatRequiresMissingFunctionName}, missing function name: ${nameOfMissingFunctionName}`);
-//   return {result: true, context};
-// }
+

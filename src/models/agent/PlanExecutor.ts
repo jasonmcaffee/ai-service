@@ -99,13 +99,100 @@ function swapFunctionArgsWithStorageDataIfNeeded(functionArgs: object, functionR
  * @param paramValue
  * @param functionResultsStore
  */
-function swapParamValueWithStorageDataIfNeeded(paramValue: any, functionResultsStore: object): any{
-  const regex = /^\$[a-zA-Z_$][a-zA-Z0-9_$]*\.result$/;
-  const doesMatch = regex.test(paramValue);
-  if(!doesMatch){
+function swapParamValueWithStorageDataIfNeeded(paramValue: any, functionResultsStore: object): any {
+  // Only process strings
+  if (typeof paramValue !== 'string') {
     return paramValue;
   }
-  //return the paramValue stored in the store.
-  const newParamValue = functionResultsStore[paramValue];
-  return newParamValue;
+
+  // Match the base reference pattern (e.g. "$aiSearchWeb.result") and capture any property path after it
+  const regex = /^\$[a-zA-Z_$][a-zA-Z0-9_$]*\.result(.*)/;
+  const match = paramValue.match(regex);
+
+  if (!match) {
+    return paramValue;
+  }
+
+  // Extract the base key and the additional property path (if any)
+  const baseKey = paramValue.substring(0, paramValue.indexOf(match[1]));
+  const propertyPath = match[1];
+
+  // Get the base object from the store
+  let result = functionResultsStore[baseKey];
+
+  // If there's no property path or the base object doesn't exist, return the result as is
+  if (!propertyPath || result === undefined) {
+    return result;
+  }
+
+  // Parse and navigate the property path
+  try {
+    // Handle both dot notation and array access
+    // First, we'll split by dots, but preserve array notation
+    const segments = [] as string[];
+    let currentSegment = '';
+    let insideBrackets = false;
+
+    for (let i = 0; i < propertyPath.length; i++) {
+      const char = propertyPath[i];
+
+      if (char === '.' && !insideBrackets) {
+        if (currentSegment) {
+          segments.push(currentSegment);
+          currentSegment = '';
+        }
+      } else if (char === '[') {
+        insideBrackets = true;
+        if (currentSegment) {
+          segments.push(currentSegment);
+          currentSegment = '[';
+        } else {
+          currentSegment += char;
+        }
+      } else if (char === ']') {
+        insideBrackets = false;
+        currentSegment += char;
+        segments.push(currentSegment);
+        currentSegment = '';
+      } else {
+        currentSegment += char;
+      }
+    }
+
+    if (currentSegment) {
+      segments.push(currentSegment);
+    }
+
+    // Navigate the object using the segments
+    for (const segment of segments) {
+      if (segment.startsWith('[') && segment.endsWith(']')) {
+        // Handle array access
+        const index = segment.substring(1, segment.length - 1);
+        result = result[index];
+      } else {
+        // Handle regular property access
+        result = result[segment];
+      }
+
+      // Exit early if we hit undefined
+      if (result === undefined) {
+        break;
+      }
+    }
+
+    return result;
+  } catch (error) {
+    // If anything fails, return undefined
+    return undefined;
+  }
 }
+// function swapParamValueWithStorageDataIfNeeded(paramValue: any, functionResultsStore: object): any{
+//   const regex = /^\$[a-zA-Z_$][a-zA-Z0-9_$]*\.result$/;
+//   const doesMatch = regex.test(paramValue);
+//   if(!doesMatch){
+//     return paramValue;
+//   }
+//   //return the paramValue stored in the store.
+//   const newParamValue = functionResultsStore[paramValue];
+//   return newParamValue;
+// }
