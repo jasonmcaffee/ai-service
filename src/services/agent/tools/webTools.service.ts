@@ -44,7 +44,15 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
         type: "function",
         function: {
             name: "aiSearchWeb",
-            description: "Search the web using DuckDuckGo and return relevant results.",
+            description: `Search the web using DuckDuckGo and return relevant results.  
+            Returns results in the format: 
+            {
+                query: "latest news",
+                searchResults: [
+                    { title: "CNN headlines", url: "http://cnn.com", blurb: "Get your latest news", markdown: "Contents of the page in markdown format"}
+                ]
+            }
+            `,
             parameters: {
                 type: "object",
                 properties: {
@@ -93,6 +101,7 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
             totalTokens += tokenCount;
             const correspondingSearchResultForUrl = searchResultResponse.searchResults.find(s => s.url == url)!; //todo: could be the same url twice?  probably not...
             result.searchResults.push({...correspondingSearchResultForUrl, markdown});
+            // result.searchResults.push({...correspondingSearchResultForUrl, markdown: ''});
         }
 
         for(let failureResult of markdownContentsForAllPagesInTheSearchResults.errorResults){
@@ -103,6 +112,41 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
         //set a maximum token length.
         return { result, context,};
     }
+
+    // @chatCompletionTool({
+    //     type: "function",
+    //     function: {
+    //         name: "aiAskAgentToEvaluateResultsSoFarAndCreateNewPlan",
+    //         description: `
+    //     There are some scenarios where a plan cannot be fully created for a user prompt, without there being a step for an AI to process the results so far, then create a sub plan to continue processing.
+    //     Deeply consider and reason about the implications of having such a powerful function/tool.
+    //     This enables you to break work up into phases, where subsequent phases could be creating a new plan.
+    //
+    //     # Example Usage
+    //     e.g. If the user prompt is "create a list of random numbers, then take the first three numbers and add 8 to each one",
+    //     a plan might have steps:
+    //     aiAddFunctionStepToPlan - { functionName: "aiGenerateRandomNumbers" }
+    //     aiAddFunctionStepToPlan - { functionName: "aiAskAgentToEvaluateResultsSoFarAndCreateNewPlan", functionArgs: {prompt: "add 8 to each of the numbers in this list: $aiGenerateRandomNumbers.result" }
+    //   `,
+    //         parameters: {
+    //             type: "object",
+    //             properties: {
+    //                 prompt: {
+    //                     type: "string",
+    //                     description: `The clear and descriptive instructions to give to the LLM Agent.`
+    //                 },
+    //                 reasoning: {
+    //                     type: "string",
+    //                     description: "The reason you feel this step is needed.  e.g. Current tool X requires a single number, which must be evaluated by an agent first"
+    //                 }
+    //             }
+    //         }
+    //     }
+    // })
+    // async aiAskAgentToEvaluateResultsSoFarAndCreateNewPlan({prompt, reasoning}: {prompt: string, reasoning: string}, context: AiFunctionContextV2): Promise<AiFunctionResult> {
+    //     console.log(`aiAskAgentToEvaluateResultsSoFarAndCreateNewPlan called with prompt: ${prompt},reasoning: ${reasoning}`);
+    //     return {result: true, context};
+    // }
 
     getToolsMetadata(): ChatCompletionTool[] {
         return extractChatCompletionToolAnnotationValues(this);

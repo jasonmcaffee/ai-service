@@ -12,6 +12,10 @@ import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources
 import InferenceSSESubject from '../InferenceSSESubject';
 import {  AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from './aiTypes';
 import { uuid } from '../../utils/utils';
+import {
+  chatCompletionTool,
+  extractChatCompletionToolAnnotationValues
+} from "../../services/agent/tools/aiToolAnnotations";
 
 //doing this mainly to test functionality.  not really needed for this implementation.
 class PlannerAgentFunctionContext implements AiFunctionContextV2 {
@@ -38,10 +42,8 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
 
   getToolsMetadata(): ChatCompletionTool[]{
     return [
-      PlannerAgentV2.getAiCreatePlanToolMetadata(),
-      PlannerAgentV2.getAiAddFunctionStepToPlanMetadata(),
-      PlannerAgentV2.getAiCompletePlanMetadata(),
-      ...this.aiFunctionExecutor.getToolsMetadata(),
+        ...extractChatCompletionToolAnnotationValues(this),
+        ...this.aiFunctionExecutor.getToolsMetadata(),
     ]
   }
 
@@ -70,6 +72,9 @@ export default class PlannerAgentV2 implements AiFunctionExecutor<PlannerAgentV2
    It's important for you to spend time reasoning about these functionNames.  You continue to make calls to aiAddFunctionStepToPlan, passing in functionNames that do not exist in the provided functionNames tag.
    Why do you think that is?
 
+   You are not allowed to attempt to access properties on the $previousFunctionName.result.
+   e.g. never pass a parameter reference of $aiWebScraper.webpages.result.url[0].
+   If a function step cannot be called directly with the .result property from a previous step, then the function step cannot be called.
 
 
    * @param userPrompt
@@ -137,40 +142,40 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
 
 `;
   }
-  static getAiCreatePlanToolMetadata(): ChatCompletionTool {
-    return {
-      type: "function",
-      function: {
-        name: "aiCreatePlan",
-        description: `Initialize a new execution plan for fulfilling the user's request.`,
-        parameters: {
-          type: "object",
-          properties: {
-            id: {
-              type: "string",
-              description: "A unique identifier for this plan",
-            },
-            functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan: {
-              type: "string",
-              description: `the exact value of the <functionNames> xml tag, which was provided to you as a reference to which functions are available to you when calling aiAddFunctionStepToPlan.`,
-            },
-            doAllFunctionsExistToFulfillTheUserRequest: {
-              type: "boolean",
-              description: `boolean to indicate whether all functionNamesPlanWillCall all are explicitly defined in <functionNames>.`
-            },
-            functionNamesPlanWillCall: {
-              type: "array",
-              description: `A array of all the functionNames/tools that will be called as part of this plan. i.e. the functionName parameters that will be sent to each aiAddFunctionStepToPlan call.`,
-              items: {
-                type: "string",
-              }
-            }
+
+
+  @chatCompletionTool({
+    type: "function",
+    function: {
+      name: "aiCreatePlan",
+      description: `Initialize a new execution plan for fulfilling the user's request.`,
+      parameters: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "A unique identifier for this plan",
           },
-          required: ["id", "functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan", "doAllFunctionsExistToFulfillTheUserRequest", "functionNamesPlanWillCall"],
+          functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan: {
+            type: "string",
+            description: `the exact value of the <functionNames> xml tag, which was provided to you as a reference to which functions are available to you when calling aiAddFunctionStepToPlan.`,
+          },
+          doAllFunctionsExistToFulfillTheUserRequest: {
+            type: "boolean",
+            description: `boolean to indicate whether all functionNamesPlanWillCall all are explicitly defined in <functionNames>.`
+          },
+          functionNamesPlanWillCall: {
+            type: "array",
+            description: `A array of all the functionNames/tools that will be called as part of this plan. i.e. the functionName parameters that will be sent to each aiAddFunctionStepToPlan call.`,
+            items: {
+              type: "string",
+            }
+          }
         },
-      }
-    };
-  }
+        required: ["id", "functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan", "doAllFunctionsExistToFulfillTheUserRequest", "functionNamesPlanWillCall"],
+      },
+    }
+  })
   async aiCreatePlan({id, doAllFunctionsExistToFulfillTheUserRequest, functionNamesPlanWillCall, functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan}:
                        {id: string, doAllFunctionsExistToFulfillTheUserRequest: boolean, functionNamesPlanWillCall: string[], functionNamesAvailableForYouToUseInAiAddFunctionStepToPlan: string},
                      context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
@@ -184,39 +189,35 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
     };
   }
 
-
-  //{"name": "searchWeb", "arguments": {"query": "latest music industry news"}}
-  static getAiAddFunctionStepToPlanMetadata(): ChatCompletionTool {
-    return {
-      type: "function",
-      function: {
-        name: "aiAddFunctionStepToPlan",
-        description: `Add a function call step to the current execution plan. `,
-        parameters: {
-          type: "object",
-          properties: {
-            functionName: {
-              type: "string",
-              description: `The name of the function to be called in this step. The value of this must be explicitly defined in the <functionNames> tag.`,
-            },
-            functionNameIndexInFunctionNamesTag: {
-              type: "number",
-              description: `The index of the array defined in <functionNames> where the functionName was found.`,
-            },
-            functionArgs: {
-              type: "object",
-              description: "The arguments that should be passed to the function when executed.",
-            },
-            reasonToAddStep: {
-              type: "string",
-              description: "Justification for why this function step is necessary to fulfill the user's request.",
-            },
+  @chatCompletionTool({
+    type: "function",
+    function: {
+      name: "aiAddFunctionStepToPlan",
+      description: `Add a function call step to the current execution plan. `,
+      parameters: {
+        type: "object",
+        properties: {
+          functionName: {
+            type: "string",
+            description: `The name of the function to be called in this step. The value of this must be explicitly defined in the <functionNames> tag.`,
           },
-          required: ["functionName", "functionArgs", "reasonToAddStep", "functionNameIndexInFunctionNamesTag"],
+          functionNameIndexInFunctionNamesTag: {
+            type: "number",
+            description: `The index of the array defined in <functionNames> where the functionName was found.`,
+          },
+          functionArgs: {
+            type: "object",
+            description: "The arguments that should be passed to the function when executed.",
+          },
+          reasonToAddStep: {
+            type: "string",
+            description: "Justification for why this function step is necessary to fulfill the user's request.",
+          },
         },
-      }
-    };
-  }
+        required: ["functionName", "functionArgs", "reasonToAddStep", "functionNameIndexInFunctionNamesTag"],
+      },
+    }
+  })
   async aiAddFunctionStepToPlan({ functionName, functionArgs, reasonToAddStep, }:
                                   { functionName: string; functionArgs: object; reasonToAddStep: string; toolIsExplicitlyDefinedInTheToolsXmlTag: boolean;},
                                 context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
@@ -234,27 +235,25 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
     };
   }
 
-  static getAiCompletePlanMetadata(): ChatCompletionTool {
-    return {
-      type: "function",
-      function: {
-        name: "aiCompletePlan",
-        description: `Indicate that the plan creation process is completed.`,
-        parameters: {
-          type: "object",
-          properties: {
-            completedReason: {
-              type: "string",
-              description: `Reason the plan is considered complete.  
+  @chatCompletionTool({
+    type: "function",
+    function: {
+      name: "aiCompletePlan",
+      description: `Indicate that the plan creation process is completed.`,
+      parameters: {
+        type: "object",
+        properties: {
+          completedReason: {
+            type: "string",
+            description: `Reason the plan is considered complete.  
               e.g. Missing available functionNames to help facilitate user's request.
               e.g. All steps have been created needed to fulfill the user request.`,
-            },
           },
-          required: ["completedReason"],
         },
-      }
-    };
-  }
+        required: ["completedReason"],
+      },
+    }
+  })
   async aiCompletePlan({completedReason}: {completedReason: string}, context: AiFunctionContextV2): Promise<AiFunctionResult> {
     console.log(`aiCompletePlan called with: `, {completedReason});
     if (!this.agentPlan) {
@@ -267,31 +266,39 @@ Remember: aiAddFunctionStepToPlan is optional, but if used, it can only refer to
     };
   }
 
+  // @chatCompletionTool({
+  //   type: "function",
+  //   function: {
+  //     name: "aiAskAgentToEvaluateResultsSoFarAndCreateNewPlan",
+  //     description: `
+  //       There are some scenarios where a plan cannot be fully created for a user prompt, without there being a step for an AI to process the results so far, then create a sub plan to continue processing.
+  //       e.g. If the user prompt is "create a list of random numbers, then take the first three numbers and add 8 to each one",
+  //       a plan might have steps:
+  //       aiAddFunctionStepToPlan - { functionName: "aiGenerateRandomNumbers" }
+  //       aiAddFunctionStepToPlan - { functionName: "aiAskAgentToEvaluateResultsSoFarAndCreateNewPlan", functionArgs: "
+  //     `,
+  //     parameters: {
+  //       type: "object",
+  //       properties: {
+  //         partOfUserRequestThatRequiresMissingFunctionName: {
+  //           type: "string",
+  //           description: `Which part of the user's request/prompt that requires a functionName that isn't defined in <functionNames>`
+  //         },
+  //         nameOfMissingFunctionName: {
+  //           type: "string",
+  //           description: "If there were to be a functionName in <functionNames> which could be used to fulfill the user's request, what would it be called? e.g. aiCreateWikipediaEntry when the user asks to create a wikipedia entry about Romans."
+  //         }
+  //       }
+  //     }
+  //   }
+  // })
+  // async aiMissingFunctionNameToFulfillUserRequest({partOfUserRequestThatRequiresMissingFunctionName, nameOfMissingFunctionName}: {partOfUserRequestThatRequiresMissingFunctionName: string, nameOfMissingFunctionName: string}, context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
+  //   console.log(`aiMissingFunctionNameToFulfillUserRequest called with prompt: ${partOfUserRequestThatRequiresMissingFunctionName}, missing function name: ${nameOfMissingFunctionName}`);
+  //   return {result: true, context};
+  // }
+
 }
 
 
 
-// @chatCompletionTool({
-//   type: "function",
-//   function: {
-//     name: "aiMissingFunctionNameToFulfillUserRequest",
-//     description: `When the user request/prompt requires a functionName that isn't defined in <functionNames>, this should be called`,
-//     parameters: {
-//       type: "object",
-//       properties: {
-//         partOfUserRequestThatRequiresMissingFunctionName: {
-//           type: "string",
-//           description: `Which part of the user's request/prompt that requires a functionName that isn't defined in <functionNames>`
-//         },
-//         nameOfMissingFunctionName: {
-//           type: "string",
-//           description: "If there were to be a functionName in <functionNames> which could be used to fulfill the user's request, what would it be called? e.g. aiCreateWikipediaEntry when the user asks to create a wikipedia entry about Romans."
-//         }
-//       }
-//     }
-//   }
-// })
-// async aiMissingFunctionNameToFulfillUserRequest({partOfUserRequestThatRequiresMissingFunctionName, nameOfMissingFunctionName}: {partOfUserRequestThatRequiresMissingFunctionName: string, nameOfMissingFunctionName: string}, context: PlannerAgentFunctionContext): Promise<AiFunctionResult> {
-//   console.log(`aiMissingFunctionNameToFulfillUserRequest called with prompt: ${partOfUserRequestThatRequiresMissingFunctionName}, missing function name: ${nameOfMissingFunctionName}`);
-//   return {result: true, context};
-// }
+
