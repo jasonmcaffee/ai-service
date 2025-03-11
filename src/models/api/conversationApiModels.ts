@@ -349,12 +349,12 @@ export class AiStatusUpdate {
   data?: object | AiStatusSearchResultsData;
   @ApiProperty()
   displayText?: string;
-  // @ApiProperty()
-  // streamable?: boolean;
   @ApiProperty()
   isError?: boolean;
   @ApiProperty()
   topicCompleted?: boolean; //lets the ui know that this set of work is complete.
+  @ApiProperty()
+  date?: number;
 }
 
 export class AiStatusSearchResultWebUrl {

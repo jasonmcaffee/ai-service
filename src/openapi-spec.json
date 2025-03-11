@@ -1343,6 +1343,9 @@
           },
           "topicCompleted": {
             "type": "boolean"
+          },
+          "date": {
+            "type": "number"
           }
         },
         "required": [
@@ -1351,7 +1354,8 @@
           "data",
           "displayText",
           "isError",
-          "topicCompleted"
+          "topicCompleted",
+          "date"
         ]
       },
       "ModelOrDatasource": {
