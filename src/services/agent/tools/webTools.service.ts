@@ -34,10 +34,16 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
         const topicId = uuid();
         const {inferenceSSESubject: subject} = context;
         subject?.sendStatus({topicId, topic: 'web', displayText: `Page scraper is getting contents of url: ${url}`});
-        const { markdown } = await this.pageScraperService.getContentsOfWebpageAsMarkdown({url: url, removeScriptsAndStyles: true, shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true, });
-        const {tokenCount} = getWordAndTokenCount(markdown);
-        subject?.sendStatus({topicId, topic: 'web', displayText: `Page scraper is done getting contents of url. Token count: ${tokenCount}`});
-        return {result: markdown, context};
+        try {
+            const { markdown } = await this.pageScraperService.getContentsOfWebpageAsMarkdown({url: url, removeScriptsAndStyles: true, shortenUrls: true, cleanWikipedia: true, removeNavElements: true, removeImages: true, });
+            const {tokenCount} = getWordAndTokenCount(markdown);
+            subject?.sendStatus({topicId, topic: 'web', displayText: `Page scraper is done getting contents of url. Token count: ${tokenCount}`, topicCompleted: true});
+            return {result: markdown, context};
+        }catch(e){
+            subject?.sendStatus({topicId, topic: 'web', displayText: `Page scraper encountered error when fetching url: ${url}: ${e.message}`, topicCompleted: true});
+            throw e;
+        }
+
     }
 
     @chatCompletionTool({

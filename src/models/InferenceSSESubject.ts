@@ -24,8 +24,8 @@ export default class InferenceSSESubject{
     const statusTopicsSignal =  JSON.stringify({statusTopics: {statusTopicsKeyValues:  this.statusTopics.statusTopicsKeyValues}});
     this.subject.next(statusTopicsSignal);
 
-    const statusSignal = JSON.stringify({ status: aiStatusUpdate });
-    this.subject.next(statusSignal);
+    // const statusSignal = JSON.stringify({ status: aiStatusUpdate });
+    // this.subject.next(statusSignal);
   }
 
   getStatusTopicsKeyValues(){

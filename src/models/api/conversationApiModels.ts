@@ -127,6 +127,7 @@ export class Message {
   messageContext?: MessageContext; //not sent back yet, but want to force including the type in openapi-spec.
   @ApiProperty({
     type: 'object',
+    nullable: true,
     additionalProperties: { $ref: getSchemaPath(StatusTopic) }, // Correctly references StatusTopic
   })
   statusTopicsKeyValues?: Record<string, StatusTopic>;
@@ -139,6 +140,7 @@ export class CreateMessage {
   role: string;
   @ApiProperty({
     type: 'object',
+    nullable: true,
     additionalProperties: { $ref: getSchemaPath(StatusTopic) }, // Correctly references StatusTopic
   })
   statusTopicsKeyValues?: Record<string, StatusTopic>; //todo: don't allow this from endpoints/controllers.  just internal after message is created.

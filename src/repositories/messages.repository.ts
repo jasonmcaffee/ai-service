@@ -94,10 +94,17 @@ export class MessagesRepository {
    * @param conversationId - unique identifier for the conversation.
    */
   async getMessagesForConversation(conversationId: string): Promise<Message[]> {
-    return this.sql<Message[]>`
+    const messages = await this.sql<Message[]>`
       select m.* from message m
       join conversation_message cm on cm.message_id = m.message_id
       where cm.conversation_id = ${conversationId}
     `;
+
+    for(let message of messages){
+      if(message.statusTopicsKeyValues){
+        message.statusTopicsKeyValues = JSON.parse(message.statusTopicsKeyValues as unknown as string);
+      }
+    }
+    return messages;
   }
 }

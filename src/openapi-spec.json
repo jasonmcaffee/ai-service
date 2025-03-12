@@ -1496,6 +1496,7 @@
           },
           "statusTopicsKeyValues": {
             "type": "object",
+            "nullable": true,
             "additionalProperties": {
               "$ref": "#/components/schemas/StatusTopic"
             }
@@ -1639,6 +1640,7 @@
           },
           "statusTopicsKeyValues": {
             "type": "object",
+            "nullable": true,
             "additionalProperties": {
               "$ref": "#/components/schemas/StatusTopic"
             }

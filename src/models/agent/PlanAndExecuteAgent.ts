@@ -79,6 +79,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
       //note: send the original openAi messages, not the one for executing the plan again.
       this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `Sending executed plan results to AI.`, });
       const r2 = await this.convertAiFunctionStepsToToolsAndSendToLLM(prompt, plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext, addUserPromptToMessagesBeforeSending);
+      this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `AI completed handling executed plan results.`, topicCompleted: true});
       return {planFinalResult, finalResponseFromLLM: r2.completeText, plannerAgent, planExecutor};
     }catch(e){
       console.error(`PlanAndExecuteAgent error: `, e);
