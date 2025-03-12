@@ -16,20 +16,22 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
     @chatCompletionTool({
         type: "function",
         function: {
-            name: 'aiGetContentsOfWebPage',
-            description: 'Retrieves the contents of a web page via url so that an AI agent can do things like summarize, read, etc',
+            name: 'aiGetContentsOfWebPageAsMarkdown',
+            description: `Retrieves the contents of a web page, as markdown, via url so that an AI agent can do things like summarize, read, etc.
+            Returns the contents of the page as markdown.
+            `,
             parameters: {
                 type: "object",
                 properties: {
                     url: {
                         type: "string",
-                        description: "The url to use in order to get the contents of a webpage.  Urls must begin with http or https e.g. https://wikipedia.com",
+                        description: "The url to use in order to get the contents of a webpage as markdown.  Urls must begin with http or https e.g. https://wikipedia.com",
                     }
                 }
             }
         }
     })
-    async aiGetContentsOfWebPage({url}: {url?: string} = {url: undefined}, context: AiFunctionContextV2, ): Promise<AiFunctionResult>{
+    async aiGetContentsOfWebPageAsMarkdown({url}: {url?: string} = {url: undefined}, context: AiFunctionContextV2, ): Promise<AiFunctionResult>{
         if(!url){ throw new Error('no url provided to aiGetContentsOfWebPage'); }
         const topicId = uuid();
         const {inferenceSSESubject: subject} = context;
