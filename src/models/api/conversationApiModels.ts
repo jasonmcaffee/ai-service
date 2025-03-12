@@ -68,6 +68,50 @@ export class PagedImages {
   images: Image[]
 }
 
+/**
+ * Object structure to replace Map<string, StatusTopic>
+ * Keys are topicIds, values are StatusTopic objects
+ */
+export class StatusTopicKeyValues {
+  [topicId: string]: StatusTopic; //Record<string, StatusTopic>; should be the same thing
+}
+
+
+export class AiStatusUpdate {
+  @ApiProperty()
+  topicId?: string; //for streaming/updates
+  @ApiProperty()
+  topic: 'planningAndExecuting' | 'planning' | 'executing' | 'reasoning' | 'web' | 'responding';
+  @ApiProperty()
+  data?: object | AiStatusSearchResultsData;
+  @ApiProperty()
+  displayText?: string;
+  @ApiProperty()
+  isError?: boolean;
+  @ApiProperty()
+  topicCompleted?: boolean; //lets the ui know that this set of work is complete.
+  @ApiProperty()
+  date?: number;
+}
+
+
+/**
+ * Update the StatusTopic interface to use the new object structure for childStatusTopics
+ */
+export class StatusTopic {
+  @ApiProperty({type: [AiStatusUpdate]})
+  statusUpdates: AiStatusUpdate[];
+  @ApiProperty()
+  isTopicOpen?: boolean;
+  @ApiProperty()
+  dateOfLastStatusUpdate?: number;
+  // @ApiProperty()
+  // lastAiStatusUpdate?: AiStatusUpdate;
+  @ApiProperty()
+  childStatusTopics?: StatusTopicKeyValues; // Changed from childStatusTopicMap to childStatusTopics
+}
+
+
 export class Message {
   @ApiProperty()
   messageId: string;
@@ -81,6 +125,11 @@ export class Message {
   role: string; //user, system
   @ApiProperty({nullable: true})
   messageContext?: MessageContext; //not sent back yet, but want to force including the type in openapi-spec.
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { $ref: getSchemaPath(StatusTopic) }, // Correctly references StatusTopic
+  })
+  statusTopicsKeyValues?: Record<string, StatusTopic>;
 }
 
 export class CreateMessage {
@@ -88,6 +137,11 @@ export class CreateMessage {
   messageText: string;
   @ApiProperty()
   role: string;
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { $ref: getSchemaPath(StatusTopic) }, // Correctly references StatusTopic
+  })
+  statusTopicsKeyValues?: Record<string, StatusTopic>; //todo: don't allow this from endpoints/controllers.  just internal after message is created.
 }
 
 
@@ -340,23 +394,6 @@ export class GetPageContentsResponse {
   tokenCount: number;
 }
 
-export class AiStatusUpdate {
-  @ApiProperty()
-  topicId?: string; //for streaming/updates
-  @ApiProperty()
-  topic: 'planningAndExecuting' | 'planning' | 'executing' | 'reasoning' | 'web' | 'responding';
-  @ApiProperty()
-  data?: object | AiStatusSearchResultsData;
-  @ApiProperty()
-  displayText?: string;
-  @ApiProperty()
-  isError?: boolean;
-  @ApiProperty()
-  topicCompleted?: boolean; //lets the ui know that this set of work is complete.
-  @ApiProperty()
-  date?: number;
-}
-
 export class AiStatusSearchResultWebUrl {
   @ApiProperty()
   url: string;
@@ -369,31 +406,6 @@ export class AiStatusSearchResultWebUrl {
 export class AiStatusSearchResultsData {
   @ApiProperty({type: [AiStatusSearchResultWebUrl]})
   webUrls: AiStatusSearchResultWebUrl[];
-}
-
-
-/**
- * Object structure to replace Map<string, StatusTopic>
- * Keys are topicIds, values are StatusTopic objects
- */
-export class StatusTopicKeyValues {
-  [topicId: string]: StatusTopic;
-}
-
-/**
- * Update the StatusTopic interface to use the new object structure for childStatusTopics
- */
-export class StatusTopic {
-  @ApiProperty({type: [AiStatusUpdate]})
-  statusUpdates: AiStatusUpdate[];
-  @ApiProperty()
-  isTopicOpen?: boolean;
-  @ApiProperty()
-  dateOfLastStatusUpdate?: number;
-  @ApiProperty()
-  lastAiStatusUpdate?: AiStatusUpdate;
-  @ApiProperty()
-  childStatusTopics?: StatusTopicKeyValues; // Changed from childStatusTopicMap to childStatusTopics
 }
 
 @ApiExtraModels(StatusTopic) // Required to reference StatusTopic properly in OpenAPI

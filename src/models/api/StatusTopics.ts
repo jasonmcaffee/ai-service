@@ -46,7 +46,7 @@ export class StatusTopics {
         childTopic.statusUpdates.push(aiStatusUpdate);
         latestOpenTopic.dateOfLastStatusUpdate = aiStatusUpdate.date;
         latestOpenTopic.isTopicOpen = !aiStatusUpdate.topicCompleted;
-        latestOpenTopic.lastAiStatusUpdate = aiStatusUpdate;
+        // latestOpenTopic.lastAiStatusUpdate = aiStatusUpdate;
       } else {
         // If no latest open topic, add the status update to the root statusTopics
         ensureStatusTopicForTopicIdExists(topicId, this.statusTopicsKeyValues);
@@ -54,13 +54,13 @@ export class StatusTopics {
         statusTopic.statusUpdates.push(aiStatusUpdate);
         statusTopic.dateOfLastStatusUpdate = aiStatusUpdate.date;
         statusTopic.isTopicOpen = !aiStatusUpdate.topicCompleted;
-        statusTopic.lastAiStatusUpdate = aiStatusUpdate;
+        // statusTopic.lastAiStatusUpdate = aiStatusUpdate;
       }
     } else {
       existingTopic.statusUpdates.push(aiStatusUpdate);
       existingTopic.dateOfLastStatusUpdate = aiStatusUpdate.date;
       existingTopic.isTopicOpen = !aiStatusUpdate.topicCompleted;
-      existingTopic.lastAiStatusUpdate = aiStatusUpdate;
+      // existingTopic.lastAiStatusUpdate = aiStatusUpdate;
     }
   }
 }

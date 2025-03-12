@@ -1399,9 +1399,6 @@
           "dateOfLastStatusUpdate": {
             "type": "number"
           },
-          "lastAiStatusUpdate": {
-            "$ref": "#/components/schemas/AiStatusUpdate"
-          },
           "childStatusTopics": {
             "$ref": "#/components/schemas/StatusTopicKeyValues"
           }
@@ -1410,7 +1407,6 @@
           "statusUpdates",
           "isTopicOpen",
           "dateOfLastStatusUpdate",
-          "lastAiStatusUpdate",
           "childStatusTopics"
         ]
       },
@@ -1497,6 +1493,12 @@
                 "$ref": "#/components/schemas/MessageContext"
               }
             ]
+          },
+          "statusTopicsKeyValues": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StatusTopic"
+            }
           }
         },
         "required": [
@@ -1505,7 +1507,8 @@
           "messageText",
           "createdDate",
           "role",
-          "messageContext"
+          "messageContext",
+          "statusTopicsKeyValues"
         ]
       },
       "Document": {
@@ -1633,11 +1636,18 @@
           },
           "role": {
             "type": "string"
+          },
+          "statusTopicsKeyValues": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StatusTopic"
+            }
           }
         },
         "required": [
           "messageText",
-          "role"
+          "role",
+          "statusTopicsKeyValues"
         ]
       },
       "GetAutoCompleteSuggestionsRequest": {

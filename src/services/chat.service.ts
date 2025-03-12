@@ -109,7 +109,8 @@ export class ChatService {
       const completeText = finalResponseFromLLM;
       console.log('handle response completed got: ', completeText);
       const formattedResponse = completeText;
-      this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system'}, false);
+      const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
+      this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system', statusTopicsKeyValues}, false);
     });
     promise.catch(e => {
 

@@ -28,6 +28,10 @@ export default class InferenceSSESubject{
     this.subject.next(statusSignal);
   }
 
+  getStatusTopicsKeyValues(){
+    return this.statusTopics.statusTopicsKeyValues;
+  }
+
   async sendComplete(){
     const endSignal = JSON.stringify({ end: 'true' });
     this.subject.next(endSignal);

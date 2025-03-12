@@ -26,4 +26,12 @@ describe("status topics", ()=>{
     expect(statusTopic1?.dateOfLastStatusUpdate).toBe(s2.date);
     expect(statusTopic1?.isTopicOpen).toBe(false);
   });
+
+  it("shou", ()=>{
+    const statusTopicsKeyValues = {} as Record<string, StatusTopic>;
+    statusTopicsKeyValues['1'] = {
+      statusUpdates: []
+    };
+    expect(statusTopicsKeyValues['1'] != null).toBe(true);
+  })
 })

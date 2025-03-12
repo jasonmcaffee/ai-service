@@ -21,7 +21,16 @@ export class MessagesRepository {
         select * from message m
         where message_id = ${messageId}
     `;
-    return result.length ? result[0] : undefined;
+    if (result.length === 0) return undefined;
+
+    const message = result[0];
+
+    // Ensure JSON field is properly deserialized
+    if (message.statusTopicsKeyValues) {
+      message.statusTopicsKeyValues = JSON.parse(message.statusTopicsKeyValues as unknown as string);
+    }
+
+    return message;
   }
 
   /**
@@ -33,14 +42,18 @@ export class MessagesRepository {
   async createMessageForConversation(conversationId: string, memberId: string, message: CreateMessage): Promise<Message> {
     return await this.sql.begin(async (trx) => {
       const [createdMessage] = await trx<Message[]>`
-          insert into message (message_id, sent_by_member_id, message_text, role)
-          values (${uuidv4()}, ${memberId}, ${message.messageText}, ${message.role})
+          insert into message (message_id, sent_by_member_id, message_text, role, status_topics_key_values)
+          values (${uuidv4()}, ${memberId}, ${message.messageText}, ${message.role}, ${message.statusTopicsKeyValues ? JSON.stringify(message.statusTopicsKeyValues) : null})
           returning *
       `;
       await trx`
         insert into conversation_message (conversation_id, message_id)
         values (${conversationId}, ${createdMessage.messageId})
       `;
+
+      if(createdMessage.statusTopicsKeyValues){
+        createdMessage.statusTopicsKeyValues = JSON.parse(createdMessage.statusTopicsKeyValues as unknown as string);
+      }
       return createdMessage;
     });
 
