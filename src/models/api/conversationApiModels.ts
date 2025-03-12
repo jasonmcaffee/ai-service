@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 
 export class Member {
   @ApiProperty()
@@ -370,3 +370,38 @@ export class AiStatusSearchResultsData {
   @ApiProperty({type: [AiStatusSearchResultWebUrl]})
   webUrls: AiStatusSearchResultWebUrl[];
 }
+
+
+/**
+ * Object structure to replace Map<string, StatusTopic>
+ * Keys are topicIds, values are StatusTopic objects
+ */
+export class StatusTopicKeyValues {
+  [topicId: string]: StatusTopic;
+}
+
+/**
+ * Update the StatusTopic interface to use the new object structure for childStatusTopics
+ */
+export class StatusTopic {
+  @ApiProperty({type: [AiStatusUpdate]})
+  statusUpdates: AiStatusUpdate[];
+  @ApiProperty()
+  isTopicOpen?: boolean;
+  @ApiProperty()
+  dateOfLastStatusUpdate?: number;
+  @ApiProperty()
+  lastAiStatusUpdate?: AiStatusUpdate;
+  @ApiProperty()
+  childStatusTopics?: StatusTopicKeyValues; // Changed from childStatusTopicMap to childStatusTopics
+}
+
+@ApiExtraModels(StatusTopic) // Required to reference StatusTopic properly in OpenAPI
+export class StatusTopicKeyValuesResponse {
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { $ref: getSchemaPath(StatusTopic) }, // Correctly references StatusTopic
+  })
+  statusTopicsKeyValues: Record<string, StatusTopic>;
+}
+

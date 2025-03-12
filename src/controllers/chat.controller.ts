@@ -2,7 +2,11 @@ import { Controller, Post, Body, Sse, Get, Query } from '@nestjs/common';
 import { ChatService } from '../services/chat.service';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { AuthenticationService } from '../services/authentication.service';
-import { AiStatusUpdate } from '../models/api/conversationApiModels';
+import {
+  AiStatusUpdate,
+  StatusTopicKeyValues,
+  StatusTopicKeyValuesResponse,
+} from '../models/api/conversationApiModels';
 
 @ApiTags('Chat')
 @Controller('chat')
@@ -52,4 +56,12 @@ export class ChatController {
   async getStatusUpdates(){
     return [];
   }
+
+  @ApiOperation({summary: 'get status topic map'})
+  @Get('statusTopicMap')
+  @ApiResponse({ status: 200, type: StatusTopicKeyValuesResponse})
+  async getStatusTopicMap(){
+    return [];
+  }
+
 }

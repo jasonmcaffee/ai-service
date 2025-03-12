@@ -101,6 +101,28 @@
         ]
       }
     },
+    "/chat/statusTopicMap": {
+      "get": {
+        "operationId": "getStatusTopicMap",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusTopicKeyValuesResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "get status topic map",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
     "/conversations/conversation/{conversationId}": {
       "get": {
         "operationId": "getConversation",
@@ -1356,6 +1378,54 @@
           "isError",
           "topicCompleted",
           "date"
+        ]
+      },
+      "StatusTopicKeyValues": {
+        "type": "object",
+        "properties": {}
+      },
+      "StatusTopic": {
+        "type": "object",
+        "properties": {
+          "statusUpdates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiStatusUpdate"
+            }
+          },
+          "isTopicOpen": {
+            "type": "boolean"
+          },
+          "dateOfLastStatusUpdate": {
+            "type": "number"
+          },
+          "lastAiStatusUpdate": {
+            "$ref": "#/components/schemas/AiStatusUpdate"
+          },
+          "childStatusTopics": {
+            "$ref": "#/components/schemas/StatusTopicKeyValues"
+          }
+        },
+        "required": [
+          "statusUpdates",
+          "isTopicOpen",
+          "dateOfLastStatusUpdate",
+          "lastAiStatusUpdate",
+          "childStatusTopics"
+        ]
+      },
+      "StatusTopicKeyValuesResponse": {
+        "type": "object",
+        "properties": {
+          "statusTopicsKeyValues": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StatusTopic"
+            }
+          }
+        },
+        "required": [
+          "statusTopicsKeyValues"
         ]
       },
       "ModelOrDatasource": {

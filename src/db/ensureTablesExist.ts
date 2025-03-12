@@ -122,6 +122,10 @@ export async function ensureTablesExist() {
         FOREIGN KEY (datasource_id) REFERENCES datasource(id)
   )`;
 
+  // await sql`create table if not exists message_status_update (
+  //
+  // )`;
+
   await createDefaultMembers();
   await createDefaultModels();
   await createDefaultDatasourceTypes();
