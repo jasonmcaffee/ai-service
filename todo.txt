@@ -2,6 +2,11 @@ There is a race condition where getConversation beats writing the message to the
 optimization:
 continueToAllowRecursiveCallsToOpenAi should be set to false after aiCompletePlan.
 
+stop using planning agent
+combine tool functionality
+
+
+
 tool plan:
 first ask planning agent to come up with a plan.
 - it gives you function steps.

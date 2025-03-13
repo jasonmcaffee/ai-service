@@ -105,17 +105,16 @@ export class ChatService {
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
     const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false);
     // promise.then(({openAiMessages, completeText}) => {
-    promise.then(({finalResponseFromLLM}) => {
+    promise.then(async ({finalResponseFromLLM}) => {
       const completeText = finalResponseFromLLM;
       console.log('handle response completed got: ', completeText);
       const formattedResponse = completeText;
       const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
-      this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system', statusTopicsKeyValues}, false);
+      await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system', statusTopicsKeyValues}, false);
+      this.abortControllers.delete(memberId);
+      inferenceSSESubject.sendCompleteOnNextTick();
     });
     promise.catch(e => {
-
-    });
-    promise.finally(() => {
       this.abortControllers.delete(memberId);
       inferenceSSESubject.sendCompleteOnNextTick();
     });
