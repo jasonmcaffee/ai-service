@@ -71,6 +71,14 @@ export async function ensureTablesExist() {
         FOREIGN KEY (member_id) REFERENCES member(member_id)
     )`;
 
+  await sql`create table if not exists member_prompt (
+      id TEXT PRIMARY KEY,
+      prompt_name TEXT,
+      member_id TEXT,
+      prompt_text TEXT,
+      foreign key (member_id) references member(member_id)
+  )`;
+
   // ------------------------------------------------------------------ Datasource
   await sql`CREATE TABLE IF NOT EXISTS datasource_type (
         id SERIAL PRIMARY KEY,

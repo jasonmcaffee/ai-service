@@ -419,3 +419,33 @@ export class StatusTopicKeyValuesResponse {
   statusTopicsKeyValues: Record<string, StatusTopic>;
 }
 
+
+export class MemberPrompt {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  promptName: string;
+
+  @ApiProperty()
+  memberId: string;
+
+  @ApiProperty()
+  promptText: string;
+}
+
+export class CreateMemberPrompt {
+  @ApiProperty()
+  promptName: string;
+
+  @ApiProperty()
+  promptText: string;
+}
+
+export class UpdateMemberPrompt {
+  @ApiProperty({ required: false })
+  promptName?: string;
+
+  @ApiProperty({ required: false })
+  promptText?: string;
+}

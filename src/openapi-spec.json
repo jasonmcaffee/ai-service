@@ -962,6 +962,211 @@
         ]
       }
     },
+    "/prompts": {
+      "post": {
+        "operationId": "createPrompt",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMemberPrompt"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The prompt has been created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPrompt"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new prompt for the current member",
+        "tags": [
+          "Member Prompts"
+        ]
+      },
+      "get": {
+        "operationId": "getPromptsForMember",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of prompts for the member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberPrompt"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all prompts for the current member",
+        "tags": [
+          "Member Prompts"
+        ]
+      }
+    },
+    "/prompts/{promptId}": {
+      "get": {
+        "operationId": "getPromptById",
+        "parameters": [
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The prompt details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPrompt"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Prompt not found"
+          }
+        },
+        "summary": "Get a specific prompt by ID",
+        "tags": [
+          "Member Prompts"
+        ]
+      },
+      "put": {
+        "operationId": "updatePrompt",
+        "parameters": [
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberPrompt"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The prompt has been updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPrompt"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Prompt not found"
+          }
+        },
+        "summary": "Update a prompt",
+        "tags": [
+          "Member Prompts"
+        ]
+      },
+      "delete": {
+        "operationId": "deletePrompt",
+        "parameters": [
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The prompt has been deleted"
+          },
+          "404": {
+            "description": "Prompt not found"
+          }
+        },
+        "summary": "Delete a prompt",
+        "tags": [
+          "Member Prompts"
+        ]
+      }
+    },
+    "/prompts/by-name/{promptName}": {
+      "get": {
+        "operationId": "getPromptByName",
+        "parameters": [
+          {
+            "name": "promptName",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The prompt details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPrompt"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Prompt not found"
+          }
+        },
+        "summary": "Get a specific prompt by name",
+        "tags": [
+          "Member Prompts"
+        ]
+      }
+    },
+    "/prompts/all": {
+      "delete": {
+        "operationId": "deleteAllPromptsForMember",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "All prompts have been deleted"
+          }
+        },
+        "summary": "Delete all prompts for the current member",
+        "tags": [
+          "Member Prompts"
+        ]
+      }
+    },
     "/models/model-types": {
       "get": {
         "operationId": "getModelTypes",
@@ -1879,6 +2084,55 @@
         "required": [
           "imageName"
         ]
+      },
+      "CreateMemberPrompt": {
+        "type": "object",
+        "properties": {
+          "promptName": {
+            "type": "string"
+          },
+          "promptText": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "promptName",
+          "promptText"
+        ]
+      },
+      "MemberPrompt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "promptName": {
+            "type": "string"
+          },
+          "memberId": {
+            "type": "string"
+          },
+          "promptText": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "promptName",
+          "memberId",
+          "promptText"
+        ]
+      },
+      "UpdateMemberPrompt": {
+        "type": "object",
+        "properties": {
+          "promptName": {
+            "type": "string"
+          },
+          "promptText": {
+            "type": "string"
+          }
+        }
       },
       "ModelType": {
         "type": "object",

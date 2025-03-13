@@ -1,6 +1,6 @@
 
 combine tool functionality
-
+prompts
 
 continueToAllowRecursiveCallsToOpenAi should be set to false after aiCompletePlan.
 tool plan:
