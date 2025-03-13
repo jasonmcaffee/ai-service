@@ -444,8 +444,8 @@ export class CreateMemberPrompt {
 
 export class UpdateMemberPrompt {
   @ApiProperty({ required: false })
-  promptName?: string;
+  promptName: string;
 
   @ApiProperty({ required: false })
-  promptText?: string;
+  promptText: string;
 }
