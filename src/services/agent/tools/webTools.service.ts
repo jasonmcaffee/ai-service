@@ -108,8 +108,8 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
             }
             totalTokens += tokenCount;
             const correspondingSearchResultForUrl = searchResultResponse.searchResults.find(s => s.url == url)!; //todo: could be the same url twice?  probably not...
-            result.searchResults.push({...correspondingSearchResultForUrl, markdown});
-            // result.searchResults.push({...correspondingSearchResultForUrl, markdown: ''});
+            // result.searchResults.push({...correspondingSearchResultForUrl, markdown});
+            result.searchResults.push({...correspondingSearchResultForUrl, markdown: ''});
         }
 
         for(let failureResult of markdownContentsForAllPagesInTheSearchResults.errorResults){

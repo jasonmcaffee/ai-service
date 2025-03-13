@@ -1,5 +1,4 @@
 
-stop using planning agent
 combine tool functionality
 
 

@@ -31,7 +31,7 @@ export function extractMessageContextFromMessage(text: string): MessageContext{
 }
 
 export function parseModelAndDatasourceTagsFromMessage(text: string): ModelOrDatasource[] {
-  const matches = [...text.matchAll(/<\s*(model|datasource)(?:\s+[^>]*?topicId=["']([^"']+)["'])?.*?>/gi)];
+  const matches = [...text.matchAll(/<\s*(model|datasource)(?:\s+[^>]*?id=["']([^"']+)["'])?.*?>/gi)];
 
   return matches.map(match => ({
     id: match[2],

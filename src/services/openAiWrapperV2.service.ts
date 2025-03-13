@@ -197,28 +197,29 @@ async function handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(
 }
 
 function parseToolCallsDueToOccasionalIssueOfLlamaCppNotRespondingWithJson(assistantContentResponse: string | null): ChatCompletionMessageToolCall[] | undefined {
-  if(!assistantContentResponse){ return undefined; }
-  // const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs; // doesn't match when there are new lines.
-  const toolCallRegex = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g; // Matches everything inside <tool_call>...</tool_call>, including newlines
-  const toolCalls: ChatCompletionMessageToolCall[] = [];
-
-  // Find all tool_calls within the response content
-  const matches = assistantContentResponse.match(toolCallRegex);
-
-  if (matches) {
-    // For each match, extract the JSON and parse it
-    matches.forEach((match) => {
-      const jsonStr = match.replace(/<tool_call>|<\/tool_call>/g, ''); // remove the <tool_call> tags
-      try {
-        const parsedJson =  JSON.parse(jsonStr); // parse the JSON string
-        toolCalls.push(parsedJson); // add to the tool_calls array
-      } catch (e) {
-        console.error('Error parsing tool_call JSON:', e);
-        throw new InvalidToolCallJsonFromLLM(e.message); //TODO: retry.
-      }
-    });
-  }
-  return toolCalls.length > 0 ? toolCalls : undefined;
+  return undefined;//this breaks sometimes when we get valid tool calls but also content like <tool_call>\n{}\n{}\n{}</tool_call>
+  // if(!assistantContentResponse){ return undefined; }
+  // // const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs; // doesn't match when there are new lines.
+  // const toolCallRegex = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g; // Matches everything inside <tool_call>...</tool_call>, including newlines
+  // const toolCalls: ChatCompletionMessageToolCall[] = [];
+  //
+  // // Find all tool_calls within the response content
+  // const matches = assistantContentResponse.match(toolCallRegex);
+  //
+  // if (matches) {
+  //   // For each match, extract the JSON and parse it
+  //   matches.forEach((match) => {
+  //     const jsonStr = match.replace(/<tool_call>|<\/tool_call>/g, ''); // remove the <tool_call> tags
+  //     try {
+  //       const parsedJson =  JSON.parse(jsonStr); // parse the JSON string
+  //       toolCalls.push(parsedJson); // add to the tool_calls array
+  //     } catch (e) {
+  //       console.error('Error parsing tool_call JSON:', e);
+  //       throw new InvalidToolCallJsonFromLLM(e.message); //TODO: retry.
+  //     }
+  //   });
+  // }
+  // return toolCalls.length > 0 ? toolCalls : undefined;
 }
 
 async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ChatCompletionMessageToolCall, aiFunctionContext: AiFunctionContextV2): Promise<{ tool_response: { name: string; content: any } } | null> {
