@@ -40,6 +40,15 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "shouldUsePlanTool",
+            "required": true,
+            "in": "query",
+            "description": "Indicator on weather to preplan execution",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {

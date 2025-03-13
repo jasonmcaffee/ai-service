@@ -11,6 +11,7 @@ import {WebToolsService} from "./agent/tools/webTools.service";
 import { OpenaiWrapperServiceV2 } from './openAiWrapperV2.service';
 import { CalculatorToolsService } from './agent/tools/calculatorTools.service';
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
+import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 
 @Injectable()
 export class ChatService {
@@ -32,7 +33,7 @@ export class ChatService {
    * @param modelId
    * @param shouldSearchWeb
    */
-  async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string, shouldSearchWeb = false): Promise<Observable<string>> {
+  async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false): Promise<Observable<string>> {
     console.log(`streamInference called. shouldSearchWeb: ${shouldSearchWeb}`);
     const messageContext = extractMessageContextFromMessage(prompt);
     const model = await this.getModelToUseForMessage(memberId, messageContext, modelId);
@@ -42,9 +43,9 @@ export class ChatService {
     const abortController = new AbortController();
     this.abortControllers.set(memberId, {controller: abortController});
     if(conversationId){
-      this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb);
+      this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool);
     }else { //eg. name the conversation?
-      this.streamInferenceWithoutConversation(memberId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb);
+      this.streamInferenceWithoutConversation(memberId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool);
     }
     return inferenceSSESubject.getSubject();
   }
@@ -70,7 +71,7 @@ export class ChatService {
 
   async streamInferenceWithConversation(memberId: string, conversationId: string, model:Model,
                                         messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject,
-                                        abortController: AbortController, shouldSearchWeb: boolean){
+                                        abortController: AbortController, shouldSearchWeb: boolean, shouldUsePlanTool: boolean){
     //add datasources to conversation
     for (let datasourceContext of messageContext.datasources) {
       await this.conversationService.addDatasourceToConversation(memberId, parseInt(datasourceContext.id), conversationId);
@@ -87,7 +88,7 @@ export class ChatService {
     conversation.messages?.filter(m => m.sentByMemberId === memberId)
       .forEach(m => m.messageText = extractMessageContextFromMessage(m.messageText).textWithoutTags)
 
-    const toolService = shouldSearchWeb ? this.webToolsService : undefined;
+    const toolService = shouldSearchWeb ? this.webToolsService : this.webToolsService;
 
     let openAiMessages: ChatCompletionMessageParam[] = [
       { role: 'system', content: getChatPageSystemPrompt()},
@@ -102,27 +103,59 @@ export class ChatService {
       ]
     }
 
-    const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
-    const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false);
-    // promise.then(({openAiMessages, completeText}) => {
-    promise.then(async ({finalResponseFromLLM}) => {
-      const completeText = finalResponseFromLLM;
+    const handleCompletedResponseText = async (completeText: string) => {
       console.log('handle response completed got: ', completeText);
       const formattedResponse = completeText;
       const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system', statusTopicsKeyValues}, false);
       this.abortControllers.delete(memberId);
       inferenceSSESubject.sendCompleteOnNextTick();
-    });
-    promise.catch(e => {
+    }
+
+    const handleError = async (e: any) => {
       this.abortControllers.delete(memberId);
       inferenceSSESubject.sendCompleteOnNextTick();
-    });
+    }
+
+    if(shouldUsePlanTool){
+      const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
+      const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false);
+      promise.then(async ({finalResponseFromLLM}) => {
+        await handleCompletedResponseText(finalResponseFromLLM);
+      });
+      promise.catch(async e => {
+        await handleError(e);
+      });
+    } else if(shouldSearchWeb){
+      const aiFunctionContext: AiFunctionContextV2 = {
+        memberId, aiFunctionExecutor: this.webToolsService, abortController, inferenceSSESubject, functionResultsStorage: {}
+      };
+      const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({openAiMessages, model, aiFunctionContext, totalOpenAiCallsMade: 0});
+      promise.then(async ({completeText}) => {
+        await handleCompletedResponseText(completeText);
+      });
+      promise.catch(async e => {
+        await handleError(e);
+      });
+    } else {
+      const aiFunctionContext: AiFunctionContextV2 = {
+        memberId, aiFunctionExecutor: this.webToolsService, abortController, inferenceSSESubject, functionResultsStorage: {}
+      };
+      const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({openAiMessages, model, aiFunctionContext, totalOpenAiCallsMade: 0});
+      promise.then(async ({completeText}) => {
+        await handleCompletedResponseText(completeText);
+      });
+      promise.catch(async e => {
+        await handleError(e);
+      });
+    }
+
+
   }
 
   async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,
                                            inferenceSSESubject: InferenceSSESubject, abortController: AbortController,
-                                           shouldSearchWeb: boolean) {
+                                           shouldSearchWeb: boolean, shouldUsePlanTool: boolean) {
     throw new Error('not supported yet');
     // const prompt = messageContext.textWithoutTags;
     // const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};

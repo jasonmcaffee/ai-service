@@ -1,12 +1,9 @@
-There is a race condition where getConversation beats writing the message to the db.
-optimization:
-continueToAllowRecursiveCallsToOpenAi should be set to false after aiCompletePlan.
 
 stop using planning agent
 combine tool functionality
 
 
-
+continueToAllowRecursiveCallsToOpenAi should be set to false after aiCompletePlan.
 tool plan:
 first ask planning agent to come up with a plan.
 - it gives you function steps.
