@@ -1,4 +1,4 @@
-import {Message, MessageContext, ModelOrDatasource} from '../models/api/conversationApiModels';
+import {Message, MessageContext, ModelOrDatasourceOrPrompt} from '../models/api/conversationApiModels';
 // import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { Observable } from 'rxjs';
@@ -21,21 +21,33 @@ export function formatDeepSeekResponse(deepSeekResponseText: string): string {
 }
 
 export function extractMessageContextFromMessage(text: string): MessageContext{
-  const modelsAndDatasources = parseModelAndDatasourceTagsFromMessage(text);
-  const models: ModelOrDatasource[] = modelsAndDatasources.filter(m => m.type === "model");
-  const datasources: ModelOrDatasource[] = modelsAndDatasources.filter(m => m.type === "datasource");
-  const textWithoutTags = removeModelAndDatasourceTagsFromMessage(text);
+  const modelsAndDatasourcesAndPrompts = parseModelAndDatasourceAndPromptTagsFromMessage(text);
+  const models: ModelOrDatasourceOrPrompt[] = modelsAndDatasourcesAndPrompts.filter(m => m.type === "model");
+  const datasources: ModelOrDatasourceOrPrompt[] = modelsAndDatasourcesAndPrompts.filter(m => m.type === "datasource");
+  const prompts: ModelOrDatasourceOrPrompt[] = modelsAndDatasourcesAndPrompts.filter(m => m.type === "prompt");
+  //completely remove the <datasource id='123'>datasource name</datasource>
+  let textWithoutTags = removeModelAndDatasourceTagsFromMessage(text);
   return {
-    textWithoutTags, models, datasources, originalText: text,
+    textWithoutTags, models, datasources, originalText: text, prompts
   };
 }
 
-export function parseModelAndDatasourceTagsFromMessage(text: string): ModelOrDatasource[] {
-  const matches = [...text.matchAll(/<\s*(model|datasource)(?:\s+[^>]*?id=["']([^"']+)["'])?.*?>/gi)];
+export function replacePromptTagWithPromptTextFromDbById(input: string, promptId: string, promptTextFromDb: string): string {
+  const regex = new RegExp(`<prompt[^>]*id=['"]${promptId}['"][^>]*>.*?<\/prompt>`, 'g');
+  return input.replace(regex, promptTextFromDb);
+}
+
+/**
+ * Used to convert <prompt id='123'>prompt text</prompt> into an object
+ * { id: "123", type: "prompt"}
+ * @param text
+ */
+export function parseModelAndDatasourceAndPromptTagsFromMessage(text: string): ModelOrDatasourceOrPrompt[] {
+  const matches = [...text.matchAll(/<\s*(model|datasource|prompt)(?:\s+[^>]*?id=["']([^"']+)["'])?.*?>/gi)];
 
   return matches.map(match => ({
     id: match[2],
-    type: match[1] as "model" | "datasource"
+    type: match[1] as "model" | "datasource" | "prompt"
   }));
 }
 

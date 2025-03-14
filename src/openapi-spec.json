@@ -1638,7 +1638,7 @@
           "statusTopicsKeyValues"
         ]
       },
-      "ModelOrDatasource": {
+      "ModelOrDatasourceOrPrompt": {
         "type": "object",
         "properties": {
           "id": {
@@ -1665,13 +1665,19 @@
           "models": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ModelOrDatasource"
+              "$ref": "#/components/schemas/ModelOrDatasourceOrPrompt"
             }
           },
           "datasources": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ModelOrDatasource"
+              "$ref": "#/components/schemas/ModelOrDatasourceOrPrompt"
+            }
+          },
+          "prompts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelOrDatasourceOrPrompt"
             }
           }
         },
@@ -1679,7 +1685,8 @@
           "textWithoutTags",
           "originalText",
           "models",
-          "datasources"
+          "datasources",
+          "prompts"
         ]
       },
       "Message": {

@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { ConversationService } from './conversation.service';
-import {MessageContext, Model} from '../models/api/conversationApiModels';
+import { Message, MessageContext, Model } from '../models/api/conversationApiModels';
 import { ChatCompletionMessageParam, } from 'openai/resources/chat/completions';
-import { createOpenAIMessagesFromMessages, extractMessageContextFromMessage, } from '../utils/utils';
+import {
+  createOpenAIMessagesFromMessages,
+  extractMessageContextFromMessage,
+  replacePromptTagWithPromptTextFromDbById,
+} from '../utils/utils';
 import { getChatPageSystemPrompt } from '../utils/prompts';
 import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
@@ -12,6 +16,7 @@ import { OpenaiWrapperServiceV2 } from './openAiWrapperV2.service';
 import { CalculatorToolsService } from './agent/tools/calculatorTools.service';
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 import { AiFunctionContextV2 } from '../models/agent/aiTypes';
+import { MemberPromptService } from './memberPrompt.service';
 
 @Injectable()
 export class ChatService {
@@ -22,7 +27,9 @@ export class ChatService {
               private readonly modelsService: ModelsService,
               private readonly webToolsService: WebToolsService,
               private readonly openAiWrapperService: OpenaiWrapperServiceV2,
-              private readonly calculatorToolsService: CalculatorToolsService,) {}
+              private readonly calculatorToolsService: CalculatorToolsService,
+              private readonly memberPromptService: MemberPromptService,
+              ) {}
 
 
   /**
@@ -84,9 +91,9 @@ export class ChatService {
     const conversation = await this.conversationService.getConversation(memberId, conversationId, true);
     if(!conversation){ throw new Error('Conversation not found'); }
 
-    //send user messages without <datasource> and <model> text.
-    conversation.messages?.filter(m => m.sentByMemberId === memberId)
-      .forEach(m => m.messageText = extractMessageContextFromMessage(m.messageText).textWithoutTags)
+    //send user messages without <datasource> and <model> and replace prompt text.
+    const conversationMessagesFromMember = conversation.messages?.filter(m => m.sentByMemberId === memberId) ?? [];
+    await this.convertAtMentionTagsToMessageText(conversationMessagesFromMember, memberId);
 
     const toolService = shouldSearchWeb ? this.webToolsService : this.webToolsService;
 
@@ -98,7 +105,7 @@ export class ChatService {
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
       openAiMessages = [
-        ...createOpenAIMessagesFromMessages([modelInitialMessage]),
+        ...createOpenAIMessagesFromMessages([modelInitialMessage]), //we say that the model message is before that chat message...
         ...openAiMessages
       ]
     }
@@ -151,6 +158,27 @@ export class ChatService {
     }
 
 
+  }
+
+  /**
+   * Remove datasource and model tags.
+   * Replace <prompt> tags with promptText from db.
+   * Todo: optimize db lookup.
+   * @param conversationMessagesFromMember
+   * @param memberId
+   * @private
+   */
+  private async convertAtMentionTagsToMessageText(conversationMessagesFromMember: Message[], memberId: string) {
+    for (let m of conversationMessagesFromMember) {
+      const messageContext = extractMessageContextFromMessage(m.messageText);
+      //first strip out datasource and model tags.
+      m.messageText = messageContext.textWithoutTags;
+      //next replace all <prompt> tags with actual prompt text 'you are a friendly assistant'
+      for (let p of messageContext.prompts) {
+        const prompt = await this.memberPromptService.getPromptById(memberId, p.id);
+        m.messageText = replacePromptTagWithPromptTextFromDbById(m.messageText, p.id, prompt?.promptText ?? '');
+      }
+    }
   }
 
   async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,

@@ -150,6 +150,13 @@ export class ConversationsRepository {
       JOIN member_datasource md ON md.datasource_id = d.id
       WHERE md.member_id = ${memberId}
         AND d.name ILIKE ${'%' + searchText + '%'}
+      
+      UNION ALL 
+      
+      SELECT mp.id, mp.prompt_name, 'prompt' AS type
+      FROM member_prompt mp
+      where mp.member_id = ${memberId}
+      and mp.prompt_name ILIKE ${'%' + searchText + '%'}
     `;
   }
 
