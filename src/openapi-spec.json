@@ -981,7 +981,7 @@
           "200": {
             "description": "The model server has been successfully started"
           },
-          "500": {
+          "400": {
             "description": "Failed to start the model server"
           }
         },
