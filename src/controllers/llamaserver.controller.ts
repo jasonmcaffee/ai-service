@@ -1,19 +1,11 @@
 import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { exec, spawn } from 'child_process';
-import * as os from 'os';
-import * as fs from 'fs';
-import * as path from 'path';
 import { LoadModelRequest } from "../models/api/llamaServerModels";
 import {LlamaCppService} from "../services/llamacpp.service";
 
 @ApiTags('LlamaServerController')
 @Controller('llamaServerController')
 export class LlamaServerController {
-    private serverProcessId: number | null = null;
-    private logFilePath = path.join(process.cwd(), 'llama_server_output.log');
-    private pidFilePath = path.join(process.cwd(), 'llama_server_pid.txt');
-    private isWindows = os.platform() === 'win32';
 
     constructor(private readonly llamaServerService: LlamaCppService,) {
     }
