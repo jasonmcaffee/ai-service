@@ -1,3 +1,7 @@
+llama_launcher.bat
+llama_server_output.log
+llama_server_pid.txt
+
 /src/crawler/.env
 /src/crawler/services/.env
 **.env
