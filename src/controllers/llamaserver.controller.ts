@@ -2,51 +2,13 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { exec } from 'child_process';
 import * as os from 'os';
+import {LoadModelRequest} from "../models/api/llamaServerModels";
 
 // Define the request body DTO
-export class LoadModelRequest {
-    /**
-     * Path to the model file
-     * @example "C:\shared-drive\llm_models\Qwen2.5-7B-Instruct.Q6_K.gguf"
-     */
-    modelPath: string;
 
-    /**
-     * Number of GPU layers to use
-     * @example 9999
-     */
-    ngl: number;
-
-    /**
-     * Host to bind the server to (optional)
-     * @example "0.0.0.0"
-     * @default "0.0.0.0"
-     */
-    host?: string = '0.0.0.0';
-
-    /**
-     * Context size
-     * @example 60000
-     */
-    contextSize: number;
-
-    /**
-     * Number of tokens to predict
-     * @example 10000
-     */
-    nPredict: number;
-
-    /**
-     * Enable Jinja templates for tool calling
-     * @example true
-     * @default false
-     */
-    jinja?: boolean = false;
-}
-
-@ApiTags('Model')
-@Controller('model')
-export class ModelController {
+@ApiTags('LlamaServerController')
+@Controller('llamaServerController')
+export class LlamaServerController {
 
     @ApiOperation({ summary: 'Load and start the LLM model server' })
     @ApiBody({
