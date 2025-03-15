@@ -39,17 +39,17 @@ export class LlamaServerController {
             let command: string;
 
             if (isWindows) {
-                command = `.\\bin\\Release\\llama-server.exe`;
+                command = `C:\\shared-drive\\dev\\llama.cpp-v3\\build\\bin\\Release\\llama-server.exe`;
             } else {
                 command = './bin/llama-server';
             }
 
             // Add parameters to the command
             command += ` -m "${request.modelPath}"`;
-            command += ` -ngl ${request.ngl}`;
+            command += ` -ngl ${request.ngl || 9999}`;
             command += ` --host ${request.host || '0.0.0.0'}`;
-            command += ` --ctx-size ${request.contextSize}`;
-            command += ` --n-predict ${request.nPredict}`;
+            command += ` --ctx-size ${request.contextSize || 60000}`;
+            command += ` --n-predict ${request.nPredict || 10000}`;
 
             if (request.jinja) {
                 command += ' --jinja';

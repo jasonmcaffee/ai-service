@@ -962,6 +962,35 @@
         ]
       }
     },
+    "/llamaServerController/loadModel": {
+      "post": {
+        "operationId": "loadModel",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The model configuration parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoadModelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The model server has been successfully started"
+          },
+          "500": {
+            "description": "Failed to start the model server"
+          }
+        },
+        "summary": "Load and start the LLM model server",
+        "tags": [
+          "LlamaServerController"
+        ]
+      }
+    },
     "/prompts": {
       "post": {
         "operationId": "createPrompt",
@@ -2091,6 +2120,10 @@
         "required": [
           "imageName"
         ]
+      },
+      "LoadModelRequest": {
+        "type": "object",
+        "properties": {}
       },
       "CreateMemberPrompt": {
         "type": "object",
