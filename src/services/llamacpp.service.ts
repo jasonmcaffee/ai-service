@@ -41,7 +41,7 @@ export class LlamaCppService {
             let commandParts = [
                 `"${executable}"`,
                 `-m "${request.modelPath}"`,
-                request.ngl != null ? `-ngl ${request.ngl}` : null,
+                request.ngl != null ? `-ngl ${request.ngl}` : '-ngl 9999',
                 request.host ? `--host ${request.host}` : `--host 0.0.0.0`,
                 request.contextSize != null ? `--ctx-size ${request.contextSize}` : null,
                 request.nPredict != null ? `--n-predict ${request.nPredict}` : null
