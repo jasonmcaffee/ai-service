@@ -49,8 +49,11 @@ export class ModelsRepository {
             }
 
             const [createdModel] = await trx<Model[]>`
-                INSERT INTO model (id, display_name, url, api_key, model_name, model_type_id, is_default, member_id, initial_message)
-                VALUES (${uuidv4()}, ${model.displayName}, ${model.url}, ${model.apiKey}, ${model.modelName}, ${model.modelTypeId}, ${model.isDefault}, ${memberId}, ${model.initialMessage || ''})
+                INSERT INTO model (id, display_name, url, api_key, model_name, model_type_id, is_default, 
+                                   member_id, initial_message, file_path, context_size)
+                VALUES (${uuidv4()}, ${model.displayName}, ${model.url}, ${model.apiKey}, ${model.modelName}, ${model.modelTypeId},
+                        ${model.isDefault}, ${memberId}, ${model.initialMessage || null}, ${model.filePath || null}
+                       ${model.contextSize || null})
                 RETURNING *
             `;
 
@@ -76,7 +79,9 @@ export class ModelsRepository {
                   model_name = COALESCE(${model.modelName}, model_name),
                   model_type_id = COALESCE(${model.modelTypeId}, model_type_id),
                   is_default = COALESCE(${model.isDefault}, is_default),
-                  initial_message = COALESCE(${model.initialMessage || ''}, initial_message)
+                  initial_message = COALESCE(${model.initialMessage || null}, initial_message),
+                  file_path = COALESCE(${model.filePath || null}, file_path),
+                  context_size = COALESCE(${model.contextSize || null}, context_size)
               WHERE id = ${modelId}
               RETURNING *
             `;

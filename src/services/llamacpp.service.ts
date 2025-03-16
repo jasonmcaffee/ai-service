@@ -33,15 +33,21 @@ export class LlamaCppService {
             } else {
                 executable = './bin/llama-server';
             }
-
             // Set default values if not provided
-            request.ngl = request.ngl || 9999;
-            request.contextSize = request.contextSize || 60000;
-            request.nPredict = request.nPredict || 10000;
+            // request.ngl = request.ngl || 9999;
+            // request.contextSize = request.contextSize || 60000;
+            // request.nPredict = request.nPredict || 10000;
+            // let command = `"${executable}" -m "${request.modelPath}" -ngl ${request.ngl} --host ${request.host || '0.0.0.0'} --ctx-size ${request.contextSize} --n-predict ${request.nPredict}`;
+            let commandParts = [
+                `"${executable}"`,
+                `-m "${request.modelPath}"`,
+                request.ngl != null ? `-ngl ${request.ngl}` : null,
+                request.host ? `--host ${request.host}` : `--host 0.0.0.0`,
+                request.contextSize != null ? `--ctx-size ${request.contextSize}` : null,
+                request.nPredict != null ? `--n-predict ${request.nPredict}` : null
+            ];
 
-            // Build the full command string
-            let command = `"${executable}" -m "${request.modelPath}" -ngl ${request.ngl} --host ${request.host || '0.0.0.0'} --ctx-size ${request.contextSize} --n-predict ${request.nPredict}`;
-
+            let command = commandParts.filter(Boolean).join(" ");
             if (request.jinja) {
                 command += ' --jinja';
             }

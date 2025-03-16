@@ -2215,6 +2215,14 @@
           },
           "initialMessage": {
             "type": "string"
+          },
+          "filePath": {
+            "type": "string",
+            "nullable": true
+          },
+          "contextSize": {
+            "type": "number",
+            "nullable": true
           }
         },
         "required": [
@@ -2225,7 +2233,9 @@
           "modelName",
           "isDefault",
           "modelTypeId",
-          "initialMessage"
+          "initialMessage",
+          "filePath",
+          "contextSize"
         ]
       },
       "CreateModel": {
@@ -2250,7 +2260,16 @@
             "type": "number"
           },
           "initialMessage": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
+          },
+          "filePath": {
+            "type": "string",
+            "nullable": true
+          },
+          "contextSize": {
+            "type": "number",
+            "nullable": true
           }
         },
         "required": [
@@ -2260,7 +2279,9 @@
           "modelName",
           "isDefault",
           "modelTypeId",
-          "initialMessage"
+          "initialMessage",
+          "filePath",
+          "contextSize"
         ]
       },
       "UpdateModel": {
@@ -2285,7 +2306,16 @@
             "type": "number"
           },
           "initialMessage": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
+          },
+          "filePath": {
+            "type": "string",
+            "nullable": true
+          },
+          "contextSize": {
+            "type": "number",
+            "nullable": true
           }
         },
         "required": [
@@ -2295,7 +2325,9 @@
           "modelName",
           "isDefault",
           "modelTypeId",
-          "initialMessage"
+          "initialMessage",
+          "filePath",
+          "contextSize"
         ]
       },
       "SearchResult": {

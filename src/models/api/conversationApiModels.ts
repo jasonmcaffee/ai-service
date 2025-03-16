@@ -281,6 +281,10 @@ export class Model {
   modelTypeId: number;
   @ApiProperty()
   initialMessage?: string; //initial message to send to the llm. aka persona
+  @ApiProperty({nullable: true})
+  filePath?: string;
+  @ApiProperty({nullable: true})
+  contextSize?: number;
 }
 
 export class CreateModel {
@@ -296,8 +300,12 @@ export class CreateModel {
   isDefault: boolean;
   @ApiProperty()
   modelTypeId: number;
-  @ApiProperty()
+  @ApiProperty({nullable: true})
   initialMessage?: string; //initial message to send to the llm. aka persona
+  @ApiProperty({nullable: true})
+  filePath?: string;
+  @ApiProperty({nullable: true})
+  contextSize?: number;
 }
 
 export class UpdateModel {
@@ -313,8 +321,12 @@ export class UpdateModel {
   isDefault: boolean;
   @ApiProperty()
   modelTypeId: number;
-  @ApiProperty()
+  @ApiProperty({nullable: true})
   initialMessage?: string; //initial message to send to the llm. aka persona
+  @ApiProperty({nullable: true})
+  filePath?: string;
+  @ApiProperty({nullable: true})
+  contextSize?: number;
 }
 
 export class Suggestion {

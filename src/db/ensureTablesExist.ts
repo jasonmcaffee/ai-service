@@ -63,6 +63,8 @@ export async function ensureTablesExist() {
         url TEXT,
         api_key TEXT,
         model_name TEXT,
+        file_path TEXT,
+        context_size INTEGER,
         model_type_id INTEGER,
         is_default BOOLEAN,
         member_id TEXT,
