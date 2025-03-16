@@ -2123,7 +2123,39 @@
       },
       "LoadModelRequest": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "modelPath": {
+            "type": "string"
+          },
+          "ngl": {
+            "type": "number",
+            "nullable": true
+          },
+          "host": {
+            "type": "string",
+            "nullable": true
+          },
+          "contextSize": {
+            "type": "number",
+            "nullable": true
+          },
+          "nPredict": {
+            "type": "number",
+            "nullable": true
+          },
+          "jinja": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "required": [
+          "modelPath",
+          "ngl",
+          "host",
+          "contextSize",
+          "nPredict",
+          "jinja"
+        ]
       },
       "CreateMemberPrompt": {
         "type": "object",

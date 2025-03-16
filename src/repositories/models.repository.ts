@@ -52,7 +52,7 @@ export class ModelsRepository {
                 INSERT INTO model (id, display_name, url, api_key, model_name, model_type_id, is_default, 
                                    member_id, initial_message, file_path, context_size)
                 VALUES (${uuidv4()}, ${model.displayName}, ${model.url}, ${model.apiKey}, ${model.modelName}, ${model.modelTypeId},
-                        ${model.isDefault}, ${memberId}, ${model.initialMessage || null}, ${model.filePath || null}
+                        ${model.isDefault}, ${memberId}, ${model.initialMessage || null}, ${model.filePath || null},
                        ${model.contextSize || null})
                 RETURNING *
             `;
