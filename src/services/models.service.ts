@@ -7,6 +7,9 @@ import * as fs from 'fs/promises';
 
 @Injectable()
 export class ModelsService {
+    // Store active downloads with AbortControllers
+    private activeDownloads: Record<string, { abortController: AbortController, fileName: string }> = {};
+
     constructor(private readonly modelsRepository: ModelsRepository) {}
 
     async searchModelsOnHuggingFace(query: string) : Promise<HFModel[]>{
@@ -25,27 +28,94 @@ export class ModelsService {
         }
     }
 
-    async downloadFileFromHuggingFaceModel(modelId: string, filename: string){
+    async downloadFileFromHuggingFaceModel(memberId: string, modelId: string, filename: string){
         const url = `https://huggingface.co/${modelId}/resolve/main/${filename}`;
         const headers: HeadersInit =  { 'Authorization': `Bearer ${config.getHuggingFaceAccessToken()}` };
         console.log(`Downloading from: ${url}`);
+
+        // Create an AbortController for this download
+        const abortController = new AbortController();
+        const downloadKey = `${memberId}-${filename}`;
+        this.activeDownloads[downloadKey] = { abortController, fileName: filename };
+
         try {
-            const response = await fetch(url, { headers });
+            const response = await fetch(url, {
+                headers,
+                signal: abortController.signal
+            });
+
             if (!response.ok) {
                 throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
             }
-            // Get the binary data as a Buffer
-            const arrayBuffer = await response.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            // Define the output file path
+
+            // Get the total size of the file
+            const contentLength = Number(response.headers.get('content-length'));
+
+            // Read the response as a stream
+            const reader = response?.body?.getReader();
+            if(!reader){ throw new Error('no reader on response body'); }
+            const chunks: Uint8Array[] = [];
+            let receivedBytes = 0;
+            let lastProgressUpdate = Date.now();
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                    break;
+                }
+
+                chunks.push(value);
+                receivedBytes += value.length;
+
+                // Log progress every 5 seconds
+                const now = Date.now();
+                if (now - lastProgressUpdate > 1000) {
+                    const percentComplete = contentLength ?
+                      Math.round((receivedBytes / contentLength) * 100) :
+                      'unknown';
+                    console.log(`Download progress for ${filename}: ${percentComplete}% complete`);
+                    lastProgressUpdate = now;
+                }
+            }
+
+            // Concatenate all chunks into a single Buffer
+            const concatenated = new Uint8Array(receivedBytes);
+            let position = 0;
+            for (const chunk of chunks) {
+                concatenated.set(chunk, position);
+                position += chunk.length;
+            }
+
+            const buffer = Buffer.from(concatenated);
             const outputPath = path.join(config.getLlmModelsFolder(), filename);
-            // Write the file to disk
             await fs.writeFile(outputPath, buffer);
             console.log(`File saved to: ${outputPath}`);
+
+            // Remove from active downloads
+            delete this.activeDownloads[downloadKey];
         } catch (error) {
+            // Remove from active downloads
+            delete this.activeDownloads[downloadKey];
+
+            // Check if this was an abort error
+            if ((error as Error).name === 'AbortError') {
+                console.log(`Download of ${filename} was canceled`);
+                return;
+            }
+
             console.error(`Error downloading ${filename}:`, error);
             throw error;
         }
+    }
+
+    async stopDownloadingHuggingFaceModelFile(memberId: string, fileName: string): Promise<boolean> {
+        const downloadKey = `${memberId}-${fileName}`;
+        if (this.activeDownloads[downloadKey]) {
+            this.activeDownloads[downloadKey].abortController.abort();
+            delete this.activeDownloads[downloadKey];
+            return true;
+        }
+        return false;
     }
 
     async getModelTypes(): Promise<ModelType[]> {
