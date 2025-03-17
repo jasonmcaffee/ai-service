@@ -11,6 +11,10 @@ function camelToSnake(str) {
 }
 
 const config = {
+  getHuggingFaceAccessToken(){
+    return process.env.HUGGING_FACE_TOKEN;
+  },
+
   getDbConnectionString() {
     const dbPassword = process.env.DB_PASSWORD;
     const dbConnectionString = `postgres://postgres:${dbPassword}@192.168.0.209:5432/ai`;

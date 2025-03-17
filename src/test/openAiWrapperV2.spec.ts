@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from '../models/api/conversationApiModels';
 import { OpenaiWrapperServiceV2 } from '../services/openAiWrapperV2.service';
-import { toolCallEndMarker, toolCallStartMarker } from '../utils/prompts';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
-import { AiFunctionContext, AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from '../models/agent/aiTypes';
+import { AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult } from '../models/agent/aiTypes';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
-import PlannerAgentV2 from '../models/agent/PlannerAgentV2';
 import { chatCompletionTool, extractChatCompletionToolAnnotationValues } from '../services/agent/tools/aiToolAnnotations';
 
 describe("parseLlamaCppToolCalls", ()=>{

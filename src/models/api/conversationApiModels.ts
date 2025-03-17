@@ -329,6 +329,31 @@ export class UpdateModel {
   contextSize?: number;
 }
 
+
+export class HFModel {
+  @ApiProperty()
+  _id: string; //"6580aa20419afba19a692cc8",
+  @ApiProperty()
+  id: string; // "TheBloke/phi-2-GGUF",
+  @ApiProperty()
+  name: string;
+  // private: boolean;
+  @ApiProperty()
+  modelId: string; // "TheBloke/phi-2-GGUF"
+  @ApiProperty()
+  tags: string[]; //"tags": [ "transformers", "gguf","phi-msft","nlp","code","text-generation","en","base_model:microsoft/phi-2","base_model:quantized:microsoft/phi-2","license:other","region:us"],
+  @ApiProperty()
+  pipeline_tag:string; // "text-generation",
+  @ApiProperty()
+  library_name: string; // "transformers",
+  @ApiProperty()
+  createdAt: string; // "2023-12-18T20:22:56.000Z",
+  @ApiProperty()
+  downloads: number; // 5004057,
+  @ApiProperty()
+  likes: number; //197
+}
+
 export class Suggestion {
   @ApiProperty()
   id: string;

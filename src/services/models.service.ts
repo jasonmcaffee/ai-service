@@ -1,10 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { ModelsRepository } from '../repositories/models.repository';
-import {CreateModel, Model, ModelType, UpdateModel} from '../models/api/conversationApiModels';
+import { CreateModel, HFModel, Model, ModelType, UpdateModel } from '../models/api/conversationApiModels';
+import * as hub from "@huggingface/hub";
+import config from '../config/config';
+import { ModelEntry } from '@huggingface/hub';
+// from huggingface_hub import HfApi
+
+
 
 @Injectable()
 export class ModelsService {
     constructor(private readonly modelsRepository: ModelsRepository) {}
+
+    async searchModelsOnHuggingFace(query: string) : Promise<HFModel[]>{
+        const url = `https://huggingface.co/api/models?search=${encodeURIComponent(query)}&sort=downloads&direction=-1&limit=50`;
+        const headers: HeadersInit =  { 'Authorization': `Bearer ${config.getHuggingFaceAccessToken()}` };
+
+        try {
+            const response = await fetch(url, { headers });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            return data as HFModel[];
+        } catch (error) {
+            throw new Error(`Failed to search for hf models: ${(error as Error).message}`);
+        }
+    }
+
+    async downloadModelFromHuggingFace(id: string){
+
+    }
 
     async getModelTypes(): Promise<ModelType[]> {
         return this.modelsRepository.getModelTypes();
