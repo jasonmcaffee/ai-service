@@ -1196,6 +1196,134 @@
         ]
       }
     },
+    "/models/huggingface/search": {
+      "get": {
+        "operationId": "searchModelsOnHuggingFace",
+        "parameters": [
+          {
+            "name": "query",
+            "required": true,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of models from HuggingFace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HFModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Search for models on HuggingFace",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
+    "/models/huggingface/{modelId}/download/{filename}": {
+      "post": {
+        "operationId": "downloadFileFromHuggingFaceModel",
+        "parameters": [
+          {
+            "name": "modelId",
+            "required": true,
+            "in": "path",
+            "description": "HuggingFace model ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "description": "File name to download",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Download started"
+          }
+        },
+        "summary": "Download a file from a HuggingFace model",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
+    "/models/huggingface/{modelId}/download-progress/{filename}": {
+      "get": {
+        "operationId": "downloadFileWithProgressUpdates",
+        "parameters": [
+          {
+            "name": "modelId",
+            "required": true,
+            "in": "path",
+            "description": "HuggingFace model ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "description": "File name to download",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE connection established for download progress"
+          }
+        },
+        "summary": "Download a file from a HuggingFace model with progress updates via SSE",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
+    "/models/huggingface/download/{filename}": {
+      "delete": {
+        "operationId": "stopDownloadingHuggingFaceModelFile",
+        "parameters": [
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "description": "File name to stop downloading",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Download canceled or not found"
+          }
+        },
+        "summary": "Stop downloading a file from HuggingFace model",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
     "/models/model-types": {
       "get": {
         "operationId": "getModelTypes",
@@ -2205,6 +2333,74 @@
             "type": "string"
           }
         }
+      },
+      "HFModelSibling": {
+        "type": "object",
+        "properties": {
+          "rfilename": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "rfilename"
+        ]
+      },
+      "HFModel": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "modelId": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pipeline_tag": {
+            "type": "string"
+          },
+          "library_name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "downloads": {
+            "type": "number"
+          },
+          "likes": {
+            "type": "number"
+          },
+          "siblings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HFModelSibling"
+            }
+          }
+        },
+        "required": [
+          "_id",
+          "id",
+          "name",
+          "modelId",
+          "tags",
+          "pipeline_tag",
+          "library_name",
+          "createdAt",
+          "downloads",
+          "likes",
+          "siblings"
+        ]
       },
       "ModelType": {
         "type": "object",
