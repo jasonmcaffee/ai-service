@@ -1,7 +1,23 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, Query, Res, Sse } from '@nestjs/common';
 import { ModelsService } from '../services/models.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
-import { Model, CreateModel, UpdateModel, ModelType, HFModel } from '../models/api/conversationApiModels';
+import {
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiParam,
+    ApiBody,
+    ApiQuery,
+    ApiOkResponse,
+    getSchemaPath, ApiExtraModels,
+} from '@nestjs/swagger';
+import {
+    Model,
+    CreateModel,
+    UpdateModel,
+    ModelType,
+    HFModel,
+    DownloadProgress,
+} from '../models/api/conversationApiModels';
 import { AuthenticationService } from '../services/authentication.service';
 import { Response } from 'express';
 
@@ -21,49 +37,54 @@ export class ModelsController {
         return this.modelsService.searchModelsOnHuggingFace(query);
     }
 
-    @ApiOperation({ summary: 'Download a file from a HuggingFace model' })
-    @ApiParam({ name: 'modelId', type: 'string', required: true, description: 'HuggingFace model ID' })
-    @ApiParam({ name: 'filename', type: 'string', required: true, description: 'File name to download' })
-    @ApiResponse({ status: 202, description: 'Download started' })
-    @Post('huggingface/:modelId/download/:filename')
-    async downloadFileFromHuggingFaceModel(
-      @Param('modelId') modelId: string,
-      @Param('filename') filename: string,
-      @Res() res: Response
-    ) {
-        const memberId = this.authenticationService.getMemberId();
-        // Start the download but don't wait for it to complete
-        this.modelsService.downloadFileFromHuggingFaceModel(memberId, modelId, filename)
-          .catch(error => console.error(`Error in download process: ${error.message}`));
-
-        // Return success immediately
-        return res.status(202).json({ message: `Download of ${filename} started` });
-    }
+    // @ApiOperation({ summary: 'Download a file from a HuggingFace model' })
+    // @ApiParam({ name: 'modelId', type: 'string', required: true, description: 'HuggingFace model ID' })
+    // @ApiParam({ name: 'filename', type: 'string', required: true, description: 'File name to download' })
+    // @ApiResponse({ status: 202, description: 'Download started' })
+    // @Post('huggingface/:modelId/download/:filename')
+    // async downloadFileFromHuggingFaceModel(
+    //   @Param('modelId') modelId: string,
+    //   @Param('filename') filename: string,
+    //   @Res() res: Response
+    // ) {
+    //     const memberId = this.authenticationService.getMemberId();
+    //     // Start the download but don't wait for it to complete
+    //     this.modelsService.downloadFileFromHuggingFaceModel(memberId, modelId, filename)
+    //       .catch(error => console.error(`Error in download process: ${error.message}`));
+    //
+    //     // Return success immediately
+    //     return res.status(202).json({ message: `Download of ${filename} started` });
+    // }
 
     @ApiOperation({ summary: 'Download a file from a HuggingFace model with progress updates via SSE' })
     @ApiParam({ name: 'modelId', type: 'string', required: true, description: 'HuggingFace model ID' })
     @ApiParam({ name: 'filename', type: 'string', required: true, description: 'File name to download' })
     @ApiResponse({ status: 200, description: 'SSE connection established for download progress' })
-    @Get('huggingface/:modelId/download-progress/:filename') // Must be GET for EventSource to work
+    @ApiExtraModels(DownloadProgress)
+    @ApiOkResponse({
+        description: "SSE connection established for download progress",
+        content: {
+            'text/event-stream': {
+                schema: {
+                    type: 'object',
+                    $ref: getSchemaPath(DownloadProgress)
+                }
+            }
+        }
+    })
+    @Get('downloadFileWithProgressUpdates/:modelId/:filename') // Must be GET for EventSource to work
     @Sse()
-    async downloadFileWithProgressUpdates(
-      @Param('modelId') modelId: string,
-      @Param('filename') filename: string
-    ) {
+    async downloadFileWithProgressUpdates(@Param('modelId') modelId: string, @Param('filename') filename: string) {
         const memberId = this.authenticationService.getMemberId();
-        // Create SSE subject for this download
         const downloadSSE = this.modelsService.createDownloadStreamForFile(memberId, modelId, filename);
-        // Start the download process in the background
         this.modelsService.downloadFileFromHuggingFaceModelStreamDownloadProgress(memberId, modelId, filename, downloadSSE);
-
-        // Return the SSE subject for streaming
         return downloadSSE.getSubject();
     }
 
     @ApiOperation({ summary: 'Stop downloading a file from HuggingFace model' })
     @ApiParam({ name: 'filename', type: 'string', required: true, description: 'File name to stop downloading' })
     @ApiResponse({ status: 200, description: 'Download canceled or not found' })
-    @Delete('huggingface/download/:filename')
+    @Delete('stopDownloadingHuggingFaceModelFile/:filename')
     async stopDownloadingHuggingFaceModelFile(
       @Param('filename') filename: string
     ) {

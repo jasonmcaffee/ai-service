@@ -1231,41 +1231,7 @@
         ]
       }
     },
-    "/models/huggingface/{modelId}/download/{filename}": {
-      "post": {
-        "operationId": "downloadFileFromHuggingFaceModel",
-        "parameters": [
-          {
-            "name": "modelId",
-            "required": true,
-            "in": "path",
-            "description": "HuggingFace model ID",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "filename",
-            "required": true,
-            "in": "path",
-            "description": "File name to download",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "202": {
-            "description": "Download started"
-          }
-        },
-        "summary": "Download a file from a HuggingFace model",
-        "tags": [
-          "Models"
-        ]
-      }
-    },
-    "/models/huggingface/{modelId}/download-progress/{filename}": {
+    "/models/downloadFileWithProgressUpdates/{modelId}/{filename}": {
       "get": {
         "operationId": "downloadFileWithProgressUpdates",
         "parameters": [
@@ -1299,7 +1265,7 @@
         ]
       }
     },
-    "/models/huggingface/download/{filename}": {
+    "/models/stopDownloadingHuggingFaceModelFile/{filename}": {
       "delete": {
         "operationId": "stopDownloadingHuggingFaceModelFile",
         "parameters": [
@@ -2400,6 +2366,33 @@
           "downloads",
           "likes",
           "siblings"
+        ]
+      },
+      "DownloadProgress": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string"
+          },
+          "modelId": {
+            "type": "string"
+          },
+          "percentComplete": {
+            "type": "number"
+          },
+          "downloadSpeed": {
+            "type": "number"
+          },
+          "estimatedSecondsRemaining": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "fileName",
+          "modelId",
+          "percentComplete",
+          "downloadSpeed",
+          "estimatedSecondsRemaining"
         ]
       },
       "ModelType": {

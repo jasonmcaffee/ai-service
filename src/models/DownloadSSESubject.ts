@@ -1,12 +1,7 @@
 import { Subject } from "rxjs";
+import { DownloadProgress } from './api/conversationApiModels';
 
-export interface DownloadProgress {
-  fileName: string;
-  modelId: string;
-  percentComplete: number;
-  downloadSpeed: number; // in MBps
-  estimatedSecondsRemaining: number;
-}
+
 
 /**
  * A class used in conjunction with NestJS SSE to stream download progress back to the client.

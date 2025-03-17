@@ -494,3 +494,17 @@ export class UpdateMemberPrompt {
   @ApiProperty({ required: false })
   promptText: string;
 }
+
+
+export class DownloadProgress {
+  @ApiProperty()
+  fileName: string;
+  @ApiProperty()
+  modelId: string;
+  @ApiProperty()
+  percentComplete: number;
+  @ApiProperty()
+  downloadSpeed: number; // in MBps
+  @ApiProperty()
+  estimatedSecondsRemaining: number;
+}
