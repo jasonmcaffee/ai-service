@@ -16,5 +16,8 @@ describe("models", ()=>{
     const modelsService = testingModule.get<ModelsService>(ModelsService);
     const result = await modelsService.searchModelsOnHuggingFace("gguf");
     console.log(`result: `, result);
+    const result1 = result[0];
+    const downloadFileResult = await modelsService.downloadFileFromHuggingFaceModel(result1.modelId, "config.json");
+    console.log(`done downloading file.`)
   });
 })

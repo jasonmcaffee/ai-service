@@ -1,19 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ModelsRepository } from '../repositories/models.repository';
 import { CreateModel, HFModel, Model, ModelType, UpdateModel } from '../models/api/conversationApiModels';
-import * as hub from "@huggingface/hub";
 import config from '../config/config';
-import { ModelEntry } from '@huggingface/hub';
-// from huggingface_hub import HfApi
-
-
+import * as path from 'path';
+import * as fs from 'fs/promises';
 
 @Injectable()
 export class ModelsService {
     constructor(private readonly modelsRepository: ModelsRepository) {}
 
     async searchModelsOnHuggingFace(query: string) : Promise<HFModel[]>{
-        const url = `https://huggingface.co/api/models?search=${encodeURIComponent(query)}&sort=downloads&direction=-1&limit=50`;
+        const url = `https://huggingface.co/api/models?search=${encodeURIComponent(query)}&sort=downloads&direction=-1&limit=50&full=true`;
         const headers: HeadersInit =  { 'Authorization': `Bearer ${config.getHuggingFaceAccessToken()}` };
 
         try {
@@ -28,8 +25,27 @@ export class ModelsService {
         }
     }
 
-    async downloadModelFromHuggingFace(id: string){
-
+    async downloadFileFromHuggingFaceModel(modelId: string, filename: string){
+        const url = `https://huggingface.co/${modelId}/resolve/main/${filename}`;
+        const headers: HeadersInit =  { 'Authorization': `Bearer ${config.getHuggingFaceAccessToken()}` };
+        console.log(`Downloading from: ${url}`);
+        try {
+            const response = await fetch(url, { headers });
+            if (!response.ok) {
+                throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+            }
+            // Get the binary data as a Buffer
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            // Define the output file path
+            const outputPath = path.join(config.getLlmModelsFolder(), filename);
+            // Write the file to disk
+            await fs.writeFile(outputPath, buffer);
+            console.log(`File saved to: ${outputPath}`);
+        } catch (error) {
+            console.error(`Error downloading ${filename}:`, error);
+            throw error;
+        }
     }
 
     async getModelTypes(): Promise<ModelType[]> {

@@ -329,7 +329,10 @@ export class UpdateModel {
   contextSize?: number;
 }
 
-
+export class HFModelSibling {
+  @ApiProperty()
+  rfilename: string; //phi-2.Q2_K.gguf
+}
 export class HFModel {
   @ApiProperty()
   _id: string; //"6580aa20419afba19a692cc8",
@@ -352,6 +355,9 @@ export class HFModel {
   downloads: number; // 5004057,
   @ApiProperty()
   likes: number; //197
+
+  @ApiProperty({type: [HFModelSibling]})
+  siblings: HFModelSibling[]
 }
 
 export class Suggestion {

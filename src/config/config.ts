@@ -42,6 +42,11 @@ const config = {
 
   getSharedDriveBasePath(){
     return this.isProduction()? `C:/shared-drive` : `/Volumes/shared-drive`;
-  }
+  },
+
+  getLlmModelsFolder(){
+    return this.getSharedDriveBasePath() + '/llm_models'
+  },
+
 }
 export default config;
