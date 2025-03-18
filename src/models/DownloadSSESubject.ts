@@ -12,7 +12,7 @@ export default class DownloadSSESubject {
   constructor() {}
 
   sendProgress(progress: DownloadProgress) {
-    const progressSignal = JSON.stringify(progress);
+    const progressSignal = JSON.stringify({progress: progress});
     this.subject.next(progressSignal);
   }
 

@@ -37,25 +37,6 @@ export class ModelsController {
         return this.modelsService.searchModelsOnHuggingFace(query);
     }
 
-    // @ApiOperation({ summary: 'Download a file from a HuggingFace model' })
-    // @ApiParam({ name: 'modelId', type: 'string', required: true, description: 'HuggingFace model ID' })
-    // @ApiParam({ name: 'filename', type: 'string', required: true, description: 'File name to download' })
-    // @ApiResponse({ status: 202, description: 'Download started' })
-    // @Post('huggingface/:modelId/download/:filename')
-    // async downloadFileFromHuggingFaceModel(
-    //   @Param('modelId') modelId: string,
-    //   @Param('filename') filename: string,
-    //   @Res() res: Response
-    // ) {
-    //     const memberId = this.authenticationService.getMemberId();
-    //     // Start the download but don't wait for it to complete
-    //     this.modelsService.downloadFileFromHuggingFaceModel(memberId, modelId, filename)
-    //       .catch(error => console.error(`Error in download process: ${error.message}`));
-    //
-    //     // Return success immediately
-    //     return res.status(202).json({ message: `Download of ${filename} started` });
-    // }
-
     @ApiOperation({ summary: 'Download a file from a HuggingFace model with progress updates via SSE' })
     @ApiParam({ name: 'modelId', type: 'string', required: true, description: 'HuggingFace model ID' })
     @ApiParam({ name: 'filename', type: 'string', required: true, description: 'File name to download' })
