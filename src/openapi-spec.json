@@ -1324,6 +1324,34 @@
         ]
       }
     },
+    "/models/gguf-files/{fileName}": {
+      "delete": {
+        "operationId": "deleteGgufFile",
+        "parameters": [
+          {
+            "name": "fileName",
+            "required": true,
+            "in": "path",
+            "description": "Name of the GGUF file to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "File successfully deleted"
+          },
+          "404": {
+            "description": "File not found"
+          }
+        },
+        "summary": "Delete a GGUF file by filename",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
     "/models/model-types": {
       "get": {
         "operationId": "getModelTypes",
@@ -2435,6 +2463,9 @@
           "fileName": {
             "type": "string"
           },
+          "filePath": {
+            "type": "string"
+          },
           "fileSizeGB": {
             "type": "number"
           },
@@ -2444,6 +2475,7 @@
         },
         "required": [
           "fileName",
+          "filePath",
           "fileSizeGB",
           "createdDate"
         ]

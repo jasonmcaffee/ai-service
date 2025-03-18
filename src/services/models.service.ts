@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ModelsRepository } from '../repositories/models.repository';
 import { CreateModel, HFModel, LlmFile, Model, ModelType, UpdateModel } from '../models/api/conversationApiModels';
 import config from '../config/config';
@@ -78,7 +78,7 @@ export class ModelsService {
                 // Convert file size from bytes to GB (1 GB = 1024^3 bytes)
                 const fileSizeGB = stats.size / Math.pow(1024, 3);
                 const createdDate = stats.birthtime.toISOString();
-                files.push( {fileName: file, fileSizeGB, createdDate});
+                files.push( {fileName: file, fileSizeGB, createdDate, filePath});
             }
             return files;
         } catch (error) {
@@ -87,6 +87,34 @@ export class ModelsService {
         }
     }
 
+    async deleteLlmFile(fileName: string): Promise<void> {
+        // Validate that the filename has .gguf extension
+        if (!fileName.toLowerCase().endsWith('.gguf')) {
+            throw new Error(`'${fileName}' is not a valid GGUF file`);
+        }
+        const modelsFolder = config.getLlmModelsFolder();
+        const filePath = path.join(modelsFolder, fileName);
+        try {
+            try {
+                await fs.access(filePath);
+            } catch (error) {
+                throw new NotFoundException(`GGUF file '${fileName}' not found`);
+            }
+            // Verify it's actually a file and not a directory
+            const stats = await fs.stat(filePath);
+            if (!stats.isFile()) {
+                throw new NotFoundException(`'${fileName}' is not a file`);
+            }
+            await fs.unlink(filePath);
+        } catch (error) {
+            // Re-throw NotFoundException instances
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            console.error(`Error deleting GGUF file '${fileName}': ${error}`);
+            throw new Error(`Failed to delete GGUF file '${fileName}': ${error.message}`);
+        }
+    }
 
     async downloadFileFromHuggingFaceModelStreamDownloadProgress(memberId: string, modelId: string, filename: string, downloadSSE: DownloadSSESubject): Promise<void> {
         const url = `https://huggingface.co/${modelId}/resolve/main/${filename}`;

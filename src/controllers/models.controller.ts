@@ -83,6 +83,15 @@ export class ModelsController {
         return this.modelsService.getLlmModelsFolderGgufFiles();
     }
 
+    @ApiOperation({ summary: 'Delete a GGUF file by filename' })
+    @ApiResponse({ status: 204, description: 'File successfully deleted' })
+    @ApiResponse({ status: 404, description: 'File not found' })
+    @ApiParam({ name: 'fileName', description: 'Name of the GGUF file to delete' })
+    @Delete('gguf-files/:fileName')
+    async deleteGgufFile(@Param('fileName') fileName: string): Promise<void> {
+        return this.modelsService.deleteLlmFile(fileName);
+    }
+
     @ApiOperation({ summary: 'Get all model types' })
     @ApiResponse({ status: 200, description: 'List of model types', type: [ModelType] })
     @Get('model-types')

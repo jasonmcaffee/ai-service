@@ -513,6 +513,8 @@ export class LlmFile {
   @ApiProperty()
   fileName: string;
   @ApiProperty()
+  filePath: string;
+  @ApiProperty()
   fileSizeGB: number;
   @ApiProperty()
   createdDate: string;
