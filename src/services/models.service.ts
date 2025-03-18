@@ -4,6 +4,7 @@ import { CreateModel, HFModel, LlmFile, Model, ModelType, UpdateModel } from '..
 import config from '../config/config';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import * as fsNoPromise from 'fs';
 import DownloadSSESubject from '../models/DownloadSSESubject';
 
 @Injectable()
@@ -126,6 +127,8 @@ export class ModelsService {
         const downloadKey = `${memberId}-${modelId}-${filename}`;
         const abortController = this.activeDownloads[downloadKey].abortController;
 
+        const outputPath = path.join(config.getLlmModelsFolder(), combinedFileName);
+
         try {
             const response = await fetch(url, { headers, signal: abortController.signal });
 
@@ -136,7 +139,14 @@ export class ModelsService {
             }
 
             // Get the total size of the file
-            const contentLength = Number(response.headers.get('content-length'));
+            const contentLength = Number(response.headers.get('content-length') || '0');
+
+            if (!contentLength) {
+                console.warn(`Warning: No content-length header received for ${filename}`);
+            }
+
+            // Create write stream to avoid keeping everything in memory
+            const fileStream = fsNoPromise.createWriteStream(outputPath);
 
             // Read the response as a stream
             const reader = response?.body?.getReader();
@@ -146,7 +156,6 @@ export class ModelsService {
                 throw error;
             }
 
-            const chunks: Uint8Array[] = [];
             let receivedBytes = 0;
             let lastProgressUpdate = Date.now();
             let startTime = Date.now();
@@ -159,10 +168,17 @@ export class ModelsService {
                     break;
                 }
 
-                chunks.push(value);
+                // Write chunk directly to file
+                await new Promise<void>((resolve, reject) => {
+                    fileStream.write(Buffer.from(value), (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
+                });
+
                 receivedBytes += value.length;
 
-                // Send progress updates every 1 seconds
+                // Send progress updates every 1 second
                 const now = Date.now();
                 if (now - lastProgressUpdate > 1000) {
                     const elapsedSeconds = (now - startTime) / 1000;
@@ -179,7 +195,7 @@ export class ModelsService {
                     const estimatedSecondsRemaining = currentSpeed > 0 ? remainingBytes / (currentSpeed * 1024 * 1024) : 0;
 
                     const percentComplete = contentLength ?
-                      Math.round((receivedBytes / contentLength) * 100) : 0;
+                        Math.round((receivedBytes / contentLength) * 100) : 0;
 
                     // Send progress update via SSE
                     downloadSSE.sendProgress({
@@ -196,19 +212,25 @@ export class ModelsService {
                 }
             }
 
-            // Concatenate all chunks into a single Buffer
-            const concatenated = new Uint8Array(receivedBytes);
-            let position = 0;
-            for (const chunk of chunks) {
-                concatenated.set(chunk, position);
-                position += chunk.length;
-            }
+            // Close the file stream properly
+            await new Promise<void>((resolve, reject) => {
+                fileStream.end((err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
 
-            const buffer = Buffer.from(concatenated);
-
-            const outputPath = path.join(config.getLlmModelsFolder(), combinedFileName);
-            await fs.writeFile(outputPath, buffer);
             console.log(`File saved to: ${outputPath}`);
+
+            // Validate file size if content length was provided
+            if (contentLength > 0) {
+                const stats = await fs.stat(outputPath);
+                if (stats.size !== contentLength) {
+                    const error = new Error(`Downloaded file size (${stats.size} bytes) does not match expected size (${contentLength} bytes)`);
+                    downloadSSE.sendError(error);
+                    throw error;
+                }
+            }
 
             // Send final 100% complete update
             downloadSSE.sendProgress({
@@ -227,6 +249,13 @@ export class ModelsService {
         } catch (error) {
             // Remove from active downloads
             delete this.activeDownloads[downloadKey];
+
+            // Try to clean up partial file
+            try {
+                await fs.unlink(outputPath);
+            } catch (cleanupError) {
+                console.warn(`Failed to clean up partial download at ${outputPath}:`, cleanupError);
+            }
 
             // Check if this was an abort error
             if ((error as Error).name === 'AbortError') {
