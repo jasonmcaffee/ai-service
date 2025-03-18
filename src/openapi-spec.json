@@ -1299,6 +1299,31 @@
         ]
       }
     },
+    "/models/gguf-files": {
+      "get": {
+        "operationId": "getGgufFiles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of GGUF files",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LlmFile"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all GGUF files from models folder",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
     "/models/model-types": {
       "get": {
         "operationId": "getModelTypes",
@@ -2402,6 +2427,25 @@
           "percentComplete",
           "downloadSpeed",
           "estimatedSecondsRemaining"
+        ]
+      },
+      "LlmFile": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string"
+          },
+          "fileSizeGB": {
+            "type": "number"
+          },
+          "createdDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileName",
+          "fileSizeGB",
+          "createdDate"
         ]
       },
       "ModelType": {

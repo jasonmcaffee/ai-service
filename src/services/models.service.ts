@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ModelsRepository } from '../repositories/models.repository';
-import { CreateModel, HFModel, Model, ModelType, UpdateModel } from '../models/api/conversationApiModels';
+import { CreateModel, HFModel, LlmFile, Model, ModelType, UpdateModel } from '../models/api/conversationApiModels';
 import config from '../config/config';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -56,6 +56,37 @@ export class ModelsService {
 
         return downloadSSE;
     }
+
+    /**
+     * Reads all .gguf files from the configured LLM models folder
+     * @returns An array of LlmFile objects
+     */
+    async getLlmModelsFolderGgufFiles(): Promise<LlmFile[]> {
+        const modelsFolder = config.getLlmModelsFolder();
+        const files: LlmFile[] = [];
+
+        try {
+            await fs.access(modelsFolder);
+            // Read all files in the directory
+            const allFiles = await fs.readdir(modelsFolder);
+            // Filter for .gguf files
+            const ggufFiles = allFiles.filter(file => path.extname(file).toLowerCase() === '.gguf');
+            // Create LlmFile objects for each .gguf file
+            for (const file of ggufFiles) {
+                const filePath = path.join(modelsFolder, file);
+                const stats = await fs.stat(filePath);
+                // Convert file size from bytes to GB (1 GB = 1024^3 bytes)
+                const fileSizeGB = stats.size / Math.pow(1024, 3);
+                const createdDate = stats.birthtime.toISOString();
+                files.push( {fileName: file, fileSizeGB, createdDate});
+            }
+            return files;
+        } catch (error) {
+            console.error(`Error reading GGUF files: ${error}`);
+            return files;
+        }
+    }
+
 
     async downloadFileFromHuggingFaceModelStreamDownloadProgress(memberId: string, modelId: string, filename: string, downloadSSE: DownloadSSESubject): Promise<void> {
         const url = `https://huggingface.co/${modelId}/resolve/main/${filename}`;

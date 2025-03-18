@@ -16,7 +16,7 @@ import {
     UpdateModel,
     ModelType,
     HFModel,
-    DownloadProgress,
+    DownloadProgress, LlmFile,
 } from '../models/api/conversationApiModels';
 import { AuthenticationService } from '../services/authentication.service';
 import { Response } from 'express';
@@ -74,6 +74,13 @@ export class ModelsController {
         const memberId = this.authenticationService.getMemberId();
         const wasCanceled = await this.modelsService.stopDownloadingHuggingFaceModelFile(memberId, modelId, filename);
         return { canceled: wasCanceled };
+    }
+
+    @ApiOperation({ summary: 'Get all GGUF files from models folder' })
+    @ApiResponse({ status: 200, description: 'List of GGUF files', type: [LlmFile] })
+    @Get('gguf-files')
+    async getGgufFiles(): Promise<LlmFile[]> {
+        return this.modelsService.getLlmModelsFolderGgufFiles();
     }
 
     @ApiOperation({ summary: 'Get all model types' })

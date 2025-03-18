@@ -508,3 +508,12 @@ export class DownloadProgress {
   @ApiProperty()
   estimatedSecondsRemaining: number;
 }
+
+export class LlmFile {
+  @ApiProperty()
+  fileName: string;
+  @ApiProperty()
+  fileSizeGB: number;
+  @ApiProperty()
+  createdDate: string;
+}
