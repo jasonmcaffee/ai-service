@@ -34,7 +34,7 @@ export class ModelsService {
     }
 
     createDownloadStreamForFile(memberId: string, modelId: string, filename: string): DownloadSSESubject {
-        const downloadKey = `${memberId}-${filename}`;
+        const downloadKey = `${memberId}-${modelId}-${filename}`;
         const downloadSSE = new DownloadSSESubject();
 
         // If there's already an active download for this file, return its SSE
@@ -64,7 +64,7 @@ export class ModelsService {
         const modelIdWithoutSlash = modelId.replaceAll('/', '-');
         const combinedFileName = `${modelIdWithoutSlash}-${filename}`;
         // Get or create download SSE subject
-        const downloadKey = `${memberId}-${filename}`;
+        const downloadKey = `${memberId}-${modelId}-${filename}`;
         const abortController = this.activeDownloads[downloadKey].abortController;
 
         try {
@@ -185,8 +185,8 @@ export class ModelsService {
         }
     }
 
-    async stopDownloadingHuggingFaceModelFile(memberId: string, fileName: string): Promise<boolean> {
-        const downloadKey = `${memberId}-${fileName}`;
+    async stopDownloadingHuggingFaceModelFile(memberId: string, modelId: string, fileName: string): Promise<boolean> {
+        const downloadKey = `${memberId}-${modelId}-${fileName}`;
         if (this.activeDownloads[downloadKey]) {
             // Abort the download
             this.activeDownloads[downloadKey].abortController.abort();

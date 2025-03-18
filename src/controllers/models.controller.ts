@@ -64,13 +64,15 @@ export class ModelsController {
 
     @ApiOperation({ summary: 'Stop downloading a file from HuggingFace model' })
     @ApiParam({ name: 'filename', type: 'string', required: true, description: 'File name to stop downloading' })
+    @ApiParam({ name: 'modelId', type: 'string', required: true, description: 'model id name to stop downloading' })
     @ApiResponse({ status: 200, description: 'Download canceled or not found' })
-    @Delete('stopDownloadingHuggingFaceModelFile/:filename')
+    @Delete('stopDownloadingHuggingFaceModelFile/:modelId/:filename')
     async stopDownloadingHuggingFaceModelFile(
+      @Param('modelId') modelId: string,
       @Param('filename') filename: string
     ) {
         const memberId = this.authenticationService.getMemberId();
-        const wasCanceled = await this.modelsService.stopDownloadingHuggingFaceModelFile(memberId, filename);
+        const wasCanceled = await this.modelsService.stopDownloadingHuggingFaceModelFile(memberId, modelId, filename);
         return { canceled: wasCanceled };
     }
 

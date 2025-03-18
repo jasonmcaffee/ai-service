@@ -1265,10 +1265,19 @@
         ]
       }
     },
-    "/models/stopDownloadingHuggingFaceModelFile/{filename}": {
+    "/models/stopDownloadingHuggingFaceModelFile/{modelId}/{filename}": {
       "delete": {
         "operationId": "stopDownloadingHuggingFaceModelFile",
         "parameters": [
+          {
+            "name": "modelId",
+            "required": true,
+            "in": "path",
+            "description": "model id name to stop downloading",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "filename",
             "required": true,
