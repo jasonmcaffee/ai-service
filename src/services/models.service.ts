@@ -103,9 +103,9 @@ export class ModelsService {
                 chunks.push(value);
                 receivedBytes += value.length;
 
-                // Send progress updates every 5 seconds
+                // Send progress updates every 1 seconds
                 const now = Date.now();
-                if (now - lastProgressUpdate > 5000) {
+                if (now - lastProgressUpdate > 1000) {
                     const elapsedSeconds = (now - startTime) / 1000;
                     const bytesPerSecond = receivedBytes / elapsedSeconds;
                     const downloadSpeed = bytesPerSecond / (1024 * 1024); // Convert to MBps
@@ -166,11 +166,6 @@ export class ModelsService {
             // Remove from active downloads
             delete this.activeDownloads[downloadKey];
         } catch (error) {
-            // Send error to client
-            if (downloadSSE) {
-                downloadSSE.sendError(error);
-            }
-
             // Remove from active downloads
             delete this.activeDownloads[downloadKey];
 
@@ -179,6 +174,8 @@ export class ModelsService {
                 console.log(`Download of ${filename} was canceled`);
                 return;
             }
+
+            downloadSSE.sendError(error);
 
             console.error(`Error downloading ${filename}:`, error);
             throw error;
