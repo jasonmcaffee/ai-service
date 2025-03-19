@@ -336,8 +336,8 @@ export class HFModelSibling {
   rfilename: string; //phi-2.Q2_K.gguf
 }
 export class HFModel {
-  @ApiProperty()
-  _id: string; //"6580aa20419afba19a692cc8",
+  // @ApiProperty()
+  // _id: string; //"6580aa20419afba19a692cc8", //duplicate identifier "id" on client. underscore ignored.
   @ApiProperty()
   id: string; // "TheBloke/phi-2-GGUF",
   @ApiProperty()

@@ -2484,9 +2484,6 @@
       "HFModel": {
         "type": "object",
         "properties": {
-          "_id": {
-            "type": "string"
-          },
           "id": {
             "type": "string"
           },
@@ -2525,7 +2522,6 @@
           }
         },
         "required": [
-          "_id",
           "id",
           "name",
           "modelId",
