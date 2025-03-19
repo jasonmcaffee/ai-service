@@ -285,6 +285,8 @@ export class Model {
   filePath?: string;
   @ApiProperty({nullable: true})
   contextSize?: number;
+  @ApiProperty({nullable: true})
+  isCurrentlyRunningOnLlamaCpp?: boolean;
 }
 
 export class CreateModel {

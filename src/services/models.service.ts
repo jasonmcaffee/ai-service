@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as fsNoPromise from 'fs';
 import DownloadSSESubject from '../models/DownloadSSESubject';
+import { LlamaCppService } from './llamacpp.service';
 
 @Injectable()
 export class ModelsService {
@@ -16,7 +17,7 @@ export class ModelsService {
         downloadSSE?: DownloadSSESubject
     }> = {};
 
-    constructor(private readonly modelsRepository: ModelsRepository) {}
+    constructor(private readonly modelsRepository: ModelsRepository, private readonly llamaCppService: LlamaCppService) {}
 
     async searchModelsOnHuggingFace(query: string) : Promise<HFModel[]>{
         const url = `https://huggingface.co/api/models?search=${encodeURIComponent(query)}&sort=downloads&direction=-1&limit=50&full=true`;
@@ -312,7 +313,25 @@ export class ModelsService {
     }
 
     async getAllModelsForMember(memberId: string): Promise<Model[]> {
-        return this.modelsRepository.getAllModelsForMember(memberId);
+        const models = await this.modelsRepository.getAllModelsForMember(memberId);
+        const llamaCppModels = models.filter(m => m.modelTypeId == 2 && m.url.length > 0);
+        const llamaCppModelUrls = Array.from(new Set(llamaCppModels.map(m => m.url))); //distinct urls
+        const llamaCppUrlAndActiveModelFilePathForThatUrl: Record<string, string> = {};
+        for(let llamaCppUrl of llamaCppModelUrls){
+            try{
+                const activeModel = await this.llamaCppService.getCurrentlyRunningModel(llamaCppUrl);
+                if(activeModel.data.length > 0){
+                    llamaCppUrlAndActiveModelFilePathForThatUrl[llamaCppUrl] = activeModel.data[0].id; //e.g "C:\\shared-drive\\llm_models\\Qwen2.5-Coder-14B-Instruct-Q6_K.gguf"
+                }
+            }catch(e){
+                console.error(`error getting llamacppservice currently running model: `, e);
+            }
+        }
+        for(let llamaCppModel of llamaCppModels){ //most likely there is only one llamacpp service, with multiple models.
+            const activeModelForLlamaCppUrl = llamaCppUrlAndActiveModelFilePathForThatUrl[llamaCppModel.url];
+            llamaCppModel.isCurrentlyRunningOnLlamaCpp = activeModelForLlamaCppUrl == llamaCppModel.filePath;
+        }
+        return models;
     }
 
     async createModel(memberId: string, model: CreateModel): Promise<Model> {
