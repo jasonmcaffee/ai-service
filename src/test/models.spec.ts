@@ -48,7 +48,7 @@ describe("models", ()=>{
     const downloadSSE = modelsService.createDownloadStreamForFile(memberId, modelResult1.modelId, siblingGgufFileName)
     const downloadFileResult = modelsService.downloadFileFromHuggingFaceModelStreamDownloadProgress(memberId, modelResult1.modelId, siblingGgufFileName, downloadSSE);
     await waitForDownloadProgress(downloadSSE);
-    await modelsService.stopDownloadingHuggingFaceModelFile(memberId, siblingGgufFileName);
+    await modelsService.stopDownloadingHuggingFaceModelFile(memberId, modelResult1.modelId, siblingGgufFileName);
 
   }, 5 * 60 * 1000);
 })

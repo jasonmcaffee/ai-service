@@ -991,6 +991,38 @@
         ]
       }
     },
+    "/llamaServerController/currentlyRunningModel": {
+      "get": {
+        "operationId": "getCurrentlyRunningModel",
+        "parameters": [
+          {
+            "name": "url",
+            "required": true,
+            "in": "query",
+            "description": "url of the llama cpp server",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LlamaCppModelsResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "get currently running model information",
+        "tags": [
+          "LlamaServerController"
+        ]
+      }
+    },
     "/prompts": {
       "post": {
         "operationId": "createPrompt",
@@ -2311,6 +2343,82 @@
           "contextSize",
           "nPredict",
           "jinja"
+        ]
+      },
+      "LlamaCppModelsDataMeta": {
+        "type": "object",
+        "properties": {
+          "vocab_type": {
+            "type": "number"
+          },
+          "n_vocab": {
+            "type": "number"
+          },
+          "n_ctx_train": {
+            "type": "number"
+          },
+          "n_embd": {
+            "type": "number"
+          },
+          "n_params": {
+            "type": "number"
+          },
+          "size": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "vocab_type",
+          "n_vocab",
+          "n_ctx_train",
+          "n_embd",
+          "n_params",
+          "size"
+        ]
+      },
+      "LlamaCppModelsData": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "object": {
+            "type": "string"
+          },
+          "created": {
+            "type": "number"
+          },
+          "owned_by": {
+            "type": "string"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/LlamaCppModelsDataMeta"
+          }
+        },
+        "required": [
+          "id",
+          "object",
+          "created",
+          "owned_by",
+          "meta"
+        ]
+      },
+      "LlamaCppModelsResponse": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LlamaCppModelsData"
+            }
+          }
+        },
+        "required": [
+          "object",
+          "data"
         ]
       },
       "CreateMemberPrompt": {

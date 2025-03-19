@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {exec, spawn} from "child_process";
 import * as os from 'os';
+import { LlamaCppModelsResponse } from '../models/api/conversationApiModels';
 
 const checkForServerStartInLogFilePathEveryNms = 50;
 
@@ -15,6 +16,23 @@ export class LlamaCppService {
     private isWindows = os.platform() === 'win32';
     private readonly llamaServerExePath = `C:\\shared-drive\\dev\\llama.cpp-v3\\build\\bin\\Release\\llama-server.exe`
     constructor() {}
+
+
+    async getCurrentlyRunningModel(llamaCppBaseUrl="http://192.168.0.209:8080"): Promise<LlamaCppModelsResponse>{
+        const url = `${llamaCppBaseUrl}/v1/models`;
+
+        try{
+            const result = await fetch(url);
+            if(!result.ok){
+                throw new Error(`could not connect to url ${url} to get model data`);
+            }
+            const json = await result.json();
+            const llamaCppModelsResponse = json as LlamaCppModelsResponse;
+            return llamaCppModelsResponse;
+        }catch(e){
+            throw new Error(`error getting model data from llama.cpp: ${e.message}`);
+        }
+    }
 
     async loadModel(request: LoadModelRequest): Promise<{ success: boolean, message: string }> {
         try {

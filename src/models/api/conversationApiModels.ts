@@ -519,3 +519,37 @@ export class LlmFile {
   @ApiProperty()
   createdDate: string;
 }
+export class LlamaCppModelsDataMeta{
+  @ApiProperty()
+  vocab_type: number; // 2
+  @ApiProperty()
+  n_vocab: number; // 152064
+  @ApiProperty()
+  n_ctx_train: number; //32768
+  @ApiProperty()
+  n_embd: number; //5120
+  @ApiProperty()
+  n_params: number; //14770033664  (14 B)
+  @ApiProperty()
+  size: number; //12118716416 (12 GB)
+}
+
+export class LlamaCppModelsData {
+  @ApiProperty()
+  id: string; // e.g. "C:\\shared-drive\\llm_models\\Qwen2.5-Coder-14B-Instruct-Q6_K.gguf"
+  @ApiProperty()
+  object: string; //model
+  @ApiProperty()
+  created: number; //1742410197;
+  @ApiProperty()
+  owned_by: string; //llamacpp
+  @ApiProperty()
+  meta: LlamaCppModelsDataMeta;
+}
+
+export class LlamaCppModelsResponse {
+  @ApiProperty()
+  object: string; // e.g. list
+  @ApiProperty({type: [LlamaCppModelsData]})
+  data: LlamaCppModelsData[]
+}
