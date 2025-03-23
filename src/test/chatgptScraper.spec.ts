@@ -19,6 +19,6 @@ describe("chatgpt scraper", ()=>{
       console.log(completeText);
     });
 
-    await wait(20000);
-  }, 1 * 60 * 1000);
+    await wait(5 * 60 * 1000);
+  }, 5 * 60 * 1000);
 })

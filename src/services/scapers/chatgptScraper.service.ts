@@ -136,7 +136,7 @@ const sseInterceptScript = `
 export class ChatgptScraperService {
     private browser;
 
-    async main(prompt:string, onTextReceived: (text: string) => void, onResponseCompleted: (completeText: string) => void ): Promise<string>{
+    async main(prompt:string, onTextReceived: (text: string) => void, onResponseCompleted: (completeText: string) => void ): Promise<void>{
         //duckduckgo has headless mode detection and throws an error.  use stealth to circumvent.
         chromium.use(stealth);
         if (!this.browser || this.browser.isConnected() === false) {
@@ -145,7 +145,7 @@ export class ChatgptScraperService {
                 args: ['--disable-blink-features=AutomationControlled'],
             });
         }
-        const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36";
+        const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.69998.89 Safari/537.36";
 
         const context = await this.browser.newContext({
             userAgent,
@@ -154,8 +154,15 @@ export class ChatgptScraperService {
         });
         const page = await context.newPage();
         try {
-            await page.goto(`https://chatgpt.com/`);
-            await page.waitForLoadState('domcontentloaded', {timeout: 1 * 10000});
+            await page.goto(`https://facebook.com`);
+            await wait(1 * 1000);
+            await page.goto(`https://pinterest.com`);
+            await wait(1 * 1000);
+
+            await page.goto(`https://chatgpt.com`);
+            // await page.waitForLoadState('domcontentloaded', {timeout: 10 * 1000});
+
+            await wait(10 * 60 * 1000);
 
             await page.exposeFunction('onTextReceived', (text: string) => {
                 console.log('Text received from page:', text);
@@ -168,7 +175,7 @@ export class ChatgptScraperService {
             });
 
             await page.evaluate(() => {
-                (function () {
+                function interceptFetches () {
                     const originalFetch = window.fetch;
                     //@ts-ignore
                     window.fetch = async function (...args) {
@@ -269,16 +276,17 @@ export class ChatgptScraperService {
                             throw error;
                         }
                     };
-                })();
+                }
+                interceptFetches();
             });
 
+            console.log(`finding text area...`);
+            const askTextarea = await page.locator('[data-placeholder="Ask anything"]', {timeout: 10 * 1000});
+            console.log('filling text area');
+            await askTextarea.fill(prompt, {timeout: 5 * 60 * 1000});
+            await askTextarea.press('Enter', {timeout: 5 * 60 * 1000});
 
-            const askTextarea = await page.locator('textarea[placeholder="Ask anything"][data-virtualkeyboard="true"]');
-            await askTextarea.fill(prompt);
-            await askTextarea.press('Enter');
-
-            await wait(20000);
-            return '';
+            await wait(5 * 60 * 1000);
         } catch (error) {
             console.error('loading chatgpt failed:', error);
             throw error;
