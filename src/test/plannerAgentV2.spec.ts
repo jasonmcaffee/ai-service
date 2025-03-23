@@ -1,14 +1,8 @@
 import {Test, TestingModule} from "@nestjs/testing";
-import {ModelsService} from "../services/models.service";
-import {ModelsRepository} from "../repositories/models.repository";
-import { OpenaiWrapperService } from '../_junk/openaiWrapper.service';
 import PlannerAgentV2 from '../models/agent/PlannerAgentV2';
 import { Model } from '../models/api/conversationApiModels';
 import { ChatCompletionChunk, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import ToolCall = ChatCompletionChunk.Choice.Delta.ToolCall;
 import { CalculatorToolsService } from '../services/agent/tools/calculatorTools.service';
-import InferenceSSESubject from '../models/InferenceSSESubject';
-import { getChatPageSystemPrompt } from '../utils/prompts';
 import { OpenaiWrapperServiceV2 } from '../services/openAiWrapperV2.service';
 import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 
