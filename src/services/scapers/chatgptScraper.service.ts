@@ -1,8 +1,8 @@
 import {Injectable} from "@nestjs/common";
-import { Model, SearchResult, SearchResultResponse } from '../models/api/conversationApiModels';
+import { Model, SearchResult, SearchResultResponse } from '../../models/api/conversationApiModels';
 import {Browser, BrowserContext, Page} from 'playwright';
 import {Subject} from "rxjs";
-import {wait} from "../utils/utils";
+import {wait} from "../../utils/utils";
 const { chromium } = require("playwright-extra");
 const stealth = require("puppeteer-extra-plugin-stealth")();
 
@@ -38,7 +38,7 @@ export class DuckduckgoSearchService {
                 "headers": {
                     "accept": "text/event-stream",
                     "accept-language": "en-US,en;q=0.9",
-                    "authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjE5MzQ0ZTY1LWJiYzktNDRkMS1hOWQwLWY5NTdiMDc5YmQwZSIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS92MSJdLCJjbGllbnRfaWQiOiJhcHBfWDh6WTZ2VzJwUTl0UjNkRTduSzFqTDVnSCIsImV4cCI6MTc0MzQ3NDMzOSwiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS9hdXRoIjp7InVzZXJfaWQiOiJ1c2VyLTVOT21UY1FYQ2xLb21OZjlpVFh5bXVqTiJ9LCJodHRwczovL2FwaS5vcGVuYWkuY29tL3Byb2ZpbGUiOnsiZW1haWwiOiJqYXNvbmxtY2FmZmVlQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwiaWF0IjoxNzQyNjEwMzM5LCJpc3MiOiJodHRwczovL2F1dGgub3BlbmFpLmNvbSIsImp0aSI6ImNkZjJlZTgxLTQ5M2UtNDI0ZS05MDFlLTdkOGJhYTY0YjAxMyIsIm5iZiI6MTc0MjYxMDMzOSwicHdkX2F1dGhfdGltZSI6MTc0MTc0NDY3MDYzOSwic2NwIjpbIm9wZW5pZCIsImVtYWlsIiwicHJvZmlsZSIsIm9mZmxpbmVfYWNjZXNzIiwibW9kZWwucmVxdWVzdCIsIm1vZGVsLnJlYWQiLCJvcmdhbml6YXRpb24ucmVhZCIsIm9yZ2FuaXphdGlvbi53cml0ZSJdLCJzZXNzaW9uX2lkIjoiYXV0aHNlc3NfWnA1RmJGMnFMd1pnN3VsYnJraVZacTFWIiwic3ViIjoiZ29vZ2xlLW9hdXRoMnwxMTA5MTI3NDc5NTAxNzY2ODQxNjUifQ.sC7yQIA-TTiaG9wGVfKEVua1ST5tv6zLZ3omG0yZZUeQ7U3L3ewXUnARVCK3HzCNSRjdw4etlSUeOihyVjI7eyb6yiOkz-nnaAFcqUZjLfr012mJardm1yxL6Ml-CgFo64PRHg6T4eWnnSueCTFzZnTFzJe-vKqHQ2qXeIjekiP2Dl_V_ahn2KE2_jWyT5C4agTakioznvAXrmiNxs-m_huBBMHpM9JMYwULAOBvhKg1GVaRrRyRru9uaC9FnsqFk-k5yHi7DRL9mm0pR7OFKFDULUSyf29lFnMZujeeUz7OIhCw5RWJ3fOj9NO3r2G9wM_gmU_gi4ETPb7dPedHb0GnrYHcadiitJQpnIjMAxdVZ6Vv9JXHtITKx0qfOkVggHN9kPipFdtHPUuQzi5Y1tlCU1XRYALdIB2KGix5FVMGLpK8PYRmGk2xA2kz-eGcL16Fr876V5cMTrTPWf3_HrM0a4FP10iFWAqr1jdNbZwKvBpFL74RUKZ2ETpPTltGKCAFlqcSbtcxKPB0FrGyzrLxd1hmG2b97O67IRzj0NyoSzmDlDba2qdgL9QUlnkonbiteRuI4oK_OYt2up73sAYE961NMMQEPi6LCcANKix8WjAMG89i5CS3-WxjOd29hOpB4qP5qAw--zxdJ5eBZp7Q52l41jqoiEClzBTPPGY",
+                    "authorization": "Bearer ",
                     "content-type": "application/json",
                     "oai-device-id": "94c4b26d-f091-4680-8aee-d24f9ea8cb95",
                     "oai-echo-logs": "0,530,1,3271,0,96432,1,101251,0,102777,1,103987,0,107705,1,107732,0,344567,1,349107",
