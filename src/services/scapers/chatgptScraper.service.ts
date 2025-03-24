@@ -3,11 +3,12 @@ import { Model, SearchResult, SearchResultResponse } from '../../models/api/conv
 import {Browser, BrowserContext, Page} from 'playwright';
 import {Subject} from "rxjs";
 import {wait} from "../../utils/utils";
-const { chromium } = require("playwright-extra");
-const stealth = require("puppeteer-extra-plugin-stealth")();
+// const { chromium } = require("playwright-extra");
+// const stealth = require("puppeteer-extra-plugin-stealth")();
+// import puppeteer from 'puppeteer';
+// const { firefox } = require('playwright');
+const { connect } = require("puppeteer-real-browser");
 
-// const { connect } = require("puppeteer-real-browser");
-import { connect } from "puppeteer-real-browser";
 
 @Injectable()
 export class ChatgptScraperService {
@@ -31,33 +32,27 @@ export class ChatgptScraperService {
         // });
         //
         // const page = await context.newPage();
-
-        const { browser, page } = await connect({
-            headless: false,
-            // args: [],
-            // customConfig: {},
-            // turnstile: true,
-            // connectOption: {},
-            // disableXvfb: false,
-            // ignoreAllFlags: false,
-            // proxy:{
-            //     host:'<proxy-host>',
-            //     port:'<proxy-port>',
-            //     username:'<proxy-username>',
-            //     password:'<proxy-password>'
-            // }
-        });
-
+        // const browser = await puppeteer.launch({
+        //     headless: false,
+        // });
+        // const page = await browser.newPage();
+        // const browser = await firefox.launch({headless: false});
+        // const page = await browser.newPage();
+        const { page, browser } = await connect();
         try {
-            await page.goto(`https://facebook.com`);
-            await wait(1 * 1000);
-            await page.goto(`https://pinterest.com`);
-            await wait(1 * 1000);
+            // await page.goto(`https://fingerprint.com/products/bot-detection/`);
+            // await wait(200 * 1000);
+            // await page.goto(`https://www.browserscan.net/`);
+            // await wait(200 * 1000);
+            // await page.goto(`https://nopecha.com/demo/cloudflare`);
+            // await wait(200 * 1000);
+
+
 
             await page.goto(`https://chatgpt.com`);
             // await page.waitForLoadState('domcontentloaded', {timeout: 10 * 1000});
 
-            await wait(10 * 60 * 1000);
+            await wait(1 * 6 * 1000);
 
             await page.exposeFunction('onTextReceived', (text: string) => {
                 console.log('Text received from page:', text);
