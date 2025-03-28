@@ -1,8 +1,6 @@
 import { Subject } from "rxjs";
 import { DownloadProgress } from './api/conversationApiModels';
 
-
-
 /**
  * A class used in conjunction with NestJS SSE to stream download progress back to the client.
  */
