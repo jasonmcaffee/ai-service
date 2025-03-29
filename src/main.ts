@@ -5,6 +5,7 @@ import { ensureTablesExist } from './db/ensureTablesExist';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { WsAdapter } from '@nestjs/platform-ws';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -31,7 +32,9 @@ async function bootstrap() {
   writeFileSync(swaggerPath, JSON.stringify(document, null, 2));
 
   await ensureTablesExist();
-  app.useWebSocketAdapter(new WsAdapter(app));
+  // app.useWebSocketAdapter(new WsAdapter(app));
+  app.useWebSocketAdapter(new IoAdapter(app));
+
   await app.listen(process.env.PORT ?? 3000);
   try{
     await testClient();

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
+import { SpeechToTextGateway } from './gateways/speechToText.gateway'; // Adjust path if needed
 
 // Recursive function to scan subdirectories for files with a given suffix
 function loadModules(directory: string, suffix: string): any[] {
@@ -24,12 +25,14 @@ function loadModules(directory: string, suffix: string): any[] {
 const controllers = loadModules(join(__dirname, 'controllers'), '.controller.js');
 const services = loadModules(join(__dirname, 'services'), '.service.js');
 const repositories = loadModules(join(__dirname, 'repositories'), '.repository.js');
+// const gateways = loadModules(join(__dirname, 'gateways'), '.gateway.js');
+const gateways = [SpeechToTextGateway];
 
 // const crawlerServices = loadModules(join(__dirname, 'crawler/services'), '.service.js');
 const crawlerServices = [];
 
 // const repositories = [];
-const providers = [...services, ...crawlerServices, ...repositories];
+const providers = [...services, ...crawlerServices, ...repositories, ...gateways];
 
 @Module({
   imports: [],
