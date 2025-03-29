@@ -1692,9 +1692,10 @@
           "200": {
             "description": "Successful response with audio buffer",
             "content": {
-              "application/json": {
+              "application/octet-stream": {
                 "schema": {
-                  "$ref": "#/components/schemas/Buffer"
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -2972,10 +2973,6 @@
           "responseFormat",
           "speed"
         ]
-      },
-      "Buffer": {
-        "type": "object",
-        "properties": {}
       },
       "SearchResult": {
         "type": "object",

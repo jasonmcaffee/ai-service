@@ -98,7 +98,14 @@ export class SpeechAudioController {
   @ApiResponse({
     status: 200,
     description: 'Successful response with audio buffer',
-    type: Buffer,
+    content: {
+      'application/octet-stream': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
   })
   @Post('textToSpeech')
   async textToSpeech(@Body() body: TextToSpeechRequest): Promise<Buffer> {
