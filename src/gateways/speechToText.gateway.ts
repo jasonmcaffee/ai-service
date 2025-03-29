@@ -24,7 +24,7 @@ export class SpeechToTextGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   // Map clientId to memberId for easy lookup on disconnect
-  private clientMemberMap = new Map<string, string | number>();
+  private clientMemberMap = new Map<string, string>();
 
   // Inject your actual AuthenticationService and SpeechToTextService
   constructor(
@@ -63,6 +63,7 @@ export class SpeechToTextGateway
         client.id, // Pass client.id too if service needs it
         model, // Pass retrieved model
         language, // Pass retrieved language
+        client
       );
 
       client.emit('connectionSuccess', { memberId: memberId, clientId: client.id }); // Optional ack
@@ -108,15 +109,13 @@ export class SpeechToTextGateway
     } else if (Buffer.isBuffer(data)) { // Check if socket.io wrapped it
       buffer = data;
     } else {
-      console.warn(
-        `[${memberId}/${client.id}] Received non-buffer data on audioChunk: ${typeof data}`,
-      );
+      console.warn( `[${memberId}/${client.id}] Received non-buffer data on audioChunk: ${typeof data}`,);
       client.emit('transcriptionError', 'Invalid audio data format.'); // Send error back
       return;
     }
 
     // Forward to the service
-    this.speechToTextService.addAudioChunk(memberId, buffer);
+    this.speechToTextService.handleAudioChunk(memberId, buffer);
   }
 
   @SubscribeMessage('stopTranscription')
