@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Query, Sse, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Sse,
+  UseInterceptors,
+  UploadedFile,
+  Res,
+  StreamableFile,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags, ApiBody, ApiConsumes, ApiProperty } from '@nestjs/swagger';
 import { SpeechAudioService } from '../services/speechAudio.service';
@@ -108,14 +119,21 @@ export class SpeechAudioController {
     },
   })
   @Post('textToSpeech')
-  async textToSpeech(@Body() body: TextToSpeechRequest): Promise<Buffer> {
-    return this.speechAudioService.textToSpeechSync(
+  async textToSpeech(
+    @Body() body: TextToSpeechRequest,
+    @Res({ passthrough: true }) res,
+  ): Promise<StreamableFile> {
+    const audioBuffer = await this.speechAudioService.textToSpeechSync(
       body.text,
       body.model,
       body.voice,
       body.responseFormat,
       body.speed,
     );
+    // Set headers for binary response
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="speech.mp3"');
+    return new StreamableFile(audioBuffer);
   }
 
   @ApiOperation({ summary: 'Convert text to speech and stream audio back' })
