@@ -1575,6 +1575,196 @@
         ]
       }
     },
+    "/speech-audio/transcribeStreaming": {
+      "get": {
+        "operationId": "streamTranscription",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "example": "data: { \"text\": \"transcription\", \"end\": \"true\" }"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stream audio transcription from microphone",
+        "tags": [
+          "Speech Audio"
+        ]
+      },
+      "post": {
+        "operationId": "transcribeAudioStreaming",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Audio file to transcribe",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeechToTextRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "example": "data: { \"text\": \"transcription\", \"end\": \"true\" }"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload audio file for transcription with streaming response",
+        "tags": [
+          "Speech Audio"
+        ]
+      }
+    },
+    "/speech-audio/transcribe": {
+      "post": {
+        "operationId": "transcribeAudio",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Audio file and language parameter",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "language": {
+                    "type": "string",
+                    "description": "Language code (e.g., en-US)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response with transcription text",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload audio file for transcription (non-streaming)",
+        "tags": [
+          "Speech Audio"
+        ]
+      }
+    },
+    "/speech-audio/textToSpeech": {
+      "post": {
+        "operationId": "textToSpeech",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Text to convert to speech",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextToSpeechRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response with audio buffer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Buffer"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Convert text to speech (non-streaming)",
+        "tags": [
+          "Speech Audio"
+        ]
+      }
+    },
+    "/speech-audio/textToSpeechStreaming": {
+      "post": {
+        "operationId": "textToSpeechStreaming",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Text to convert to speech",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextToSpeechRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "example": "data: { \"audio\": \"base64EncodedAudio\", \"end\": \"true\" }"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Convert text to speech and stream audio back",
+        "tags": [
+          "Speech Audio"
+        ]
+      }
+    },
+    "/speech-audio/cancel": {
+      "get": {
+        "operationId": "cancelAudioProcessing",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "query",
+            "description": "The ID of the session to cancel",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Cancel ongoing audio processing",
+        "tags": [
+          "Speech Audio"
+        ]
+      }
+    },
     "/webSearch/search": {
       "get": {
         "operationId": "webSearch",
@@ -2744,6 +2934,48 @@
           "filePath",
           "contextSize"
         ]
+      },
+      "SpeechToTextRequest": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "language"
+        ]
+      },
+      "TextToSpeechRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "voice": {
+            "type": "string"
+          },
+          "responseFormat": {
+            "type": "string"
+          },
+          "speed": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "text",
+          "model",
+          "voice",
+          "responseFormat",
+          "speed"
+        ]
+      },
+      "Buffer": {
+        "type": "object",
+        "properties": {}
       },
       "SearchResult": {
         "type": "object",

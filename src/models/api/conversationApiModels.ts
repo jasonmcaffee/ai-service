@@ -555,3 +555,39 @@ export class LlamaCppModelsResponse {
   @ApiProperty({type: [LlamaCppModelsData]})
   data: LlamaCppModelsData[]
 }
+
+export class SpeechToTextRequest {
+  @ApiProperty()
+  language: string = 'en';
+}
+
+export class TextToSpeechRequest {
+  @ApiProperty()
+  text: string;
+
+  @ApiProperty()
+  model: string = 'hexgrad/Kokoro-82M';
+
+  @ApiProperty()
+  voice: string = 'af_sky';
+
+  @ApiProperty()
+  responseFormat: string = 'mp3';
+
+  @ApiProperty()
+  speed: number = 1;
+}
+
+export class AudioStreamResponse {
+  @ApiProperty()
+  text?: string;
+
+  @ApiProperty()
+  audio?: string;
+
+  @ApiProperty()
+  end?: boolean;
+
+  @ApiProperty()
+  error?: string;
+}

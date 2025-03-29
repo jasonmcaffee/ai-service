@@ -23,7 +23,6 @@ describe("thing", ()=>{
     const audioBuffer = await result.arrayBuffer(); // Adjust according to your API response format
     const nodeBuffer = Buffer.from(audioBuffer);
 
-
     fs.writeFileSync(filePath, nodeBuffer);
 
     player.play(filePath);
