@@ -6,7 +6,7 @@ import * as path from 'path';
 import { Observable } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 import { SpeechAudioSSESubject } from '../models/SpeechAudioSSESubject';
-
+import { marked } from "marked";
 
 @Injectable()
 export class SpeechAudioService {
@@ -161,26 +161,19 @@ export class SpeechAudioService {
     }
   }
 
-  textToSpeech(text: string, model: string = 'hexgrad/Kokoro-82M', voice: string = 'af_sky', responseFormat: string = 'mp3', speed: number = 1): Observable<any> {
+  textToSpeechStreaming(text: string, model: string = 'hexgrad/Kokoro-82M', voice: string = 'af_sky', responseFormat: string = 'mp3', speed: number = 1): Observable<any> {
     const sessionId = uuidv4();
     const subject = new SpeechAudioSSESubject();
     const abortController = new AbortController();
     this.activeProcesses.set(sessionId, abortController);
 
-    const generateSpeech = async () => {
+    const generateSpeechForSentence = async (sentence: string) => {
       try {
+        console.log(`generating speech for sentence: `, sentence);
         const start = Date.now();
-        subject.sendProgress({ processingTime: 0 });
-
-        const result = await this.openAi.audio.speech.create({
-          model: model,
-          // @ts-ignore
-          voice: voice,
-          input: text,
-          //@ts-ignore
-          response_format: responseFormat,
-          speed: speed,
-        }, { signal: abortController.signal });
+        //@ts-ignore
+        const result = await this.openAi.audio.speech.create({ model: model, voice: voice, input: sentence, response_format: responseFormat, speed: speed, },
+          { signal: abortController.signal });
 
         const audioBuffer = await result.arrayBuffer();
         const base64Audio = Buffer.from(audioBuffer).toString('base64');
@@ -189,7 +182,7 @@ export class SpeechAudioService {
         console.log(`Speech generation finished in ${processingTime} ms`);
 
         subject.sendAudio(base64Audio);
-        subject.sendCompleteOnNextTick();
+        // subject.sendCompleteOnNextTick();
       } catch (error) {
         if (!abortController.signal.aborted) {
           console.error(`Error generating speech: ${error.message}`);
@@ -200,7 +193,18 @@ export class SpeechAudioService {
       }
     };
 
-    generateSpeech();
+    const generate = async (text: string) => {
+      const sentences = splitTextIntoSentences(text);
+      for(let s of sentences){
+        if(abortController.signal.aborted){
+          break;
+        }
+        await generateSpeechForSentence(s);
+      }
+      subject.sendCompleteOnNextTick();
+    };
+
+    generate(text);
     return subject.getSubject();
   }
 
@@ -248,4 +252,51 @@ export class SpeechAudioService {
 
     return { success: false, message: `No active processing found for session ${sessionId}` };
   }
+}
+
+const maxWordsPerSentence = 50;
+function splitTextIntoSentences(text: string): string[] {
+  const sentenceRegex = /[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g;
+  const sentences = text.match(sentenceRegex) || [];
+  const result: string[] = [];
+  for(let sentence of sentences){
+    let words = sentence.split(" ");
+    if(words.length >= maxWordsPerSentence){
+      while(words.length > maxWordsPerSentence){
+        const nextSentenceWords = words.splice(0, maxWordsPerSentence);
+        const nextSentence = nextSentenceWords.join(" ");
+        result.push(nextSentence);
+      }
+      const nextSentenceWords = words.splice(0, maxWordsPerSentence);
+      const nextSentence = nextSentenceWords.join(" ");
+      result.push(nextSentence);
+    }else{
+      result.push(sentence);
+    }
+  }
+  return result;
+}
+
+async function markdownToPlainText(markdown: string): Promise<string> {
+  const renderer = new marked.Renderer();
+
+  // Override rendering functions to extract plain text
+  renderer.paragraph = (text) => text + "\n";
+  renderer.heading = (text) => text + "\n";
+  renderer.list = (body) => body.items.join("\n");
+  renderer.listitem = (text) => `- ${text}\n`;
+  renderer.blockquote = (text) => `"${text}"\n`;
+  renderer.code = (code) => `${code}\n`;
+  renderer.strong = (text) => text.text;
+  renderer.em = (text) => text.text;
+  renderer.codespan = (text) => text.text;
+  renderer.table = (token) => token.header + "\n" + token.rows.join("\n");
+  renderer.tablerow = (content) => content + "\n";
+  renderer.tablecell = (content) => content + " | ";
+  renderer.link = ({href, title, tokens}) => title || '';
+  renderer.image = ({href, title, text}) => text;
+  renderer.hr = () => "\n";
+  renderer.br = () => "\n";
+
+  return await marked(markdown, { renderer });
 }

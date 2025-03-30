@@ -156,14 +156,14 @@ export class SpeechAudioController {
   })
   @Get('textToSpeechStreaming')
   @Sse()
-  textToSpeechStreaming(
+  async textToSpeechStreaming(
     @Query('text') text: string,
     @Query('model') model = 'hexgrad/Kokoro-82M',
     @Query('voice') voice = 'af_sky',
     @Query('responseFormat') responseFormat = 'mp3',
     @Query('speed') speed = 1,
-  ): Observable<any> {
-    return this.speechAudioService.textToSpeech(text, model, voice, responseFormat, Number(speed));
+  ): Promise<Observable<any>> {
+    return await this.speechAudioService.textToSpeechStreaming(text, model, voice, responseFormat, Number(speed));
   }
 
   @ApiOperation({ summary: 'Cancel ongoing audio processing' })
