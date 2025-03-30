@@ -137,10 +137,11 @@ export class SpeechAudioController {
   }
 
   @ApiOperation({ summary: 'Convert text to speech and stream audio back' })
-  @ApiBody({
-    description: 'Text to convert to speech',
-    type: TextToSpeechRequest,
-  })
+  @ApiQuery({ name: 'text', required: true, description: 'Text to convert to speech' })
+  @ApiQuery({ name: 'model', required: false, description: 'Model to use', example: 'hexgrad/Kokoro-82M' })
+  @ApiQuery({ name: 'voice', required: false, description: 'Voice to use', example: 'af_sky' })
+  @ApiQuery({ name: 'responseFormat', required: false, description: 'Response format', example: 'mp3' })
+  @ApiQuery({ name: 'speed', required: false, description: 'Speech speed', example: 1 })
   @ApiResponse({
     status: 200,
     description: 'Successful response',
@@ -153,16 +154,16 @@ export class SpeechAudioController {
       },
     },
   })
-  @Post('textToSpeechStreaming')
+  @Get('textToSpeechStreaming')
   @Sse()
-  textToSpeechStreaming(@Body() body: TextToSpeechRequest): Observable<any> {
-    return this.speechAudioService.textToSpeech(
-      body.text,
-      body.model,
-      body.voice,
-      body.responseFormat,
-      body.speed,
-    );
+  textToSpeechStreaming(
+    @Query('text') text: string,
+    @Query('model') model = 'hexgrad/Kokoro-82M',
+    @Query('voice') voice = 'af_sky',
+    @Query('responseFormat') responseFormat = 'mp3',
+    @Query('speed') speed = 1,
+  ): Observable<any> {
+    return this.speechAudioService.textToSpeech(text, model, voice, responseFormat, Number(speed));
   }
 
   @ApiOperation({ summary: 'Cancel ongoing audio processing' })

@@ -161,13 +161,7 @@ export class SpeechAudioService {
     }
   }
 
-  textToSpeech(
-    text: string,
-    model: string = 'hexgrad/Kokoro-82M',
-    voice: string = 'af_sky',
-    responseFormat: string = 'mp3',
-    speed: number = 1
-  ): Observable<any> {
+  textToSpeech(text: string, model: string = 'hexgrad/Kokoro-82M', voice: string = 'af_sky', responseFormat: string = 'mp3', speed: number = 1): Observable<any> {
     const sessionId = uuidv4();
     const subject = new SpeechAudioSSESubject();
     const abortController = new AbortController();

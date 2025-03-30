@@ -1708,20 +1708,55 @@
       }
     },
     "/speech-audio/textToSpeechStreaming": {
-      "post": {
+      "get": {
         "operationId": "textToSpeechStreaming",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Text to convert to speech",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TextToSpeechRequest"
-              }
+        "parameters": [
+          {
+            "name": "text",
+            "required": true,
+            "in": "query",
+            "description": "Text to convert to speech",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "speed",
+            "required": false,
+            "in": "query",
+            "description": "Speech speed",
+            "schema": {
+              "example": 1
+            }
+          },
+          {
+            "name": "responseFormat",
+            "required": false,
+            "in": "query",
+            "description": "Response format",
+            "schema": {
+              "example": "mp3"
+            }
+          },
+          {
+            "name": "voice",
+            "required": false,
+            "in": "query",
+            "description": "Voice to use",
+            "schema": {
+              "example": "af_sky"
+            }
+          },
+          {
+            "name": "model",
+            "required": false,
+            "in": "query",
+            "description": "Model to use",
+            "schema": {
+              "example": "hexgrad/Kokoro-82M"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
