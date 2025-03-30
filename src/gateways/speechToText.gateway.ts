@@ -12,6 +12,9 @@ import { Server, Socket } from 'socket.io';
 import { SpeechToTextService } from '../services/speechToText.service';
 import { AuthenticationService } from '../services/authentication.service';
 
+/**
+ * This is probably not needed.  its used when chunking audio, which doesn't work great with audio/webm, as we have to start/stop in order to get the headers sent each tim.
+ */
 @WebSocketGateway({
   cors: {
     origin: '*', // Adjust for production!

@@ -9,9 +9,13 @@ interface ClientState {
   model: string;
   language?: string;
   clientId: string;
-  socket: Socket; // Added to emit transcription back to the client
+  socket: Socket;
+  previousTranscription: string; // Added to store prior text
 }
 
+/**
+ * This isn't needed for now.
+ */
 @Injectable()
 export class SpeechToTextService implements OnModuleDestroy {
   private readonly openAi: OpenAI;
@@ -39,7 +43,7 @@ export class SpeechToTextService implements OnModuleDestroy {
     clientId: string,
     model: string,
     language: string | undefined,
-    socket: Socket, // Pass the socket instance
+    socket: Socket,
   ): void {
     console.log(`Client connected: MemberId=${memberId}, ClientId=${clientId}, Model=${model}, Language=${language || 'auto'}`);
     if (this.clientStates.has(memberId)) {
@@ -52,7 +56,8 @@ export class SpeechToTextService implements OnModuleDestroy {
       model,
       language,
       clientId,
-      socket, // Store socket for emitting results
+      socket,
+      previousTranscription: '', // Initialize empty
     });
   }
 
@@ -86,6 +91,7 @@ export class SpeechToTextService implements OnModuleDestroy {
         file: fileArgument,
         model: clientState.model,
         language: clientState.language,
+        prompt: clientState.previousTranscription, // Provide prior text as context
       }, { signal: abortController.signal });
 
       const duration = Date.now() - start;
@@ -93,7 +99,8 @@ export class SpeechToTextService implements OnModuleDestroy {
 
       if (!abortController.signal.aborted) {
         console.log(`Transcription Result:`, speechToTextResult.text);
-        clientState.socket.emit('transcriptionResult', speechToTextResult.text); // Emit to client
+        clientState.previousTranscription = speechToTextResult.text; // Update previous transcription
+        clientState.socket.emit('transcriptionResult', speechToTextResult.text);
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
