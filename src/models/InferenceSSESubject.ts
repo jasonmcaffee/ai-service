@@ -14,9 +14,15 @@ export default class InferenceSSESubject implements IEmitAudioSSESubject{
 
   constructor() {}
 
-  sendAudio(audio: string) {
-    const audioSignal = JSON.stringify({ audio });
+  //@ts-ignore
+  sendAudio(audio: string, audioForText: string) {
+    const audioSignal = JSON.stringify({ audio,  audioForText});
     this.subject.next(audioSignal);
+  }
+  sendAudioOnNextTick(audio: string, audioForText: string){
+    setTimeout(() => {
+      this.sendAudio(audio, audioForText);
+    }, 10);
   }
   sendAudioComplete() {
     const endSignal = JSON.stringify({ audioEnd: true });

@@ -112,7 +112,7 @@ export class ChatService {
     }
 
     const handleCompletedResponseText = async (completeText: string) => {
-      console.log('handle response completed got: ', completeText);
+      // console.log('handle response completed got: ', completeText);
       const formattedResponse = completeText;
       const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system', statusTopicsKeyValues}, false);
@@ -138,45 +138,83 @@ export class ChatService {
 
   private handleSendingAudio(inferenceSSESubject: InferenceSSESubject, shouldRespondWithAudio: boolean, memberId: string){
     if(!shouldRespondWithAudio){ return; }
+
+    const pendingAudio: {index: number, sentence: string, buffer?: Buffer}[] = [];
+    let nextIndexToSend = 0;
     const audioPromises: Promise<Buffer>[] = [];
+
+    const processPendingAudio = () => {
+      while (nextIndexToSend < pendingAudio.length && pendingAudio[nextIndexToSend].buffer) {
+        const item = pendingAudio[nextIndexToSend];
+        const base64Audio = Buffer.from(item.buffer!).toString('base64');
+        console.log(`${Date.now()} sending audio for sentence: ${item.sentence}`);
+        inferenceSSESubject.sendAudioOnNextTick(base64Audio, item.sentence);
+        nextIndexToSend++;
+      }
+    };
 
     const subscription = inferenceSSESubject.getSubject().subscribe({
       next: async (data: string) => {
         try {
           const parsed = JSON.parse(data);
           if (parsed.sentence) {
-            console.log(`sentence received: `, parsed.sentence);
-            // this.speechAudioService.textToSpeechStreaming(inferenceSSESubject, memberId, parsed.sentence);
-            // const audioForSentence = await this.speechAudioService.textToSpeechSync(parsed.sentence);
-            const audioForSentencePromise =  this.speechAudioService.textToSpeechSync(parsed.sentence);
-            audioPromises.push(audioForSentencePromise);
-            const audioForSentence = await audioForSentencePromise;
-            const base64Audio = Buffer.from(audioForSentence).toString('base64');
-            inferenceSSESubject.sendAudio(base64Audio);
+            const currentIndex = pendingAudio.length;
+            pendingAudio.push({index: currentIndex, sentence: parsed.sentence});
+
+            // Create a promise that resolves when this audio is processed
+            const audioPromise = this.speechAudioService.textToSpeechSync(parsed.sentence)
+              .then(audioBuffer => {
+                // Store the buffer with its metadata
+                pendingAudio[currentIndex].buffer = audioBuffer;
+                // Try to send pending audio immediately after each buffer is ready
+                processPendingAudio();
+                return audioBuffer;
+              });
+
+            audioPromises.push(audioPromise);
           }
+
           if(parsed.textEnd){
+            // Wait for ALL audio to be processed before sending complete
             await Promise.all(audioPromises);
+            // One final check to send any remaining audio
+            processPendingAudio();
             console.log(`received textEnd and all promises are complete, so no more sentence, therefore audioEnd`);
-            inferenceSSESubject.sendAudioComplete();
+            inferenceSSESubject.sendAudioCompleteOnNextTick();
           }
-          // if (parsed.audioEnd === "true") {
-          //   console.log("Processing complete.");
-          //   subscription.unsubscribe();
-          // }
         } catch (error) {
           console.error("Error parsing data:", error);
         }
-      },
-      error: (err) => {
-        console.error("Stream encountered an error:", err);
-        subscription.unsubscribe();
-      },
-      complete: () => {
-        console.log("inferenceSSESubject completed.");
-      },
+      }
     });
-
   }
+
+  // private handleSendingAudio(inferenceSSESubject: InferenceSSESubject, shouldRespondWithAudio: boolean, memberId: string){
+  //   if(!shouldRespondWithAudio){ return; }
+  //   const audioPromises: Promise<Buffer>[] = [];
+  //   const subscription = inferenceSSESubject.getSubject().subscribe({
+  //     next: async (data: string) => {
+  //       try {
+  //         const parsed = JSON.parse(data);
+  //         if (parsed.sentence) {
+  //           const audioForSentencePromise =  this.speechAudioService.textToSpeechSync(parsed.sentence);
+  //           audioPromises.push(audioForSentencePromise);
+  //           const audioForSentence = await audioForSentencePromise;
+  //           const base64Audio = Buffer.from(audioForSentence).toString('base64');
+  //           console.log(`sending audio for sentence: `, parsed.sentence);
+  //           inferenceSSESubject.sendAudio(base64Audio);
+  //         }
+  //         if(parsed.textEnd){
+  //           await Promise.all(audioPromises);
+  //           console.log(`received textEnd and all promises are complete, so no more sentence, therefore audioEnd`);
+  //           inferenceSSESubject.sendAudioComplete();
+  //         }
+  //       } catch (error) {
+  //         console.error("Error parsing data:", error);
+  //       }
+  //     }
+  //   });
+  // }
 
   private handleNoTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
     const aiFunctionContext: AiFunctionContextV2 = {
