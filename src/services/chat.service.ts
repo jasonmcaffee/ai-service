@@ -4,6 +4,7 @@ import { ConversationService } from './conversation.service';
 import { Message, MessageContext, Model } from '../models/api/conversationApiModels';
 import { ChatCompletionMessageParam, } from 'openai/resources/chat/completions';
 import {
+  convertMarkdownToPlainText,
   createOpenAIMessagesFromMessages,
   extractMessageContextFromMessage,
   replacePromptTagWithPromptTextFromDbById,
@@ -147,7 +148,7 @@ export class ChatService {
       while (nextIndexToSend < pendingAudio.length && pendingAudio[nextIndexToSend].buffer) {
         const item = pendingAudio[nextIndexToSend];
         const base64Audio = Buffer.from(item.buffer!).toString('base64');
-        console.log(`${Date.now()} sending audio for sentence: ${item.sentence}`);
+        // console.log(`${Date.now()} sending audio for sentence: ${item.sentence}`);
         inferenceSSESubject.sendAudioOnNextTick(base64Audio, item.sentence);
         nextIndexToSend++;
       }
@@ -158,11 +159,13 @@ export class ChatService {
         try {
           const parsed = JSON.parse(data);
           if (parsed.sentence) {
+            const plainTextSentence = convertMarkdownToPlainText(parsed.sentence);
+            console.log(`original sentence: \n${parsed.sentence} \n plainText: ${plainTextSentence}`);
             const currentIndex = pendingAudio.length;
-            pendingAudio.push({index: currentIndex, sentence: parsed.sentence});
+            pendingAudio.push({index: currentIndex, sentence: plainTextSentence});
 
             // Create a promise that resolves when this audio is processed
-            const audioPromise = this.speechAudioService.textToSpeechSync(parsed.sentence)
+            const audioPromise = this.speechAudioService.textToSpeechSync(plainTextSentence)
               .then(audioBuffer => {
                 // Store the buffer with its metadata
                 pendingAudio[currentIndex].buffer = audioBuffer;

@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { encoding_for_model } from 'tiktoken';
 import { marked } from 'marked';
 const { v4: uuidv4 } = require('uuid');
+const he = require('he');
 
 export function uuid(){
   return uuidv4();
@@ -128,15 +129,18 @@ export function convertMarkdownToPlainText(markdown: string): string {
   const tokens = marked.lexer(markdown);
   // Process tokens and convert to plain text
   let plainText = processTokens(tokens);
+  plainText = plainText.replace(/\*\*/g, ''); // Remove bold markers
+  plainText = plainText.replace(/\*/g, '');   // Remove italic markers
+  plainText = plainText.replace(/\_\_/g, ''); // Remove alternate bold markers
+  plainText = plainText.replace(/\_/g, '');   // Remove alternate italic markers
+  plainText = plainText.replace(/\`/g, '');   // Remove code markers
   // Handle any remaining HTML entities
   plainText = htmlDecode(plainText);
   return plainText;
 }
 
-const htmlDecode = (input: string): string => {
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = input;
-  return textarea.childNodes.length === 0 ? "" : textarea.childNodes[0].nodeValue as string;
+const htmlDecode = (input) => {
+  return input ? he.decode(input) : "";
 };
 /**
  * Process an array of tokens and convert to plain text
