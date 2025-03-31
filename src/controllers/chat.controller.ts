@@ -17,8 +17,9 @@ export class ChatController {
   @ApiQuery({ name: 'prompt', type: String, description: 'The prompt to initiate the message stream' })
   @ApiQuery({ name: 'conversationId', type: String, required: false, description: 'Optional. The conversation to add the passed in prompt and llm response to.' })
   @ApiQuery({name: 'modelId', type: String, required: false, description: 'The id of the model to use.  If not passed, the default model will be used.'})
-  @ApiQuery({name: 'shouldSearchWeb', type: Boolean, required: true, description: 'Indicator on weather to search the web.'})
-  @ApiQuery({name: 'shouldUsePlanTool', type: Boolean, required: true, description: 'Indicator on weather to preplan execution'})
+  @ApiQuery({name: 'shouldSearchWeb', type: Boolean, required: true, description: 'Indicator on whether to search the web.'})
+  @ApiQuery({name: 'shouldUsePlanTool', type: Boolean, required: true, description: 'Indicator on whether to preplan execution'})
+  @ApiQuery({name: 'shouldRespondWithAudio', type: Boolean, required: true, description: 'Indicator on whether audio should be streamed along with text.'})
   @Get('streamInference') // Must be GET for EventSource to work
   @Sse() // Server-Sent Events so we can stream LLM response back the client.
   @ApiResponse({
@@ -36,7 +37,8 @@ export class ChatController {
   async streamInference(@Query('prompt') prompt: string, @Query('conversationId') conversationId: string,
                       @Query('modelId') modelId: string, @Query('shouldSearchWeb') shouldSearchWeb: boolean,
                         @Query('shouldUsePlanTool') shouldUsePlanTool: boolean,
-                        ) {
+                        @Query('shouldRespondWithAudio') shouldRespondWithAudio: boolean,
+  ) {
     console.log('got stream inference request: ', prompt, conversationId, modelId);
     const memberId = this.authenticationService.getMemberId();
     if(typeof shouldSearchWeb === "string"){
@@ -45,7 +47,10 @@ export class ChatController {
     if(typeof shouldUsePlanTool === "string"){
       shouldUsePlanTool = shouldUsePlanTool === "true";
     }
-    return this.chatService.streamInference(prompt, memberId, conversationId, modelId, shouldSearchWeb, shouldUsePlanTool);
+    if(typeof shouldRespondWithAudio === "string"){
+      shouldRespondWithAudio = shouldRespondWithAudio === "true";
+    }
+    return this.chatService.streamInference(prompt, memberId, conversationId, modelId, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio);
   }
 
   @ApiOperation({summary: 'stop the current stream for a member'})

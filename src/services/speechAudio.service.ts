@@ -7,6 +7,7 @@ import { Observable } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 import { SpeechAudioSSESubject } from '../models/SpeechAudioSSESubject';
 import { marked } from "marked";
+import { splitTextIntoSentences } from '../utils/utils';
 
 type ActiveProcessContext = {
   abortController: AbortController;
@@ -169,28 +170,7 @@ export class SpeechAudioService {
   }
 }
 
-const maxWordsPerSentence = 50;
-function splitTextIntoSentences(text: string): string[] {
-  const sentenceRegex = /[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g;
-  const sentences = text.match(sentenceRegex) || [];
-  const result: string[] = [];
-  for(let sentence of sentences){
-    let words = sentence.split(" ");
-    if(words.length >= maxWordsPerSentence){
-      while(words.length > maxWordsPerSentence){
-        const nextSentenceWords = words.splice(0, maxWordsPerSentence);
-        const nextSentence = nextSentenceWords.join(" ");
-        result.push(nextSentence);
-      }
-      const nextSentenceWords = words.splice(0, maxWordsPerSentence);
-      const nextSentence = nextSentenceWords.join(" ");
-      result.push(nextSentence);
-    }else{
-      result.push(sentence);
-    }
-  }
-  return result;
-}
+
 
 async function markdownToPlainText(markdown: string): Promise<string> {
   const renderer = new marked.Renderer();

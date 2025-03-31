@@ -36,7 +36,7 @@
             "name": "shouldSearchWeb",
             "required": true,
             "in": "query",
-            "description": "Indicator on weather to search the web.",
+            "description": "Indicator on whether to search the web.",
             "schema": {
               "type": "boolean"
             }
@@ -45,7 +45,16 @@
             "name": "shouldUsePlanTool",
             "required": true,
             "in": "query",
-            "description": "Indicator on weather to preplan execution",
+            "description": "Indicator on whether to preplan execution",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "shouldRespondWithAudio",
+            "required": true,
+            "in": "query",
+            "description": "Indicator on whether audio should be streamed along with text.",
             "schema": {
               "type": "boolean"
             }

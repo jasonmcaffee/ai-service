@@ -80,12 +80,8 @@ export class OpenaiWrapperServiceV2{
   }
 
   //stream version. careful llama.cpp doesn't support stream + tools yet.
-  async callOpenAiUsingModelAndSubjectStream({
-                                         openAiMessages,
-                                         model,
-                                         totalOpenAiCallsMade = 0,
-                                         aiFunctionContext,
-                                       }: CallOpenAiParams, allowToolCalls = false): Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }> {
+  async callOpenAiUsingModelAndSubjectStream({ openAiMessages, model, totalOpenAiCallsMade = 0, aiFunctionContext, }: CallOpenAiParams, allowToolCalls = false)
+    : Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }> {
     const apiKey = model.apiKey;
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL });
@@ -112,7 +108,6 @@ export class OpenaiWrapperServiceV2{
         if (contentDelta) {
           completeText += contentDelta;
           assistantMessage.content = completeText;
-
           // Send the chunk to the SSE subject for real-time updates
           aiFunctionContext.inferenceSSESubject?.sendText(contentDelta);
         }

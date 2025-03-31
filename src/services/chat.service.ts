@@ -40,7 +40,7 @@ export class ChatService {
    * @param modelId
    * @param shouldSearchWeb
    */
-  async streamInference(prompt: string, memberId: string, conversationId?: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false): Promise<Observable<string>> {
+  async streamInference(prompt: string, memberId: string, conversationId: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false, shouldRespondWithAudio = false): Promise<Observable<string>> {
     console.log(`streamInference called. shouldSearchWeb: ${shouldSearchWeb}`);
     const messageContext = extractMessageContextFromMessage(prompt);
     const model = await this.getModelToUseForMessage(memberId, messageContext, modelId);
@@ -49,11 +49,9 @@ export class ChatService {
     //allow client to press stop button with abort controller.
     const abortController = new AbortController();
     this.abortControllers.set(memberId, {controller: abortController});
-    if(conversationId){
-      this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool);
-    }else { //eg. name the conversation?
-      this.streamInferenceWithoutConversation(memberId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool);
-    }
+
+    this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio);
+
     return inferenceSSESubject.getSubject();
   }
 
@@ -78,7 +76,8 @@ export class ChatService {
 
   async streamInferenceWithConversation(memberId: string, conversationId: string, model:Model,
                                         messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject,
-                                        abortController: AbortController, shouldSearchWeb: boolean, shouldUsePlanTool: boolean){
+                                        abortController: AbortController, shouldSearchWeb: boolean, shouldUsePlanTool: boolean,
+                                        shouldRespondWithAudio: boolean){
     //add datasources to conversation
     for (let datasourceContext of messageContext.datasources) {
       await this.conversationService.addDatasourceToConversation(memberId, parseInt(datasourceContext.id), conversationId);
@@ -125,39 +124,69 @@ export class ChatService {
     }
 
     if(shouldUsePlanTool){
-      const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
-      const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false);
-      promise.then(async ({finalResponseFromLLM}) => {
-        await handleCompletedResponseText(finalResponseFromLLM);
-      });
-      promise.catch(async e => {
-        await handleError(e);
-      });
+      this.handleUsingPlanTool(model, memberId, toolService, inferenceSSESubject, abortController, messageText, openAiMessages, handleCompletedResponseText, handleError);
     } else if(shouldSearchWeb){
-      const aiFunctionContext: AiFunctionContextV2 = {
-        memberId, aiFunctionExecutor: this.webToolsService, abortController, inferenceSSESubject, functionResultsStorage: {}
-      };
-      const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({openAiMessages, model, aiFunctionContext, totalOpenAiCallsMade: 0});
-      promise.then(async ({completeText}) => {
-        await handleCompletedResponseText(completeText);
-      });
-      promise.catch(async e => {
-        await handleError(e);
-      });
+      this.handleUsingSearchWebTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError);
     } else {
-      const aiFunctionContext: AiFunctionContextV2 = {
-        memberId, aiFunctionExecutor: this.webToolsService, abortController, inferenceSSESubject, functionResultsStorage: {}
-      };
-      const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({openAiMessages, model, aiFunctionContext, totalOpenAiCallsMade: 0});
-      promise.then(async ({completeText}) => {
-        await handleCompletedResponseText(completeText);
-      });
-      promise.catch(async e => {
-        await handleError(e);
-      });
+      this.handleNoTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError);
     }
 
 
+  }
+
+  private handleNoTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
+    const aiFunctionContext: AiFunctionContextV2 = {
+      memberId,
+      aiFunctionExecutor: this.webToolsService,
+      abortController,
+      inferenceSSESubject,
+      functionResultsStorage: {},
+    };
+    const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({
+      openAiMessages,
+      model,
+      aiFunctionContext,
+      totalOpenAiCallsMade: 0,
+    });
+    promise.then(async ({ completeText }) => {
+      await handleCompletedResponseText(completeText);
+    });
+    promise.catch(async e => {
+      await handleError(e);
+    });
+  }
+
+  private handleUsingSearchWebTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
+    const aiFunctionContext: AiFunctionContextV2 = {
+      memberId,
+      aiFunctionExecutor: this.webToolsService,
+      abortController,
+      inferenceSSESubject,
+      functionResultsStorage: {},
+    };
+    const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+      openAiMessages,
+      model,
+      aiFunctionContext,
+      totalOpenAiCallsMade: 0,
+    });
+    promise.then(async ({ completeText }) => {
+      await handleCompletedResponseText(completeText);
+    });
+    promise.catch(async e => {
+      await handleError(e);
+    });
+  }
+
+  private handleUsingPlanTool(model: Model, memberId: string, toolService: WebToolsService, inferenceSSESubject: InferenceSSESubject, abortController: AbortController, messageText: string, openAiMessages: ChatCompletionMessageParam[], handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
+    const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
+    const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false);
+    promise.then(async ({ finalResponseFromLLM }) => {
+      await handleCompletedResponseText(finalResponseFromLLM);
+    });
+    promise.catch(async e => {
+      await handleError(e);
+    });
   }
 
   /**
@@ -179,40 +208,6 @@ export class ChatService {
         m.messageText = replacePromptTagWithPromptTextFromDbById(m.messageText, p.id, prompt?.promptText ?? '');
       }
     }
-  }
-
-  async streamInferenceWithoutConversation(memberId: string, model: Model, messageContext: MessageContext,
-                                           inferenceSSESubject: InferenceSSESubject, abortController: AbortController,
-                                           shouldSearchWeb: boolean, shouldUsePlanTool: boolean) {
-    throw new Error('not supported yet');
-    // const prompt = messageContext.textWithoutTags;
-    // const userMessage = {messageText: prompt, sentByMemberId: memberId, messageId: '', createdDate: '', role: 'user'};
-    // let openAiMessages: ChatCompletionMessageParam[] = [{ role: 'system', content: getChatPageSystemPrompt()}, ...createOpenAIMessagesFromMessages([userMessage])];
-    //
-    // const tools = shouldSearchWeb ? this.webToolsService.getToolsMetadata() : [];
-    // if(model.initialMessage){
-    //   const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
-    //   openAiMessages = [
-    //     {role: "system", content: getToolsPrompt(tools)},
-    //     ...createOpenAIMessagesFromMessages([modelInitialMessage]),
-    //     ...openAiMessages
-    //   ];
-    //}
-    //todo:
-
-    // this.openAiWrapperService.callOpenAiUsingModelAndSubject({
-    //   openAiMessages,
-    //   model,
-    //   memberId,
-    //   inferenceSSESubject,
-    //   abortController,
-    //   toolService: this.webToolsService,
-    //   tools,
-    // }).finally(()=>{
-    //   this.abortControllers.delete(memberId);
-    // });
-    // this.openAiWrapperService.callOpenAiUsingModelAndSubject(openAiMessages, ()=>{}, handleOnComplete, handleError, model, memberId, inferenceSSESubject, abortController, this.webToolsService, tools);
-    // }
   }
 }
 
