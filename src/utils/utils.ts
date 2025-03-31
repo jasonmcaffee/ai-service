@@ -161,7 +161,7 @@ const numberedListFormatter = (elem, walk, builder) => {
 };
 
 // Updated function with new name and list formatting
-function convertMarkdownToPlainText(markdown: string): string {
+export function convertMarkdownToPlainText(markdown: string): string {
   // Convert Markdown to HTML
   const html = marked.parse(markdown);
 
