@@ -103,6 +103,9 @@ export class OpenaiWrapperServiceV2{
       }, { signal });
 
       for await (const chunk of stream) {
+        if(!chunk.choices || chunk.choices.length <= 0){
+          continue;
+        }
         // Extract content from the chunk
         const contentDelta = chunk.choices[0]?.delta?.content || '';
         if (contentDelta) {
