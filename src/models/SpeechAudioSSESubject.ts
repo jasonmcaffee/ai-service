@@ -1,5 +1,6 @@
 
 import { Subject } from 'rxjs';
+import { IEmitAudioSSESubject } from './IEmitAudioSSESubject';
 
 export class AudioProgress {
   text?: string;
@@ -10,7 +11,7 @@ export class AudioProgress {
 /**
  * A class used in conjunction with NestJS SSE to stream audio processing results back to the client.
  */
-export class SpeechAudioSSESubject {
+export class SpeechAudioSSESubject implements IEmitAudioSSESubject{
   private readonly subject = new Subject<any>();
 
   constructor() {}
@@ -30,15 +31,15 @@ export class SpeechAudioSSESubject {
     this.subject.next(audioSignal);
   }
 
-  sendComplete() {
-    const endSignal = JSON.stringify({ end: true });
+  sendAudioComplete() {
+    const endSignal = JSON.stringify({ audioEnd: true });
     this.subject.next(endSignal);
     this.subject.complete();
   }
 
-  sendCompleteOnNextTick() {
+  sendAudioCompleteOnNextTick() {
     setTimeout(() => {
-      this.sendComplete();
+      this.sendAudioComplete();
     }, 10);
   }
 

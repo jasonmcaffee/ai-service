@@ -2,17 +2,33 @@ import { Subject } from "rxjs";
 import { uuid, wait } from '../utils/utils';
 import { AiStatusUpdate } from './api/conversationApiModels';
 import { StatusTopics } from './api/StatusTopics';
+import { IEmitAudioSSESubject } from './IEmitAudioSSESubject';
 
 /**
  * A class used in conjunction with nextjs SSE to stream communications back to the client.
  */
-export default class InferenceSSESubject{
+export default class InferenceSSESubject implements IEmitAudioSSESubject{
   private readonly subject = new Subject<string>();
   private readonly statusTopics = new StatusTopics();
   private buffer: string = ""; // Buffer to store incomplete sentences
 
   constructor() {}
 
+  sendAudio(audio: string) {
+    const audioSignal = JSON.stringify({ audio });
+    this.subject.next(audioSignal);
+  }
+  sendAudioComplete() {
+    const endSignal = JSON.stringify({ audioEnd: true });
+    this.subject.next(endSignal);
+    // this.subject.complete();
+  }
+
+  sendAudioCompleteOnNextTick() {
+    setTimeout(() => {
+      this.sendAudioComplete();
+    }, 10);
+  }
   /**
    * Helper function to track received text and emit complete sentences
    * @param text The text received from the LLM
@@ -73,9 +89,9 @@ export default class InferenceSSESubject{
       this.buffer = "";
     }
 
-    const endSignal = JSON.stringify({ end: 'true' });
+    const endSignal = JSON.stringify({ textEnd: 'true' });
     this.subject.next(endSignal);
-    this.subject.complete();
+    // this.subject.complete();
   }
 
   /**

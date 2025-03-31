@@ -17,6 +17,7 @@ import { CalculatorToolsService } from './agent/tools/calculatorTools.service';
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 import { MemberPromptService } from './memberPrompt.service';
+import { SpeechAudioService } from './speechAudio.service';
 
 @Injectable()
 export class ChatService {
@@ -29,6 +30,7 @@ export class ChatService {
               private readonly openAiWrapperService: OpenaiWrapperServiceV2,
               private readonly calculatorToolsService: CalculatorToolsService,
               private readonly memberPromptService: MemberPromptService,
+              private readonly speechAudioService: SpeechAudioService,
               ) {}
 
 
@@ -123,7 +125,7 @@ export class ChatService {
       inferenceSSESubject.sendCompleteOnNextTick();
     }
 
-    this.handleSendingAudio(inferenceSSESubject, shouldRespondWithAudio);
+    this.handleSendingAudio(inferenceSSESubject, shouldRespondWithAudio, memberId);
 
     if(shouldUsePlanTool){
       this.handleUsingPlanTool(model, memberId, toolService, inferenceSSESubject, abortController, messageText, openAiMessages, handleCompletedResponseText, handleError);
@@ -134,7 +136,7 @@ export class ChatService {
     }
   }
 
-  private handleSendingAudio(inferenceSSESubject: InferenceSSESubject, shouldRespondWithAudio: boolean){
+  private handleSendingAudio(inferenceSSESubject: InferenceSSESubject, shouldRespondWithAudio: boolean, memberId: string){
     if(!shouldRespondWithAudio){ return; }
     const subscription = inferenceSSESubject.getSubject().subscribe({
       next: (data: string) => {
@@ -142,6 +144,7 @@ export class ChatService {
           const parsed = JSON.parse(data);
           if (parsed.sentence) {
             console.log(`sentence received: `, parsed.sentence);
+            this.speechAudioService.textToSpeechStreaming(inferenceSSESubject, memberId, parsed.sentence);
           }
           if (parsed.end === "true") {
             console.log("Processing complete.");
@@ -156,7 +159,7 @@ export class ChatService {
         subscription.unsubscribe();
       },
       complete: () => {
-        console.log("Stream completed.");
+        console.log("inferenceSSESubject completed.");
       },
     });
 

@@ -6,6 +6,7 @@ import { SpeechToTextRequest, TextToSpeechRequest } from '../models/api/conversa
 import { Observable } from 'rxjs';
 import { Multer } from 'multer';
 import { AuthenticationService } from '../services/authentication.service';
+import { SpeechAudioSSESubject } from '../models/SpeechAudioSSESubject';
 
 @ApiTags('Speech Audio')
 @Controller('speech-audio')
@@ -83,7 +84,9 @@ export class SpeechAudioController {
   async textToSpeechStreaming( @Query('text') text: string, @Query('model') model = 'hexgrad/Kokoro-82M', @Query('voice') voice = 'af_sky',
     @Query('responseFormat') responseFormat = 'mp3', @Query('speed') speed = 1,): Promise<Observable<any>> {
     const memberId = this.authenticationService.getMemberId();
-    return await this.speechAudioService.textToSpeechStreaming(memberId, text, model, voice, responseFormat, Number(speed));
+    const subject = new SpeechAudioSSESubject();
+    await this.speechAudioService.textToSpeechStreaming(subject, memberId, text, model, voice, responseFormat, Number(speed));
+    return subject.getSubject();
   }
 
   @ApiOperation({ summary: 'Cancel ongoing audio processing' })

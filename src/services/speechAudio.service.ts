@@ -8,10 +8,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { SpeechAudioSSESubject } from '../models/SpeechAudioSSESubject';
 import { marked } from "marked";
 import { splitTextIntoSentences } from '../utils/utils';
+import { IEmitAudioSSESubject } from '../models/IEmitAudioSSESubject';
 
 type ActiveProcessContext = {
   abortController: AbortController;
-  subject: SpeechAudioSSESubject;
+  subject: IEmitAudioSSESubject;
 }
 @Injectable()
 export class SpeechAudioService {
@@ -95,11 +96,9 @@ export class SpeechAudioService {
     }
   }
 
-  textToSpeechStreaming(memberId: string, text: string, model: string = 'hexgrad/Kokoro-82M', voice: string = 'af_sky', responseFormat: string = 'mp3', speed: number = 1): Observable<any> {
-    const subject = new SpeechAudioSSESubject();
+  textToSpeechStreaming(subject: IEmitAudioSSESubject, memberId: string, text: string, model: string = 'hexgrad/Kokoro-82M', voice: string = 'af_sky', responseFormat: string = 'mp3', speed: number = 1){
     const abortController = new AbortController();
     this.activeTextToSpeechProcesses.set(memberId, {subject, abortController});
-
     const generateSpeechForSentence = async (sentence: string) => {
       try {
         console.log(`generating speech for sentence: `, sentence);
@@ -133,11 +132,10 @@ export class SpeechAudioService {
         await generateSpeechForSentence(s);
         this.activeProcesses.delete(memberId);
       }
-      subject.sendCompleteOnNextTick();
+      subject.sendAudioCompleteOnNextTick();
     };
 
     generate(text);
-    return subject.getSubject();
   }
 
   async textToSpeechSync(text: string, model: string = 'hexgrad/Kokoro-82M', voice: string = 'af_sky', responseFormat: string = 'mp3', speed: number = 1): Promise<Buffer> {
@@ -165,7 +163,7 @@ export class SpeechAudioService {
 
     abortController.abort();
     this.activeProcesses.delete(memberId);
-    subject.sendCompleteOnNextTick();
+    subject.sendAudioCompleteOnNextTick();
     return { success: true, message: `Processing for session ${memberId} was cancelled` };
   }
 }
