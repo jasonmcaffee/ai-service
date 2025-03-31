@@ -123,6 +123,8 @@ export class ChatService {
       inferenceSSESubject.sendCompleteOnNextTick();
     }
 
+    this.handleSendingAudio(inferenceSSESubject, shouldRespondWithAudio);
+
     if(shouldUsePlanTool){
       this.handleUsingPlanTool(model, memberId, toolService, inferenceSSESubject, abortController, messageText, openAiMessages, handleCompletedResponseText, handleError);
     } else if(shouldSearchWeb){
@@ -130,7 +132,33 @@ export class ChatService {
     } else {
       this.handleNoTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError);
     }
+  }
 
+  private handleSendingAudio(inferenceSSESubject: InferenceSSESubject, shouldRespondWithAudio: boolean){
+    if(!shouldRespondWithAudio){ return; }
+    const subscription = inferenceSSESubject.getSubject().subscribe({
+      next: (data: string) => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.sentence) {
+            console.log(`sentence received: `, parsed.sentence);
+          }
+          if (parsed.end === "true") {
+            console.log("Processing complete.");
+            subscription.unsubscribe();
+          }
+        } catch (error) {
+          console.error("Error parsing data:", error);
+        }
+      },
+      error: (err) => {
+        console.error("Stream encountered an error:", err);
+        subscription.unsubscribe();
+      },
+      complete: () => {
+        console.log("Stream completed.");
+      },
+    });
 
   }
 
