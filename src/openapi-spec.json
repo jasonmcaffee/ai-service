@@ -1575,64 +1575,9 @@
         ]
       }
     },
-    "/speech-audio/transcribeStreaming": {
-      "get": {
-        "operationId": "streamTranscription",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "text/event-stream": {
-                "schema": {
-                  "type": "string",
-                  "example": "data: { \"text\": \"transcription\", \"end\": \"true\" }"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Stream audio transcription from microphone",
-        "tags": [
-          "Speech Audio"
-        ]
-      },
+    "/speech-audio/speechToText": {
       "post": {
-        "operationId": "transcribeAudioStreaming",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Audio file to transcribe",
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/SpeechToTextRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "text/event-stream": {
-                "schema": {
-                  "type": "string",
-                  "example": "data: { \"text\": \"transcription\", \"end\": \"true\" }"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Upload audio file for transcription with streaming response",
-        "tags": [
-          "Speech Audio"
-        ]
-      }
-    },
-    "/speech-audio/transcribe": {
-      "post": {
-        "operationId": "transcribeAudio",
+        "operationId": "speechToText",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -1776,20 +1721,10 @@
         ]
       }
     },
-    "/speech-audio/cancel": {
+    "/speech-audio/stopTextToSpeech": {
       "get": {
-        "operationId": "cancelAudioProcessing",
-        "parameters": [
-          {
-            "name": "sessionId",
-            "required": true,
-            "in": "query",
-            "description": "The ID of the session to cancel",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "operationId": "stopTextToSpeech",
+        "parameters": [],
         "responses": {
           "200": {
             "description": ""
@@ -2969,17 +2904,6 @@
           "initialMessage",
           "filePath",
           "contextSize"
-        ]
-      },
-      "SpeechToTextRequest": {
-        "type": "object",
-        "properties": {
-          "language": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "language"
         ]
       },
       "TextToSpeechRequest": {
