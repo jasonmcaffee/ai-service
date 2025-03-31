@@ -82,7 +82,7 @@ export default class InferenceSSESubject implements IEmitAudioSSESubject{
     return this.statusTopics.statusTopicsKeyValues;
   }
 
-  async sendComplete(){
+  async sendTextComplete(){
     // If there's any remaining text in the buffer, emit it as a sentence
     if (this.buffer.length > 0) {
       this.subject.next(JSON.stringify({ sentence: this.buffer }));
@@ -98,9 +98,9 @@ export default class InferenceSSESubject implements IEmitAudioSSESubject{
    * Useful for cases where we start sending subject before returning.
    * e.g. on stop processing request.
    */
-  async sendCompleteOnNextTick(){
+  async sendTextCompleteOnNextTick(){
     setTimeout(()=>{
-      this.sendComplete();
+      this.sendTextComplete();
     }, 10);
   }
 

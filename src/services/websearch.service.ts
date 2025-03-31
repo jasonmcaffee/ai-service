@@ -74,7 +74,7 @@ export class WebsearchService {
             //since this is initiated by the user, swallow the exception.
             if(e instanceof ClientAbortedError){
                 console.log(`1 Request aborted before processing for memberId: ${memberId}`);
-                streamAiSummaryOfUrlSubject.sendCompleteOnNextTick();
+                streamAiSummaryOfUrlSubject.sendTextCompleteOnNextTick();
             }else{
                 streamAiSummaryOfUrlSubject.sendError(e);
             }
@@ -101,7 +101,7 @@ export class WebsearchService {
                   }
               }
               this.abortControllers.delete(memberId);
-              subject.sendComplete();
+              subject.sendTextComplete();
           })
           .catch((error) => {
               console.log(`openai error: `, error);
