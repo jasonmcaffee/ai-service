@@ -74,10 +74,10 @@ export class SpeechToTextService implements OnModuleDestroy {
       return;
     }
 
-    if (clientState.isProcessing) {
-      console.log(`Skipping chunk for ${memberId} as processing is ongoing`);
-      return;
-    }
+    // if (clientState.isProcessing) {
+    //   console.log(`Skipping chunk for ${memberId} as processing is ongoing`);
+    //   return;
+    // }
 
     clientState.isProcessing = true;
     const abortController = new AbortController();
@@ -90,8 +90,8 @@ export class SpeechToTextService implements OnModuleDestroy {
       const speechToTextResult = await this.openAi.audio.transcriptions.create({
         file: fileArgument,
         model: clientState.model,
-        language: clientState.language,
-        prompt: clientState.previousTranscription, // Provide prior text as context
+        language: 'en',
+        // prompt: clientState.previousTranscription, // Provide prior text as context
       }, { signal: abortController.signal });
 
       const duration = Date.now() - start;
