@@ -9,7 +9,7 @@ import {
   extractMessageContextFromMessage,
   replacePromptTagWithPromptTextFromDbById,
 } from '../utils/utils';
-import { getChatPageSystemPrompt } from '../utils/prompts';
+import { getChatPageSystemPromptForAudioResponse, getChatPageSystemPromptForMarkdownResponse } from '../utils/prompts';
 import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
 import {WebToolsService} from "./agent/tools/webTools.service";
@@ -100,7 +100,7 @@ export class ChatService {
     const toolService = shouldSearchWeb ? this.webToolsService : this.webToolsService;
 
     let openAiMessages: ChatCompletionMessageParam[] = [
-      { role: 'system', content: getChatPageSystemPrompt()},
+      { role: 'system', content: shouldRespondWithAudio ? getChatPageSystemPromptForAudioResponse() :  getChatPageSystemPromptForMarkdownResponse()},
       ...createOpenAIMessagesFromMessages(conversation.messages!)
     ];
 

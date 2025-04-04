@@ -5,7 +5,7 @@ import { Model, SearchResultWithMarkdownContentResponse } from '../models/api/co
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 import InferenceSSESubject from '../models/InferenceSSESubject';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
-import { getChatPageSystemPrompt } from '../utils/prompts';
+import { getChatPageSystemPromptForMarkdownResponse } from '../utils/prompts';
 import { OpenaiWrapperServiceV2 } from '../services/openAiWrapperV2.service';
 import { WebToolsService } from '../services/agent/tools/webTools.service';
 import { DuckduckgoSearchService } from '../services/duckduckgoSearch.service';
@@ -43,7 +43,7 @@ describe('Plan and Execute agent', () => {
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, noToolsService, inferenceSSESubject, abortController);
 
     const originalOpenAiMessages: ChatCompletionMessageParam[] = [
-      {role: 'system', content: getChatPageSystemPrompt()}
+      {role: 'system', content: getChatPageSystemPromptForMarkdownResponse()}
     ];
 
     async function askNoToolsPlannerBot(mathQuestion: string){
@@ -89,7 +89,7 @@ describe('Plan and Execute agent', () => {
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, noToolsService, inferenceSSESubject, abortController);
 
     const originalOpenAiMessages: ChatCompletionMessageParam[] = [
-      {role: 'system', content: getChatPageSystemPrompt()}
+      {role: 'system', content: getChatPageSystemPromptForMarkdownResponse()}
     ];
 
     async function askNoToolsBot(mathQuestion: string){
@@ -113,7 +113,7 @@ describe('Plan and Execute agent', () => {
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, calculatorToolsService, inferenceSSESubject, abortController);
 
     const originalOpenAiMessages: ChatCompletionMessageParam[] = [
-      {role: 'system', content: getChatPageSystemPrompt()}
+      {role: 'system', content: getChatPageSystemPromptForMarkdownResponse()}
     ]
 
     async function askMathBot(mathQuestion: string){
@@ -173,7 +173,7 @@ describe('Plan and Execute agent', () => {
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, webToolsService, inferenceSSESubject, abortController);
 
     const originalOpenAiMessages: ChatCompletionMessageParam[] = [
-      {role: 'system', content: getChatPageSystemPrompt()}
+      {role: 'system', content: getChatPageSystemPromptForMarkdownResponse()}
     ]
 
     async function askWebBot(webQuestion: string){
@@ -199,7 +199,7 @@ describe('Plan and Execute agent', () => {
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, webToolsService, inferenceSSESubject, abortController);
 
     const originalOpenAiMessages: ChatCompletionMessageParam[] = [
-      {role: 'system', content: getChatPageSystemPrompt()}
+      {role: 'system', content: getChatPageSystemPromptForMarkdownResponse()}
     ]
 
     async function askWebBot(webQuestion: string){
@@ -277,7 +277,7 @@ describe('Plan and Execute agent', () => {
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, openAiWrapperService, memberId, errorToolService, inferenceSSESubject, abortController);
 
     const originalOpenAiMessages: ChatCompletionMessageParam[] = [
-      {role: 'system', content: getChatPageSystemPrompt()},
+      {role: 'system', content: getChatPageSystemPromptForMarkdownResponse()},
     ]
 
     async function askAgent(webQuestion: string){
