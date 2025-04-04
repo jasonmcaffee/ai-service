@@ -20,6 +20,8 @@ export class ChatController {
   @ApiQuery({name: 'shouldSearchWeb', type: Boolean, required: true, description: 'Indicator on whether to search the web.'})
   @ApiQuery({name: 'shouldUsePlanTool', type: Boolean, required: true, description: 'Indicator on whether to preplan execution'})
   @ApiQuery({name: 'shouldRespondWithAudio', type: Boolean, required: true, description: 'Indicator on whether audio should be streamed along with text.'})
+  @ApiQuery({name: 'textToSpeechSpeed', type: Number, required: true, description: 'How fast the speech should be'})
+
   @Get('streamInference') // Must be GET for EventSource to work
   @Sse() // Server-Sent Events so we can stream LLM response back the client.
   @ApiResponse({
@@ -38,6 +40,7 @@ export class ChatController {
                       @Query('modelId') modelId: string, @Query('shouldSearchWeb') shouldSearchWeb: boolean,
                         @Query('shouldUsePlanTool') shouldUsePlanTool: boolean,
                         @Query('shouldRespondWithAudio') shouldRespondWithAudio: boolean,
+                        @Query('textToSpeechSpeed') textToSpeechSpeed: number,
   ) {
     console.log('got stream inference request: ', prompt, conversationId, modelId);
     const memberId = this.authenticationService.getMemberId();
@@ -50,7 +53,10 @@ export class ChatController {
     if(typeof shouldRespondWithAudio === "string"){
       shouldRespondWithAudio = shouldRespondWithAudio === "true";
     }
-    return this.chatService.streamInference(prompt, memberId, conversationId, modelId, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio);
+    if(typeof textToSpeechSpeed === "string"){
+      textToSpeechSpeed = parseFloat(textToSpeechSpeed);
+    }
+    return this.chatService.streamInference(prompt, memberId, conversationId, modelId, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio, textToSpeechSpeed);
   }
 
   @ApiOperation({summary: 'stop the current stream for a member'})

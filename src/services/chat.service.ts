@@ -43,7 +43,7 @@ export class ChatService {
    * @param modelId
    * @param shouldSearchWeb
    */
-  async streamInference(prompt: string, memberId: string, conversationId: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false, shouldRespondWithAudio = false): Promise<Observable<string>> {
+  async streamInference(prompt: string, memberId: string, conversationId: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false, shouldRespondWithAudio = false, textToSpeechSpeed = 1): Promise<Observable<string>> {
     console.log(`streamInference called. shouldSearchWeb: ${shouldSearchWeb}`);
     const messageContext = extractMessageContextFromMessage(prompt);
     const model = await this.getModelToUseForMessage(memberId, messageContext, modelId);
@@ -53,7 +53,7 @@ export class ChatService {
     const abortController = new AbortController();
     this.abortControllers.set(memberId, {controller: abortController});
 
-    this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio);
+    this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio, textToSpeechSpeed);
 
     return inferenceSSESubject.getSubject();
   }
@@ -80,7 +80,7 @@ export class ChatService {
   async streamInferenceWithConversation(memberId: string, conversationId: string, model:Model,
                                         messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject,
                                         abortController: AbortController, shouldSearchWeb: boolean, shouldUsePlanTool: boolean,
-                                        shouldRespondWithAudio: boolean){
+                                        shouldRespondWithAudio: boolean, textToSpeechSpeed: number){
     //add datasources to conversation
     for (let datasourceContext of messageContext.datasources) {
       await this.conversationService.addDatasourceToConversation(memberId, parseInt(datasourceContext.id), conversationId);
@@ -126,7 +126,7 @@ export class ChatService {
       inferenceSSESubject.sendTextCompleteOnNextTick();
     }
 
-    this.handleSendingAudio(inferenceSSESubject, shouldRespondWithAudio, memberId);
+    this.handleSendingAudio(inferenceSSESubject, shouldRespondWithAudio, memberId, textToSpeechSpeed);
 
     if(shouldUsePlanTool){
       this.handleUsingPlanTool(model, memberId, toolService, inferenceSSESubject, abortController, messageText, openAiMessages, handleCompletedResponseText, handleError);
@@ -137,7 +137,7 @@ export class ChatService {
     }
   }
 
-  private handleSendingAudio(inferenceSSESubject: InferenceSSESubject, shouldRespondWithAudio: boolean, memberId: string){
+  private handleSendingAudio(inferenceSSESubject: InferenceSSESubject, shouldRespondWithAudio: boolean, memberId: string, textToSpeechSpeed: number){
     if(!shouldRespondWithAudio){ return; }
 
     const pendingAudio: {index: number, sentence: string, buffer?: Buffer}[] = [];
@@ -165,7 +165,7 @@ export class ChatService {
             pendingAudio.push({index: currentIndex, sentence: plainTextSentence});
 
             // Create a promise that resolves when this audio is processed
-            const audioPromise = this.speechAudioService.textToSpeechSync(plainTextSentence)
+            const audioPromise = this.speechAudioService.textToSpeechSync(plainTextSentence, textToSpeechSpeed)
               .then(audioBuffer => {
                 // Store the buffer with its metadata
                 pendingAudio[currentIndex].buffer = audioBuffer;

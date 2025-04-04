@@ -138,7 +138,7 @@ export class SpeechAudioService {
     generate(text);
   }
 
-  async textToSpeechSync(text: string, model: string = 'hexgrad/Kokoro-82M', voice: string = 'af_sky', responseFormat: string = 'mp3', speed: number = 1): Promise<Buffer> {
+  async textToSpeechSync(text: string, speed: number = 1, model: string = 'hexgrad/Kokoro-82M', voice: string = 'af_sky', responseFormat: string = 'mp3'): Promise<Buffer> {
     try {
       const start = Date.now();
       //@ts-ignore

@@ -58,6 +58,15 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "textToSpeechSpeed",
+            "required": true,
+            "in": "query",
+            "description": "How fast the speech should be",
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "responses": {

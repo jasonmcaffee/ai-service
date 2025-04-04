@@ -54,7 +54,7 @@ export class SpeechAudioController {
   })
   @Post('textToSpeech')
   async textToSpeech(@Body() body: TextToSpeechRequest, @Res({ passthrough: true }) res,): Promise<StreamableFile> {
-    const audioBuffer = await this.speechAudioService.textToSpeechSync(body.text, body.model, body.voice, body.responseFormat, body.speed,);
+    const audioBuffer = await this.speechAudioService.textToSpeechSync(body.text, body.speed, body.model, body.voice, body.responseFormat,);
     // Set headers for binary response
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', 'attachment; filename="speech.mp3"');
