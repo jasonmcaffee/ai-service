@@ -154,13 +154,30 @@ export class ChatService {
       }
     };
 
-    const subscription = inferenceSSESubject.getSubject().subscribe({
+    let doesResponseHaveAThinkTag = false;
+    let hasThinkTagEnded = false;
+
+    inferenceSSESubject.getSubject().subscribe({
       next: async (data: string) => {
         try {
           const parsed = JSON.parse(data);
           if (parsed.sentence) {
+
+            if(parsed.sentence.indexOf('<think>') >= 0){
+              doesResponseHaveAThinkTag = true;
+            }
+            if(parsed.sentence.indexOf('</think>') >= 0){
+              hasThinkTagEnded = true;
+            }
+
+            if(doesResponseHaveAThinkTag && !hasThinkTagEnded){
+              console.log(`skipping converting text to speech because sentence is inside of a think tag.`);
+              return;
+            }
+
             const plainTextSentence = convertMarkdownToPlainText(parsed.sentence);
             console.log(`original sentence: \n${parsed.sentence} \n plainText: ${plainTextSentence}`);
+
             const currentIndex = pendingAudio.length;
             pendingAudio.push({index: currentIndex, sentence: plainTextSentence});
 
@@ -192,32 +209,6 @@ export class ChatService {
     });
   }
 
-  // private handleSendingAudio(inferenceSSESubject: InferenceSSESubject, shouldRespondWithAudio: boolean, memberId: string){
-  //   if(!shouldRespondWithAudio){ return; }
-  //   const audioPromises: Promise<Buffer>[] = [];
-  //   const subscription = inferenceSSESubject.getSubject().subscribe({
-  //     next: async (data: string) => {
-  //       try {
-  //         const parsed = JSON.parse(data);
-  //         if (parsed.sentence) {
-  //           const audioForSentencePromise =  this.speechAudioService.textToSpeechSync(parsed.sentence);
-  //           audioPromises.push(audioForSentencePromise);
-  //           const audioForSentence = await audioForSentencePromise;
-  //           const base64Audio = Buffer.from(audioForSentence).toString('base64');
-  //           console.log(`sending audio for sentence: `, parsed.sentence);
-  //           inferenceSSESubject.sendAudio(base64Audio);
-  //         }
-  //         if(parsed.textEnd){
-  //           await Promise.all(audioPromises);
-  //           console.log(`received textEnd and all promises are complete, so no more sentence, therefore audioEnd`);
-  //           inferenceSSESubject.sendAudioComplete();
-  //         }
-  //       } catch (error) {
-  //         console.error("Error parsing data:", error);
-  //       }
-  //     }
-  //   });
-  // }
 
   private handleNoTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
     const aiFunctionContext: AiFunctionContextV2 = {
@@ -296,6 +287,3 @@ export class ChatService {
   }
 }
 
-
-//from chatgpt
-//data: 429 You exceeded your current quota

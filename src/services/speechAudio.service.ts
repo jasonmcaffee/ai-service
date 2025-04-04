@@ -71,7 +71,7 @@ export class SpeechAudioService {
 
   async speechToTextSync(file: any, language: string = 'en'): Promise<string> {
     const tempFilePath = path.join(os.tmpdir(), `upload-${Date.now()}`);
-    console.log(`speechToTextSync called: ${tempFilePath}`);
+    // console.log(`speechToTextSync called: ${tempFilePath}`);
     try {
       // Write the uploaded file to a temporary location
       fs.writeFileSync(tempFilePath, file.buffer);
