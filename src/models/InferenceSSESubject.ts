@@ -48,16 +48,21 @@ export default class InferenceSSESubject implements IEmitAudioSSESubject{
 
     let match;
     let lastIndex = 0;
+    let startIndex = 0;
 
     // Find all sentence boundaries in the current buffer
     while ((match = sentenceRegex.exec(this.buffer)) !== null) {
-      // Extract the complete sentence
-      const sentence = this.buffer.substring(0, match.index + 1);
+      // Extract the complete sentence from the start index to the match
+      const sentence = this.buffer.substring(startIndex, match.index + 1).trim();
       // Emit the sentence
       this.subject.next(JSON.stringify({ sentence }));
+
+      // Update the start index for the next sentence
+      startIndex = match.index + match[0].length;
       // Update the last matched index
-      lastIndex = match.index + match[0].length;
+      lastIndex = startIndex;
     }
+
     // Remove emitted sentences from buffer, keep remaining text
     if (lastIndex > 0) {
       this.buffer = this.buffer.substring(lastIndex);

@@ -247,6 +247,7 @@ export class ChatService {
       totalOpenAiCallsMade: 0,
     });
     promise.then(async ({ completeText }) => {
+      inferenceSSESubject.sendText(completeText);
       await handleCompletedResponseText(completeText);
     });
     promise.catch(async e => {
