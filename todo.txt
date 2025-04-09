@@ -1,7 +1,4 @@
 Llama cpp model loader
-- download from hugging face
-- load models from llama.cpp reload function
-- the v1/models endpoint gets info about current model https://github.com/ggml-org/llama.cpp/blob/master/examples/server/README.md#get-v1models-openai-compatible-model-info-api
 - temperature, top_k, etc params. https://github.com/ggml-org/llama.cpp/blob/master/examples/server/README.md
 
 combine tool functionality
@@ -13,7 +10,6 @@ agent calling
 - agent that specializes in validation.
 - plan running agent that orchestrates it all.
 
-claude integration
 
 code editor page.
 - run vms
