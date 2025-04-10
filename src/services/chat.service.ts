@@ -19,6 +19,7 @@ import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 import { MemberPromptService } from './memberPrompt.service';
 import { SpeechAudioService } from './speechAudio.service';
+import { AgentsAsToolsService } from './agent/tools/agentsAsTools.service';
 
 @Injectable()
 export class ChatService {
@@ -32,6 +33,7 @@ export class ChatService {
               private readonly calculatorToolsService: CalculatorToolsService,
               private readonly memberPromptService: MemberPromptService,
               private readonly speechAudioService: SpeechAudioService,
+              private readonly agentsAsToolsService: AgentsAsToolsService,
               ) {}
 
 
@@ -130,8 +132,10 @@ export class ChatService {
 
     if(shouldUsePlanTool){
       this.handleUsingPlanTool(model, memberId, toolService, inferenceSSESubject, abortController, messageText, openAiMessages, handleCompletedResponseText, handleError);
-    } else if(shouldSearchWeb){
+    } else if(shouldSearchWeb) {
       this.handleUsingSearchWebTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError);
+    } else if(shouldUseAgentOfAgents){
+      this.handleUsingAgentOfAgents(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError);
     } else {
       this.handleNoTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError);
     }
@@ -225,6 +229,29 @@ export class ChatService {
       totalOpenAiCallsMade: 0,
     });
     promise.then(async ({ completeText }) => {
+      await handleCompletedResponseText(completeText);
+    });
+    promise.catch(async e => {
+      await handleError(e);
+    });
+  }
+
+  private handleUsingAgentOfAgents(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
+    const aiFunctionContext: AiFunctionContextV2 = {
+      memberId,
+      aiFunctionExecutor: this.agentsAsToolsService,
+      abortController,
+      inferenceSSESubject,
+      functionResultsStorage: {},
+    };
+    const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+      openAiMessages,
+      model,
+      aiFunctionContext,
+      totalOpenAiCallsMade: 0,
+    });
+    promise.then(async ({ completeText }) => {
+      inferenceSSESubject.sendText(completeText);
       await handleCompletedResponseText(completeText);
     });
     promise.catch(async e => {
