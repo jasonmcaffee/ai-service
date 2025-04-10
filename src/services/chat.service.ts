@@ -243,6 +243,7 @@ export class ChatService {
       abortController,
       inferenceSSESubject,
       functionResultsStorage: {},
+      model,
     };
     const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages,

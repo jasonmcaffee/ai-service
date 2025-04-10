@@ -1,6 +1,10 @@
 import {Injectable} from "@nestjs/common";
 import {DuckduckgoSearchService} from "../../duckduckgoSearch.service";
-import { SearchResultResponse, SearchResultWithMarkdownContentResponse } from '../../../models/api/conversationApiModels';
+import {
+  Model,
+  SearchResultResponse,
+  SearchResultWithMarkdownContentResponse,
+} from '../../../models/api/conversationApiModels';
 import { PageScraperService } from '../../pageScraper.service';
 import { getWordAndTokenCount, uuid } from '../../../utils/utils';
 import InferenceSSESubject from "../../../models/InferenceSSESubject";
@@ -12,7 +16,6 @@ import {WebSearchAgent} from '../webSearchAgent.service';
 @Injectable()
 export class AgentsAsToolsService implements AiFunctionExecutor<AgentsAsToolsService>{
   constructor(private readonly webSearchAgent: WebSearchAgent) {}
-
   @chatCompletionTool({
     type: "function",
     function: {
@@ -41,9 +44,8 @@ export class AgentsAsToolsService implements AiFunctionExecutor<AgentsAsToolsSer
     }
   })
   async aiWebSearchAgent({prompt}: {prompt?: string} = {prompt: undefined}, context: AiFunctionContextV2, ): Promise<AiFunctionResult>{
-    const {inferenceSSESubject: subject} = context;
-    const result = await this.webSearchAgent.handlePrompt(prompt);
-    //set a maximum token length.
+    if(!prompt){ return {result: 'Error: no prompt was provided', context}; }
+    const result = await this.webSearchAgent.handlePrompt(prompt, context);
     return { result, context,};
   }
 
