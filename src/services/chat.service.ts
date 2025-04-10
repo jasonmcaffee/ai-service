@@ -43,7 +43,7 @@ export class ChatService {
    * @param modelId
    * @param shouldSearchWeb
    */
-  async streamInference(prompt: string, memberId: string, conversationId: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false, shouldRespondWithAudio = false, textToSpeechSpeed = 1): Promise<Observable<string>> {
+  async streamInference(prompt: string, memberId: string, conversationId: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false, shouldRespondWithAudio = false, textToSpeechSpeed = 1, shouldUseAgentOfAgents = false): Promise<Observable<string>> {
     console.log(`streamInference called. shouldSearchWeb: ${shouldSearchWeb}`);
     const messageContext = extractMessageContextFromMessage(prompt);
     const model = await this.getModelToUseForMessage(memberId, messageContext, modelId);
@@ -53,7 +53,7 @@ export class ChatService {
     const abortController = new AbortController();
     this.abortControllers.set(memberId, {controller: abortController});
 
-    this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio, textToSpeechSpeed);
+    this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio, textToSpeechSpeed, shouldUseAgentOfAgents);
 
     return inferenceSSESubject.getSubject();
   }
@@ -80,7 +80,7 @@ export class ChatService {
   async streamInferenceWithConversation(memberId: string, conversationId: string, model:Model,
                                         messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject,
                                         abortController: AbortController, shouldSearchWeb: boolean, shouldUsePlanTool: boolean,
-                                        shouldRespondWithAudio: boolean, textToSpeechSpeed: number){
+                                        shouldRespondWithAudio: boolean, textToSpeechSpeed: number, shouldUseAgentOfAgents: boolean){
     //add datasources to conversation
     for (let datasourceContext of messageContext.datasources) {
       await this.conversationService.addDatasourceToConversation(memberId, parseInt(datasourceContext.id), conversationId);

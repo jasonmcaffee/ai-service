@@ -67,6 +67,15 @@
             "schema": {
               "type": "number"
             }
+          },
+          {
+            "name": "shouldUseAgentOfAgents",
+            "required": true,
+            "in": "query",
+            "description": "Should use agent to coordinate other agents",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
