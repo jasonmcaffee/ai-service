@@ -78,12 +78,13 @@ export class StatusTopicKeyValues {
   [topicId: string]: StatusTopic; //Record<string, StatusTopic>; should be the same thing
 }
 
+export type StatusUpdateTopicType = 'planningAndExecuting' | 'planning' | 'executing' | 'reasoning' | 'web' | 'responding' | 'agent';
 
 export class AiStatusUpdate {
   @ApiProperty()
   topicId?: string; //for streaming/updates
   @ApiProperty()
-  topic: 'planningAndExecuting' | 'planning' | 'executing' | 'reasoning' | 'web' | 'responding';
+  topic: StatusUpdateTopicType;
   @ApiProperty()
   data?: object | AiStatusSearchResultsData;
   @ApiProperty()

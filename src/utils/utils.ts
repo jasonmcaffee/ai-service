@@ -1,4 +1,9 @@
-import {Message, MessageContext, ModelOrDatasourceOrPrompt} from '../models/api/conversationApiModels';
+import {
+  Message,
+  MessageContext,
+  ModelOrDatasourceOrPrompt,
+  StatusUpdateTopicType,
+} from '../models/api/conversationApiModels';
 // import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { Observable } from 'rxjs';
@@ -7,6 +12,7 @@ import { marked } from 'marked';
 const { v4: uuidv4 } = require('uuid');
 const he = require('he');
 import { convert } from 'html-to-text';
+import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 
 export function uuid(){
   return uuidv4();
@@ -223,6 +229,20 @@ const htmlDecode = (input) => {
   return input ? he.decode(input) : "";
 };
 
+
+export async function withStatus<TResult>(func:  () => Promise<TResult>, {context, topic, displayText}: {context: AiFunctionContextV2, topic: StatusUpdateTopicType, displayText: string}){
+  const subject = context.inferenceSSESubject;
+  const topicId = uuid();
+  try{
+    subject?.sendStatus({topicId, topic, displayText});
+    const result = await func();
+    subject?.sendStatus({topicId, topic, displayText: `Completed: ${displayText}`, topicCompleted: true});
+    return result;
+  } catch (e){
+    subject?.sendStatus({topicId, topic, displayText: `Error: ${e.message}`, isError: true, topicCompleted: true});
+    throw e;
+  }
+}
 // export function convertMarkdownToPlainText(markdown: string): string {
 //   // Initialize the marked lexer to tokenize markdown
 //   const tokens = marked.lexer(markdown);

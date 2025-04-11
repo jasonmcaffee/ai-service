@@ -2,11 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { WebToolsService } from '../tools/webTools.service';
 import { OpenaiWrapperServiceV2 } from '../../openAiWrapperV2.service';
 import {ChatCompletionMessageParam, ChatCompletionTool} from 'openai/resources/chat/completions';
-import {
-    getChatPageSystemPromptForAudioResponse,
-    getChatPageSystemPromptForMarkdownResponse,
-} from '../../../utils/prompts';
-import {createOpenAIMessagesFromMessages, uuid} from '../../../utils/utils';
+import { createOpenAIMessagesFromMessages, uuid, withStatus } from '../../../utils/utils';
 import {AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult} from '../../../models/agent/aiTypes';
 import { Model } from '../../../models/api/conversationApiModels';
 import {chatCompletionTool, extractChatCompletionToolAnnotationValues} from "../tools/aiToolAnnotations";
@@ -103,30 +99,29 @@ export class NewsAgent implements AiFunctionExecutor<NewsAgent>{
      * @param originalAiFunctionContext
      */
     async handlePrompt(prompt: string, originalAiFunctionContext: AiFunctionContextV2){
-        const subject = originalAiFunctionContext.inferenceSSESubject;
-        const topicId = uuid();
-        subject?.sendStatus({topicId, topic: 'web', displayText: `News Agent received prompt ${prompt}`});
-        let openAiMessages: ChatCompletionMessageParam[] = [
-            { role: 'system', content: this.getNewsAgentPrompt(prompt)},
-            { role: 'user', content: prompt},
-        ];
+        return withStatus(async ()=> {
+            let openAiMessages: ChatCompletionMessageParam[] = [
+                { role: 'system', content: this.getNewsAgentPrompt(prompt)},
+                { role: 'user', content: prompt},
+            ];
 
-        const aiFunctionContext: AiFunctionContextV2 = {
-            memberId: originalAiFunctionContext.memberId,
-            aiFunctionExecutor: this.webToolsService,
-            abortController: originalAiFunctionContext.abortController,
-            inferenceSSESubject: originalAiFunctionContext.inferenceSSESubject,
-            functionResultsStorage: originalAiFunctionContext.functionResultsStorage,
-            model: originalAiFunctionContext.model,
-        };
-        const { completeText } = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
-            openAiMessages,
-            model: originalAiFunctionContext.model!,
-            aiFunctionContext,
-            totalOpenAiCallsMade: 0,
-        });
-        subject?.sendStatus({topicId, topic: 'web', displayText: `News Agent done.`, topicCompleted: true});
-        return completeText;
+            const aiFunctionContext: AiFunctionContextV2 = {
+                memberId: originalAiFunctionContext.memberId,
+                aiFunctionExecutor: this.webToolsService,
+                abortController: originalAiFunctionContext.abortController,
+                inferenceSSESubject: originalAiFunctionContext.inferenceSSESubject,
+                functionResultsStorage: originalAiFunctionContext.functionResultsStorage,
+                model: originalAiFunctionContext.model,
+            };
+            const { completeText } = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+                openAiMessages,
+                model: originalAiFunctionContext.model!,
+                aiFunctionContext,
+                totalOpenAiCallsMade: 0,
+            });
+            return completeText;
+        }, {context: originalAiFunctionContext, displayText: `News Agent handling "${prompt}"`, topic: 'agent'});
+
     }
 
     getToolsMetadata(): ChatCompletionTool[] {
