@@ -74,16 +74,22 @@ export class NewsAgent implements AiFunctionExecutor<NewsAgent>{
       # Response Instructions
       Do not use any preamble in your response.
       Do not ask followup questions.
-
+      You should respond with headlines, summaries, and sources.
+      Your response should contain headlines in the same order that they were found in the markdown for the news site.
+      This is important because the most important headlines are found at the top of the markdown.
+      Your response should include at least 20 headlines.
+      
       # Response Format
       Your response should be formatted in markdown.
-      You should respond with headlines, summaries, and sources.
-      
       Each headline should be formatted as header (ie. #). 
       Under each headline should be a summary of all the information you found related to the headline.
       Under the summary, a list of sources should be provided, with url links to the article for the headline.
+      You should include a source from each newsSite provided.
       
-      Example response from you can be found inside the exampleResponse tag below:
+      Each source must include the link to the headline.  The relavent link will begin with http://local.ai
+      
+      ## Example Response
+      Important: Your response should be in the same format as provided below. 
       <exampleResponse>
       # War Tensions Escalate
       Today, tensions escalated between Saudi Arabia and Yemen.  
@@ -100,13 +106,13 @@ export class NewsAgent implements AiFunctionExecutor<NewsAgent>{
       Foxnews reports that the escalation was the fault of democrats [1](http://local.ai/3)
       
       Cnn reports that the escalation was the fault of republicans. [2](http://local.ai/3)
-      
       </exampleResponse>
       
       # IMPORTANT CONSIDERATIONS
       Never use any knowledge or information that is not directly mentioned in the provided news articles.  
       If the user prompt relates to information not found in the news articles, simply state that you could not find any related information in the news.
       Always validate that you match the desired response format before responding.
+      Deeply reason about the above instructions, and verify that you have fulfilled all the requirements.
     `;
     }
 
@@ -128,6 +134,7 @@ export class NewsAgent implements AiFunctionExecutor<NewsAgent>{
             const { completeText } = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
                 openAiMessages, model: originalAiFunctionContext.model!, aiFunctionContext,
             });
+            console.log(`news agent response: `, completeText);
             return completeText;
         }, {context: originalAiFunctionContext, displayText: `News Agent handling "${prompt}"`, topic: 'agent'});
 
@@ -142,7 +149,9 @@ export class NewsAgent implements AiFunctionExecutor<NewsAgent>{
 async function getNewsSitesAsMarkdownInPromptFormat(pageScraperService: PageScraperService){
     const urls = [
       'https://cnn.com',
-      // 'https://foxnews.com'
+      'https://www.npr.org',
+      'https://foxnews.com',
+      'https://bbc.com',
     ]
     const {successResults, errorResults} = await pageScraperService.getContentsOfWebpagesAsMarkdown({urls, removeImages: true, removeNavElements: true, cleanWikipedia: true, shortenUrls: true, removeScriptsAndStyles: true});
     const successResultsInPromptFormat = convertMarkdownResultsIntoPromptFormat(successResults);
