@@ -37,11 +37,11 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
         # searching the web.  
         Use a prompt to ask the web agent to search the web for a specific topic, query, etc.
         e.g. 'search the web for a recipe for chicken noodle soup.' 
-        e.g. 'search the web the latest news on tariffs.'
+        e.g. 'search the web the for how to fix a broken transmission.'
         
         # retrieving information from a single web page.
         Use a prompt to ask the web agent to retrieve the contents
-            `,
+        `,
       parameters: {
         type: "object",
         properties: {
@@ -60,9 +60,25 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
     return {result: result, context};
   }
 
+  private getWebSearchAgentPrompt(prompt: string){
+    return `
+      You are an AI agent who is an expert at using the provided tools to search the web.
+      Using the provided user prompt, you expertly craft search queries, fetch web pages, etc to fulfill the request made in the prompt.
+      
+      The user prompt is:
+      ${prompt}
+    `;
+  }
+
+  /**
+   * Call the LLM, passing it the getWebSearchAgentPrompt and webToolsService tools.
+   * Once the LLM is done calling the tools, return the complete response from the LLM.
+   * @param prompt
+   * @param originalAiFunctionContext
+   */
   async handlePrompt(prompt: string, originalAiFunctionContext: AiFunctionContextV2){
     let openAiMessages: ChatCompletionMessageParam[] = [
-      { role: 'system', content: getWebSearchAgentPrompt(prompt)},
+      { role: 'system', content: this.getWebSearchAgentPrompt(prompt)},
     ];
 
     const aiFunctionContext: AiFunctionContextV2 = {
@@ -89,12 +105,4 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
 }
 
 
-function getWebSearchAgentPrompt(prompt: string){
-  return `
-  You are an AI agent who is an expert at using the provided tools to search the web.
-  Using the provided user prompt, you expertly craft search queries, fetch web pages, etc to fulfill the request made in the prompt.
-  
-  The user prompt is:
-  ${prompt}
-  `
-}
+

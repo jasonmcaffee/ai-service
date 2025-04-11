@@ -21,6 +21,7 @@ import { MemberPromptService } from './memberPrompt.service';
 import { SpeechAudioService } from './speechAudio.service';
 import CombinedTools from "./agent/tools/CombinedTools";
 import {WebSearchAgent} from "./agent/agents/webSearchAgent.service";
+import {NewsAgent} from "./agent/agents/newsAgent.service";
 
 @Injectable()
 export class ChatService {
@@ -34,6 +35,7 @@ export class ChatService {
               private readonly memberPromptService: MemberPromptService,
               private readonly speechAudioService: SpeechAudioService,
               private readonly webSearchAgent: WebSearchAgent,
+              private readonly newsAgent: NewsAgent,
               ) {}
 
 
@@ -239,6 +241,7 @@ export class ChatService {
   private handleUsingAgentOfAgents(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
     const combinedTools = new CombinedTools();
     combinedTools.registerTool(this.webSearchAgent);
+    combinedTools.registerTool(this.newsAgent);
 
     const aiFunctionContext: AiFunctionContextV2 = {
       memberId,
