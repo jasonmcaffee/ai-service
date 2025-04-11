@@ -1,10 +1,15 @@
 import { AiFunctionExecutor } from '../../../models/agent/aiTypes';
 import { ChatCompletionTool } from 'openai/resources/chat/completions';
 
-export default class CombinedTools implements AiFunctionExecutor<CombinedTools>{
+/**
+ * Proxy for N number of AiFunctionExecutors, which allows us to combine them together and act as a single function executor.
+ * Only functions that begin with 'ai' will be combined into this class.
+ * Duplicate function names will result in error when combineAiFunctionExecutor is called.
+ */
+export default class CombinedAiFunctionExecutors implements AiFunctionExecutor<CombinedAiFunctionExecutors>{
   private tools: AiFunctionExecutor<any>[] = [];
 
-  registerTool(aiFunctionExecutor: AiFunctionExecutor<any>){
+  combineAiFunctionExecutor(aiFunctionExecutor: AiFunctionExecutor<any>){
     this.tools.push(aiFunctionExecutor);
 
     //todo: each function on the aiFunctionExecutor.

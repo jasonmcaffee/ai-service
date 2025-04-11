@@ -19,7 +19,7 @@ import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 import { MemberPromptService } from './memberPrompt.service';
 import { SpeechAudioService } from './speechAudio.service';
-import CombinedTools from "./agent/tools/CombinedTools";
+import CombinedAiFunctionExecutors from "./agent/tools/CombinedAiFunctionExecutors";
 import {WebSearchAgent} from "./agent/agents/webSearchAgent.service";
 import {NewsAgent} from "./agent/agents/newsAgent.service";
 
@@ -239,9 +239,9 @@ export class ChatService {
   }
 
   private handleUsingAgentOfAgents(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
-    const combinedTools = new CombinedTools();
-    combinedTools.registerTool(this.webSearchAgent);
-    combinedTools.registerTool(this.newsAgent);
+    const combinedTools = new CombinedAiFunctionExecutors();
+    combinedTools.combineAiFunctionExecutor(this.webSearchAgent);
+    combinedTools.combineAiFunctionExecutor(this.newsAgent);
 
     const aiFunctionContext: AiFunctionContextV2 = {
       memberId,
