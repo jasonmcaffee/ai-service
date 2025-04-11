@@ -8,16 +8,17 @@ export default class CombinedTools implements AiFunctionExecutor<CombinedTools>{
     this.tools.push(aiFunctionExecutor);
 
     //todo: each function on the aiFunctionExecutor.
-    const propertyNames = Object.getOwnPropertyNames(aiFunctionExecutor);
-    for(const prop in propertyNames){
-      const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(aiFunctionExecutor), prop);
-      if(descriptor && typeof aiFunctionExecutor[prop] === 'function'){
-        this.addFunctionToThis(prop, aiFunctionExecutor);
+    const propertyNames = Object.getOwnPropertyNames(Object.getPrototypeOf(aiFunctionExecutor));
+    for(const prop of propertyNames){
+      if(typeof aiFunctionExecutor[prop] === 'function'){
+        this.addAiFunctionToThis(prop, aiFunctionExecutor);
       }
     }
   }
 
-  private addFunctionToThis(functionName: string, aiFunctionExecutor: AiFunctionExecutor<any>){
+  private addAiFunctionToThis(functionName: string, aiFunctionExecutor: AiFunctionExecutor<any>){
+    // if(functionName === 'constructor'){ return; }
+    if(!functionName.startsWith('ai')){ return; }
     if(this[functionName]){
       throw new Error(`functionName: ${functionName} already exists`);
     }

@@ -19,7 +19,8 @@ import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
 import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 import { MemberPromptService } from './memberPrompt.service';
 import { SpeechAudioService } from './speechAudio.service';
-import { AgentsAsToolsService } from './agent/tools/agentsAsTools.service';
+import CombinedTools from "./agent/tools/CombinedTools";
+import {WebSearchAgent} from "./agent/agents/webSearchAgent.service";
 
 @Injectable()
 export class ChatService {
@@ -30,10 +31,9 @@ export class ChatService {
               private readonly modelsService: ModelsService,
               private readonly webToolsService: WebToolsService,
               private readonly openAiWrapperService: OpenaiWrapperServiceV2,
-              private readonly calculatorToolsService: CalculatorToolsService,
               private readonly memberPromptService: MemberPromptService,
               private readonly speechAudioService: SpeechAudioService,
-              private readonly agentsAsToolsService: AgentsAsToolsService,
+              private readonly webSearchAgent: WebSearchAgent,
               ) {}
 
 
@@ -237,9 +237,12 @@ export class ChatService {
   }
 
   private handleUsingAgentOfAgents(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
+    const combinedTools = new CombinedTools();
+    combinedTools.registerTool(this.webSearchAgent);
+
     const aiFunctionContext: AiFunctionContextV2 = {
       memberId,
-      aiFunctionExecutor: this.agentsAsToolsService,
+      aiFunctionExecutor: combinedTools, //this.agentsAsToolsService,
       abortController,
       inferenceSSESubject,
       functionResultsStorage: {},
