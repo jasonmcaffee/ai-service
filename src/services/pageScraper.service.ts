@@ -180,7 +180,7 @@ async function getHtmlContentsOfPage(
           }
 
           // Create shortened URL
-          const shortenedUrl = `${urlCounter}.ai`;
+          const shortenedUrl = `http://local.ai/${urlCounter}`;
 
           // Store in map
           shortenedUrlMap.set(shortenedUrl, originalUrl);

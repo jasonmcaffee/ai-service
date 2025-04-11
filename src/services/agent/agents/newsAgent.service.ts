@@ -6,6 +6,7 @@ import { createOpenAIMessagesFromMessages, uuid, withStatus } from '../../../uti
 import {AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult} from '../../../models/agent/aiTypes';
 import { Model } from '../../../models/api/conversationApiModels';
 import {chatCompletionTool, extractChatCompletionToolAnnotationValues} from "../tools/aiToolAnnotations";
+import { PageScraperService } from '../../pageScraper.service';
 
 /**
  * An agent is an abstraction that allows us to bundle prompts, tools, and behaviors together, and provides a simple
@@ -21,7 +22,9 @@ import {chatCompletionTool, extractChatCompletionToolAnnotationValues} from "../
 export class NewsAgent implements AiFunctionExecutor<NewsAgent>{
     constructor(
         private readonly webToolsService: WebToolsService,
-        private readonly openAiWrapperService: OpenaiWrapperServiceV2,) {}
+        private readonly openAiWrapperService: OpenaiWrapperServiceV2,
+        private readonly pageScraperService: PageScraperService,
+    ) {}
 
     @chatCompletionTool({
         type: "function",
@@ -55,16 +58,28 @@ export class NewsAgent implements AiFunctionExecutor<NewsAgent>{
         return {result: result, context};
     }
 
-    private getNewsAgentPrompt(prompt: string){
+    private getNewsAgentPrompt(newsSitesInPromptFormat: string){
         return `
-      You are an AI agent who is an expert at using the provided tools to get latest news headlines from the web.
-      Using the provided user prompt, you expertly craft search queries, fetch web pages, etc to fulfill the request made in the prompt.
+      You are an AI agent who is an expert at parsing the markdown from news sites, in order to create concise news reporting.
+      You expertly consolidate the information from multiple news websites into a single document, following the instruction given in the user's prompt.
       
-      # Response Format
+      # Information to Reference
+      When responding, you should only reference the information found in the below information tag, and nothing else.  
+      Do not use any previous knowledge of topics, regardless of what is asked.
+      The information tag contain 1 or more <newsSite> entries, which each include a url and the website in markdown format.
+      <information>
+      ${newsSitesInPromptFormat}
+      </information>
+      
+      # Response Instructions
       Do not use any preamble in your response.
       Do not ask followup questions.
+
+      # Response Format
       Your response should be formatted in markdown.
-      Each headline should be a header # 
+      You should respond with headlines, summaries, and sources.
+      
+      Each headline should be formatted as header (ie. #). 
       Under each headline should be a summary of all the information you found related to the headline.
       Under the summary, a list of sources should be provided, with url links to the article for the headline.
       
@@ -88,6 +103,9 @@ export class NewsAgent implements AiFunctionExecutor<NewsAgent>{
       
       </exampleResponse>
       
+      # IMPORTANT CONSIDERATIONS
+      Never use any knowledge or information that is not directly mentioned in the provided news articles.  
+      If the user prompt relates to information not found in the news articles, simply state that you could not find any related information in the news.
       Always validate that you match the desired response format before responding.
     `;
     }
@@ -100,24 +118,15 @@ export class NewsAgent implements AiFunctionExecutor<NewsAgent>{
      */
     async handlePrompt(prompt: string, originalAiFunctionContext: AiFunctionContextV2){
         return withStatus(async ()=> {
+            const newsSitesInPromptFormat = await getNewsSitesAsMarkdownInPromptFormat(this.pageScraperService);
             let openAiMessages: ChatCompletionMessageParam[] = [
-                { role: 'system', content: this.getNewsAgentPrompt(prompt)},
+                { role: 'system', content: this.getNewsAgentPrompt(newsSitesInPromptFormat)},
                 { role: 'user', content: prompt},
             ];
-
-            const aiFunctionContext: AiFunctionContextV2 = {
-                memberId: originalAiFunctionContext.memberId,
-                aiFunctionExecutor: this.webToolsService,
-                abortController: originalAiFunctionContext.abortController,
-                inferenceSSESubject: originalAiFunctionContext.inferenceSSESubject,
-                functionResultsStorage: originalAiFunctionContext.functionResultsStorage,
-                model: originalAiFunctionContext.model,
-            };
+            const aiFunctionContext = {...originalAiFunctionContext, aiFunctionExecutor: undefined};
+            aiFunctionContext.aiFunctionExecutor = undefined;
             const { completeText } = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
-                openAiMessages,
-                model: originalAiFunctionContext.model!,
-                aiFunctionContext,
-                totalOpenAiCallsMade: 0,
+                openAiMessages, model: originalAiFunctionContext.model!, aiFunctionContext,
             });
             return completeText;
         }, {context: originalAiFunctionContext, displayText: `News Agent handling "${prompt}"`, topic: 'agent'});
@@ -130,5 +139,25 @@ export class NewsAgent implements AiFunctionExecutor<NewsAgent>{
 
 }
 
+async function getNewsSitesAsMarkdownInPromptFormat(pageScraperService: PageScraperService){
+    const urls = [
+      'https://cnn.com',
+      // 'https://foxnews.com'
+    ]
+    const {successResults, errorResults} = await pageScraperService.getContentsOfWebpagesAsMarkdown({urls, removeImages: true, removeNavElements: true, cleanWikipedia: true, shortenUrls: true, removeScriptsAndStyles: true});
+    const successResultsInPromptFormat = convertMarkdownResultsIntoPromptFormat(successResults);
+    return successResultsInPromptFormat;
+}
 
+function convertMarkdownResultsIntoPromptFormat(successResults: {url: string, markdown: string}[]){
+    const promptFormat = successResults.map(({url, markdown}) => {
+        return `
+         <newsSite>
+            <url>${url}</url>
+            <siteContentsAsMarkdown>${markdown}</siteContentsAsMarkdown>
+         </newsSite>
+        `
+    }).join('\n');
+    return promptFormat;
+}
 
