@@ -95,6 +95,8 @@ export class AiStatusUpdate {
   topicCompleted?: boolean; //lets the ui know that this set of work is complete.
   @ApiProperty()
   date?: number;
+  @ApiProperty()
+  timeTakenInMs?: number;
 }
 
 

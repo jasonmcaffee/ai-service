@@ -229,17 +229,27 @@ const htmlDecode = (input) => {
   return input ? he.decode(input) : "";
 };
 
-
-export async function withStatus<TResult>(func:  () => Promise<TResult>, {context, topic, displayText}: {context: AiFunctionContextV2, topic: StatusUpdateTopicType, displayText: string}){
+/**
+ *
+ * @param func - function to execute.  Is passed a sendStatus function for when other status updates need to be sent.
+ * @param context
+ * @param topic
+ * @param displayText
+ */
+export async function withStatus<TResult>(func:  (sendStatus: (text: string) => void) => Promise<TResult>, {context, topic, displayText}: {context: AiFunctionContextV2, topic: StatusUpdateTopicType, displayText: string}){
   const subject = context.inferenceSSESubject;
   const topicId = uuid();
+  const startTimeMs = Date.now();
+  const sendStatus = (t: string) => {
+    subject?.sendStatus({topicId, topic, displayText: t, timeTakenInMs: Date.now() - startTimeMs});
+  };
   try{
     subject?.sendStatus({topicId, topic, displayText});
-    const result = await func();
-    subject?.sendStatus({topicId, topic, displayText: `Completed: ${displayText}`, topicCompleted: true});
+    const result = await func(sendStatus);
+    subject?.sendStatus({topicId, topic, displayText: `Completed: ${displayText}`, topicCompleted: true, timeTakenInMs: Date.now() - startTimeMs});
     return result;
   } catch (e){
-    subject?.sendStatus({topicId, topic, displayText: `Error: ${e.message}`, isError: true, topicCompleted: true});
+    subject?.sendStatus({topicId, topic, displayText: `Error: ${e.message}`, isError: true, topicCompleted: true, timeTakenInMs: Date.now() - startTimeMs});
     throw e;
   }
 }

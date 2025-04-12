@@ -1987,6 +1987,9 @@
           },
           "date": {
             "type": "number"
+          },
+          "timeTakenInMs": {
+            "type": "number"
           }
         },
         "required": [
@@ -1996,7 +1999,8 @@
           "displayText",
           "isError",
           "topicCompleted",
-          "date"
+          "date",
+          "timeTakenInMs"
         ]
       },
       "StatusTopicKeyValues": {

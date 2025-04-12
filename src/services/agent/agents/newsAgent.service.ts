@@ -152,7 +152,7 @@ async function getNewsSitesAsMarkdownInPromptFormat(pageScraperService: PageScra
       'https://www.npr.org',
       'https://foxnews.com',
       'https://bbc.com',
-    ]
+    ];
     const {successResults, errorResults} = await pageScraperService.getContentsOfWebpagesAsMarkdown({urls, removeImages: true, removeNavElements: true, cleanWikipedia: true, shortenUrls: true, removeScriptsAndStyles: true});
     const successResultsInPromptFormat = convertMarkdownResultsIntoPromptFormat(successResults);
     return successResultsInPromptFormat;
