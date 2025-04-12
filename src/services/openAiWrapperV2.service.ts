@@ -32,6 +32,7 @@ export class OpenaiWrapperServiceV2{
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL });
     const signal = aiFunctionContext.abortController?.signal;
+    const modelParams = aiFunctionContext.modelParams;
 
     try {
       totalOpenAiCallsMade += 1;
@@ -40,6 +41,10 @@ export class OpenaiWrapperServiceV2{
         messages: openAiMessages,
         tools: aiFunctionContext.aiFunctionExecutor?.getToolsMetadata(),
         stream: false,
+        temperature: modelParams?.temperature ?? 1, //Controls the randomness of responses. Lower values (e.g., 0.2) produce more deterministic and focused outputs, while higher values (e.g., 0.8) make responses more creative and varied
+        top_p: modelParams?.top_p ?? 1, //Controls diversity by considering only the top P percent of probable words. Lower values make responses more predictable, while higher values allow for more variety
+        frequency_penalty: modelParams?.frequency_penalty ?? 0, //Penalizes repeated tokens based on frequency in the generated text. Higher values discourage repetition
+        presence_penalty: modelParams?.presence_penalty ?? 0, //Encourages introducing new topics by penalizing tokens already present in the context
       }, { signal });
 
       const assistantMessage = response.choices[0].message;
@@ -86,6 +91,7 @@ export class OpenaiWrapperServiceV2{
     const baseURL = model.url;
     const openai = new OpenAI({ apiKey, baseURL });
     const signal = aiFunctionContext.abortController?.signal;
+    const modelParams = aiFunctionContext.modelParams;
     let completeText = '';
     let assistantMessage: ChatCompletionMessageParam = {
       role: 'assistant',
@@ -100,6 +106,10 @@ export class OpenaiWrapperServiceV2{
         messages: openAiMessages,
         tools: allowToolCalls ? aiFunctionContext.aiFunctionExecutor?.getToolsMetadata() : undefined,
         stream: true,
+        temperature: modelParams?.temperature ?? 1, //Controls the randomness of responses. Lower values (e.g., 0.2) produce more deterministic and focused outputs, while higher values (e.g., 0.8) make responses more creative and varied
+        top_p: modelParams?.top_p ?? 1, //Controls diversity by considering only the top P percent of probable words. Lower values make responses more predictable, while higher values allow for more variety
+        frequency_penalty: modelParams?.frequency_penalty ?? 0, //Penalizes repeated tokens based on frequency in the generated text. Higher values discourage repetition
+        presence_penalty: modelParams?.presence_penalty ?? 0, //Encourages introducing new topics by penalizing tokens already present in the context
       }, { signal });
 
       for await (const chunk of stream) {

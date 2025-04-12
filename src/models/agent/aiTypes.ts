@@ -10,6 +10,17 @@ import { Model } from '../api/conversationApiModels';
 //     functionResults: object; //where we house "$aiAdd.result", etc.
 // };
 
+export type ModelParams = {
+    //Controls the randomness of responses. Lower values (e.g., 0.2) produce more deterministic and focused outputs, while higher values (e.g., 0.8) make responses more creative and varied
+    temperature: number, //0 - 1. default 1.
+    //Nucleus Sampling): Controls diversity by considering only the top P percent of probable words. Lower values make responses more predictable, while higher values allow for more variety
+    top_p: number, // 0 - 1.  default 1
+    // Reduces repetition by penalizing new tokens based on their frequency in the text so far. Values range from -2.0 to 2.0
+    frequency_penalty: number, //-2-2  default 0.
+    //Encourages introducing new topics by penalizing tokens that have already appeared in the conversation. Values range from -2.0 to 2.
+    presence_penalty: number, //0-1. default 0.
+
+}
 export type AiFunctionContextV2 = {
     inferenceSSESubject?: InferenceSSESubject;
     aiFunctionExecutor?: AiFunctionExecutor<any>; //optional so we can stream
@@ -17,6 +28,7 @@ export type AiFunctionContextV2 = {
     memberId: string;
     abortController?: AbortController;
     model?: Model; //needed for agent of agents tool calling.
+    modelParams?: ModelParams;
     // continueToAllowRecursiveCallsToOpenAi: boolean; //after aiCompletePlan executed, we don't want to send the result back to openAi
 };
 
