@@ -236,12 +236,12 @@ const htmlDecode = (input) => {
  * @param topic
  * @param displayText
  */
-export async function withStatus<TResult>(func:  (sendStatus: (text: string) => void) => Promise<TResult>, {context, topic, displayText}: {context: AiFunctionContextV2, topic: StatusUpdateTopicType, displayText: string}){
+export async function withStatus<TResult>(func:  (sendStatus: (text: string, data?: any) => void) => Promise<TResult>, {context, topic, displayText}: {context: AiFunctionContextV2, topic: StatusUpdateTopicType, displayText: string}){
   const subject = context.inferenceSSESubject;
   const topicId = uuid();
   const startTimeMs = Date.now();
-  const sendStatus = (t: string) => {
-    subject?.sendStatus({topicId, topic, displayText: t, timeTakenInMs: Date.now() - startTimeMs});
+  const sendStatus = (t: string, data?: any) => {
+    subject?.sendStatus({topicId, topic, displayText: t, timeTakenInMs: Date.now() - startTimeMs, data});
   };
   try{
     subject?.sendStatus({topicId, topic, displayText});

@@ -59,7 +59,8 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
   private getWebSearchAgentPrompt(){
     return `
       You are an AI agent who is an expert at searching the web and/or fetching the contents of a single website, in order to fulfill the user's request.
-      
+      You search the web, then provide a response that includes direct quotes and links related to the user's request.
+      You do not provide any information that is not direct quotes from the search results.
       # Response Instructions
       Do not use any preamble in your response.
       Do not ask followup questions.
@@ -68,18 +69,18 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
       # Response Format
       Your response should be formatted in markdown.
       Your response should contain the following information:
-      - response to the user's request.
-      - the response should include a synthesis that you create.
-      - the response should also mix in several direct quotes from the search results, as well as url links where the direct quotes were obtained from.
+      - as many relevant direct quotes from the search results as possible.
+      - url links where the direct quotes were obtained from.
       
       ## Example Response
       Important: Your response should be in the same format as provided below. 
       <exampleResponse>
-      # Rome
-      Rome is the capital city and most populated comune (municipality) of Italy. It is also the capital of the Lazio region, the centre of the Metropolitan City.  
+      "Rome is the capital city and most populated comune (municipality) of Italy. It is also the capital of the Lazio region, the centre of the Metropolitan City." [0](https://romefacts.com)
+      
       "Rome is located in the central portion of the Italian peninsula, on the Tiber River about 15 miles (24 km) inland from the Tyrrhenian Sea." [1](https://brittanica.com/rome)
-      From its beautiful buildings that have withstood time itself to the majestic, graceful, Mediterannean Pines. 
-      "It's a living museum." [2](https://wikipedia.org/rome)
+      
+      "From its beautiful buildings that have withstood time itself to the majestic, graceful, Mediterannean Pines." [2](https://wikipedia.org/rome)
+      
       "While Roman mythology dates the founding of Rome at around 753 BC, the site has been inhabited for much longer, making it a major human settlement for over three millennia and one of the oldest continuously occupied cities in Europe." [3](https://wikipedia.org/rome)
       </exampleResponse>
       
@@ -98,7 +99,7 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
    * @param originalAiFunctionContext
    */
   async handlePrompt(prompt: string, originalAiFunctionContext: AiFunctionContextV2){
-    return withStatus(async () => {
+    return withStatus(async (sendStatus) => {
       let openAiMessages: ChatCompletionMessageParam[] = [
         { role: 'system', content: this.getWebSearchAgentPrompt()},
         { role: 'user', content: prompt},
@@ -118,8 +119,9 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
         aiFunctionContext,
         totalOpenAiCallsMade: 0,
       });
+      sendStatus('Web search agent response: ', {agentText: completeText});
       return completeText;
-    }, {context: originalAiFunctionContext, displayText: `Web Search Agent is searching the web: "${prompt}"`, topic:'web'});
+    }, {context: originalAiFunctionContext, displayText: `Web Search Agent is searching the web: "${prompt}"`, topic:'agent'});
 
   }
 
