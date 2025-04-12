@@ -22,6 +22,10 @@ export class ChatController {
   @ApiQuery({name: 'shouldRespondWithAudio', type: Boolean, required: true, description: 'Indicator on whether audio should be streamed along with text.'})
   @ApiQuery({name: 'textToSpeechSpeed', type: Number, required: true, description: 'How fast the speech should be'})
   @ApiQuery({name: 'shouldUseAgentOfAgents', type: Boolean, required: true, description: 'Should use agent to coordinate other agents'})
+  @ApiQuery({name: 'temperature', type: Number, required: true, description: 'Controls randomness of responses (0-1)'})
+  @ApiQuery({name: 'top_p', type: Number, required: true, description: 'Controls diversity by considering top P percent of probable words (0-1)'})
+  @ApiQuery({name: 'frequency_penalty', type: Number, required: true, description: 'Penalizes repeated tokens (-2 to 2)'})
+  @ApiQuery({name: 'presence_penalty', type: Number, required: true, description: 'Encourages new topics (-2 to 2)'})
 
   @Get('streamInference') // Must be GET for EventSource to work
   @Sse() // Server-Sent Events so we can stream LLM response back the client.
@@ -43,6 +47,10 @@ export class ChatController {
                         @Query('shouldRespondWithAudio') shouldRespondWithAudio: boolean,
                         @Query('textToSpeechSpeed') textToSpeechSpeed: number,
                         @Query('shouldUseAgentOfAgents') shouldUseAgentOfAgents: boolean,
+                        @Query('temperature') temperature: number,
+                        @Query('top_p') top_p: number,
+                        @Query('frequency_penalty') frequency_penalty: number,
+                        @Query('presence_penalty') presence_penalty: number,
   ) {
     console.log('got stream inference request: ', prompt, conversationId, modelId);
     const memberId = this.authenticationService.getMemberId();
@@ -61,7 +69,19 @@ export class ChatController {
     if(typeof shouldUseAgentOfAgents === "string"){
       shouldUseAgentOfAgents = shouldUseAgentOfAgents === "true";
     }
-    return this.chatService.streamInference(prompt, memberId, conversationId, modelId, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio, textToSpeechSpeed, shouldUseAgentOfAgents);
+    if(typeof temperature === "string"){
+      temperature = parseFloat(temperature);
+    }
+    if(typeof top_p === "string"){
+      top_p = parseFloat(top_p);
+    }
+    if(typeof frequency_penalty === "string"){
+      frequency_penalty = parseFloat(frequency_penalty);
+    }
+    if(typeof presence_penalty === "string"){
+      presence_penalty = parseFloat(presence_penalty);
+    }
+    return this.chatService.streamInference(prompt, memberId, conversationId, modelId, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio, textToSpeechSpeed, shouldUseAgentOfAgents, temperature, top_p, frequency_penalty, presence_penalty);
   }
 
   @ApiOperation({summary: 'stop the current stream for a member'})

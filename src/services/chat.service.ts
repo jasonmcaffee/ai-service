@@ -22,6 +22,7 @@ import { SpeechAudioService } from './speechAudio.service';
 import CombinedAiFunctionExecutors from "./agent/tools/CombinedAiFunctionExecutors";
 import {WebSearchAgent} from "./agent/agents/webSearchAgent.service";
 import {NewsAgent} from "./agent/agents/newsAgent.service";
+import { ModelParams } from '../models/agent/aiTypes';
 
 @Injectable()
 export class ChatService {
@@ -47,7 +48,7 @@ export class ChatService {
    * @param modelId
    * @param shouldSearchWeb
    */
-  async streamInference(prompt: string, memberId: string, conversationId: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false, shouldRespondWithAudio = false, textToSpeechSpeed = 1, shouldUseAgentOfAgents = false): Promise<Observable<string>> {
+  async streamInference(prompt: string, memberId: string, conversationId: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false, shouldRespondWithAudio = false, textToSpeechSpeed = 1, shouldUseAgentOfAgents = false, temperature = 0.7, top_p = 1, frequency_penalty = 0, presence_penalty = 0): Promise<Observable<string>> {
     console.log(`streamInference called. shouldSearchWeb: ${shouldSearchWeb}`);
     const messageContext = extractMessageContextFromMessage(prompt);
     const model = await this.getModelToUseForMessage(memberId, messageContext, modelId);
@@ -57,7 +58,7 @@ export class ChatService {
     const abortController = new AbortController();
     this.abortControllers.set(memberId, {controller: abortController});
 
-    this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio, textToSpeechSpeed, shouldUseAgentOfAgents);
+    this.streamInferenceWithConversation(memberId, conversationId, model, messageContext, inferenceSSESubject, abortController, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio, textToSpeechSpeed, shouldUseAgentOfAgents, temperature, top_p, frequency_penalty, presence_penalty);
 
     return inferenceSSESubject.getSubject();
   }
@@ -84,7 +85,8 @@ export class ChatService {
   async streamInferenceWithConversation(memberId: string, conversationId: string, model:Model,
                                         messageContext: MessageContext, inferenceSSESubject: InferenceSSESubject,
                                         abortController: AbortController, shouldSearchWeb: boolean, shouldUsePlanTool: boolean,
-                                        shouldRespondWithAudio: boolean, textToSpeechSpeed: number, shouldUseAgentOfAgents: boolean){
+                                        shouldRespondWithAudio: boolean, textToSpeechSpeed: number, shouldUseAgentOfAgents: boolean,
+                                        temperature: number, top_p: number, frequency_penalty: number, presence_penalty: number){
     //add datasources to conversation
     for (let datasourceContext of messageContext.datasources) {
       await this.conversationService.addDatasourceToConversation(memberId, parseInt(datasourceContext.id), conversationId);
@@ -116,6 +118,13 @@ export class ChatService {
       ]
     }
 
+    const modelParams = {
+      temperature,
+      top_p,
+      frequency_penalty,
+      presence_penalty
+    };
+
     const handleCompletedResponseText = async (completeText: string) => {
       // console.log('handle response completed got: ', completeText);
       const formattedResponse = completeText;
@@ -133,13 +142,13 @@ export class ChatService {
     this.handleSendingAudio(inferenceSSESubject, shouldRespondWithAudio, memberId, textToSpeechSpeed);
 
     if(shouldUsePlanTool){
-      this.handleUsingPlanTool(model, memberId, toolService, inferenceSSESubject, abortController, messageText, openAiMessages, handleCompletedResponseText, handleError);
+      this.handleUsingPlanTool(model, memberId, toolService, inferenceSSESubject, abortController, messageText, openAiMessages, handleCompletedResponseText, handleError, modelParams);
     } else if(shouldSearchWeb) {
-      this.handleUsingSearchWebTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError);
+      this.handleUsingSearchWebTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError, modelParams);
     } else if(shouldUseAgentOfAgents){
-      this.handleUsingAgentOfAgents(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError);
+      this.handleUsingAgentOfAgents(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError, modelParams);
     } else {
-      this.handleNoTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError);
+      this.handleNoTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError, modelParams);
     }
   }
 
@@ -216,13 +225,14 @@ export class ChatService {
   }
 
 
-  private handleNoTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
+  private handleNoTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
     const aiFunctionContext: AiFunctionContextV2 = {
       memberId,
       aiFunctionExecutor: this.webToolsService,
       abortController,
       inferenceSSESubject,
       functionResultsStorage: {},
+      modelParams,
     };
     const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({
       openAiMessages,
@@ -238,7 +248,7 @@ export class ChatService {
     });
   }
 
-  private handleUsingAgentOfAgents(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
+  private handleUsingAgentOfAgents(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
     const combinedTools = new CombinedAiFunctionExecutors();
     combinedTools.combineAiFunctionExecutor(this.webSearchAgent);
     combinedTools.combineAiFunctionExecutor(this.newsAgent);
@@ -250,6 +260,7 @@ export class ChatService {
       inferenceSSESubject,
       functionResultsStorage: {},
       model,
+      modelParams,
     };
     const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages,
@@ -266,13 +277,14 @@ export class ChatService {
     });
   }
 
-  private handleUsingSearchWebTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
+  private handleUsingSearchWebTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
     const aiFunctionContext: AiFunctionContextV2 = {
       memberId,
       aiFunctionExecutor: this.webToolsService,
       abortController,
       inferenceSSESubject,
       functionResultsStorage: {},
+      modelParams,
     };
     const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages,
@@ -289,9 +301,9 @@ export class ChatService {
     });
   }
 
-  private handleUsingPlanTool(model: Model, memberId: string, toolService: WebToolsService, inferenceSSESubject: InferenceSSESubject, abortController: AbortController, messageText: string, openAiMessages: ChatCompletionMessageParam[], handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>) {
+  private handleUsingPlanTool(model: Model, memberId: string, toolService: WebToolsService, inferenceSSESubject: InferenceSSESubject, abortController: AbortController, messageText: string, openAiMessages: ChatCompletionMessageParam[], handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
-    const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false);
+    const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false, modelParams);
     promise.then(async ({ finalResponseFromLLM }) => {
       await handleCompletedResponseText(finalResponseFromLLM);
     });

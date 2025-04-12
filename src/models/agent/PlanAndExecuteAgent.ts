@@ -1,6 +1,6 @@
 import { Model } from '../api/conversationApiModels';
 import { PlanExecutor } from './PlanExecutor';
-import { AiFunctionContextV2, AiFunctionExecutor } from './aiTypes';
+import { AiFunctionContextV2, AiFunctionExecutor, ModelParams } from './aiTypes';
 import InferenceSSESubject from '../InferenceSSESubject';
 import { ChatCompletionMessageParam, ChatCompletionMessageToolCall, } from 'openai/resources/chat/completions';
 import PlannerAgentV2 from './PlannerAgentV2';
@@ -40,7 +40,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
    * @param prompt
    * @param originalOpenAiMessages
    */
-  async planAndExecuteThenStreamResultsBack(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[], addUserPromptToMessagesBeforeSending: boolean){
+  async planAndExecuteThenStreamResultsBack(prompt: string, originalOpenAiMessages: ChatCompletionMessageParam[], addUserPromptToMessagesBeforeSending: boolean, modelParams: ModelParams){
     if(!this.aiFunctionExecutor){
         const r2 = await this.callLlmWithoutUsingPlanOrTools(prompt, originalOpenAiMessages, addUserPromptToMessagesBeforeSending);
         return {planFinalResult: undefined, finalResponseFromLLM: r2.completeText, plannerAgent: undefined, planExecutor: undefined};
@@ -59,6 +59,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
         abortController: this.abortController,
         inferenceSSESubject: this.inferenceSSESubject,
         memberId: this.memberId,
+        modelParams,
       };
       const planExecutor = new PlanExecutor(agentPlan, aiFunctionContext);
       if(!plannerAgent.agentPlan){

@@ -76,6 +76,42 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "temperature",
+            "required": true,
+            "in": "query",
+            "description": "Controls randomness of responses (0-1)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "top_p",
+            "required": true,
+            "in": "query",
+            "description": "Controls diversity by considering top P percent of probable words (0-1)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "frequency_penalty",
+            "required": true,
+            "in": "query",
+            "description": "Penalizes repeated tokens (-2 to 2)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "presence_penalty",
+            "required": true,
+            "in": "query",
+            "description": "Encourages new topics (-2 to 2)",
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "responses": {
