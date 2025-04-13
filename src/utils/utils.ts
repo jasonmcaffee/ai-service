@@ -72,8 +72,14 @@ export function wait(ms: number){
 
 
 function getTokenCount(text: string){
-  const tokenizer = encoding_for_model("gpt-3.5-turbo");
-  return tokenizer.encode(text).length;
+  try{
+    const tokenizer = encoding_for_model("gpt-3.5-turbo");
+    return tokenizer.encode(text).length;
+  }catch(e){ //<|endoftext|>
+    console.error(`unable to get token count`, e);
+    return getWordCount(text);
+  }
+
 }
 
 function getWordCount(text: string){
