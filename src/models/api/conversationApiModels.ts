@@ -7,11 +7,11 @@ export class Member {
   userName: string;
 }
 
-export class ModelOrDatasourceOrPrompt {
+export class ModelOrDatasourceOrPromptOrAgent {
   @ApiProperty()
   id: string;
   @ApiProperty()
-  type: "model" | "datasource" | "prompt";
+  type: "model" | "datasource" | "prompt" | "agent";
 }
 
 export class MessageContext {
@@ -19,12 +19,14 @@ export class MessageContext {
   textWithoutTags: string;
   @ApiProperty()
   originalText: string;
-  @ApiProperty({type: [ModelOrDatasourceOrPrompt]})
-  models: ModelOrDatasourceOrPrompt[];
-  @ApiProperty({type: [ModelOrDatasourceOrPrompt]})
-  datasources: ModelOrDatasourceOrPrompt[];
-  @ApiProperty({type: [ModelOrDatasourceOrPrompt]})
-  prompts: ModelOrDatasourceOrPrompt[];
+  @ApiProperty({type: [ModelOrDatasourceOrPromptOrAgent]})
+  models: ModelOrDatasourceOrPromptOrAgent[];
+  @ApiProperty({type: [ModelOrDatasourceOrPromptOrAgent]})
+  datasources: ModelOrDatasourceOrPromptOrAgent[];
+  @ApiProperty({type: [ModelOrDatasourceOrPromptOrAgent]})
+  prompts: ModelOrDatasourceOrPromptOrAgent[];
+  @ApiProperty({type: [ModelOrDatasourceOrPromptOrAgent]})
+  agents: ModelOrDatasourceOrPromptOrAgent[];
 }
 
 export class Image {

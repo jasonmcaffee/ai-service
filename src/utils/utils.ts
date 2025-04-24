@@ -1,7 +1,7 @@
 import {
   Message,
   MessageContext,
-  ModelOrDatasourceOrPrompt,
+  ModelOrDatasourceOrPromptOrAgent,
   StatusUpdateTopicType,
 } from '../models/api/conversationApiModels';
 // import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
@@ -31,13 +31,14 @@ export function formatDeepSeekResponse(deepSeekResponseText: string): string {
 
 export function extractMessageContextFromMessage(text: string): MessageContext{
   const modelsAndDatasourcesAndPrompts = parseModelAndDatasourceAndPromptTagsFromMessage(text);
-  const models: ModelOrDatasourceOrPrompt[] = modelsAndDatasourcesAndPrompts.filter(m => m.type === "model");
-  const datasources: ModelOrDatasourceOrPrompt[] = modelsAndDatasourcesAndPrompts.filter(m => m.type === "datasource");
-  const prompts: ModelOrDatasourceOrPrompt[] = modelsAndDatasourcesAndPrompts.filter(m => m.type === "prompt");
+  const models: ModelOrDatasourceOrPromptOrAgent[] = modelsAndDatasourcesAndPrompts.filter(m => m.type === "model");
+  const datasources: ModelOrDatasourceOrPromptOrAgent[] = modelsAndDatasourcesAndPrompts.filter(m => m.type === "datasource");
+  const prompts: ModelOrDatasourceOrPromptOrAgent[] = modelsAndDatasourcesAndPrompts.filter(m => m.type === "prompt");
+  const agents: ModelOrDatasourceOrPromptOrAgent[] = modelsAndDatasourcesAndPrompts.filter(m => m.type === "agent");
   //completely remove the <datasource id='123'>datasource name</datasource>
-  let textWithoutTags = removeModelAndDatasourceTagsFromMessage(text);
+  let textWithoutTags = removeModelAndDatasourceAndAgentTagsFromMessage(text);
   return {
-    textWithoutTags, models, datasources, originalText: text, prompts
+    textWithoutTags, models, datasources, originalText: text, prompts, agents,
   };
 }
 
@@ -51,17 +52,17 @@ export function replacePromptTagWithPromptTextFromDbById(input: string, promptId
  * { id: "123", type: "prompt"}
  * @param text
  */
-export function parseModelAndDatasourceAndPromptTagsFromMessage(text: string): ModelOrDatasourceOrPrompt[] {
-  const matches = [...text.matchAll(/<\s*(model|datasource|prompt)(?:\s+[^>]*?id=["']([^"']+)["'])?.*?>/gi)];
+export function parseModelAndDatasourceAndPromptTagsFromMessage(text: string): ModelOrDatasourceOrPromptOrAgent[] {
+  const matches = [...text.matchAll(/<\s*(model|datasource|prompt|agent)(?:\s+[^>]*?id=["']([^"']+)["'])?.*?>/gi)];
 
   return matches.map(match => ({
     id: match[2],
-    type: match[1] as "model" | "datasource" | "prompt"
+    type: match[1] as "model" | "datasource" | "prompt" | "agent"
   }));
 }
 
-function removeModelAndDatasourceTagsFromMessage(text: string): string {
-  return text.replace(/<\s*(model|datasource)[^>]*>.*?<\s*\/\s*\1\s*>\s*/gi, '');
+function removeModelAndDatasourceAndAgentTagsFromMessage(text: string): string {
+  return text.replace(/<\s*(model|datasource|agent)[^>]*>.*?<\s*\/\s*\1\s*>\s*/gi, ''); //todo: prompt?
 }
 
 export function wait(ms: number){

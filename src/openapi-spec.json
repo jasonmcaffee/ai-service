@@ -2083,7 +2083,7 @@
           "statusTopicsKeyValues"
         ]
       },
-      "ModelOrDatasourceOrPrompt": {
+      "ModelOrDatasourceOrPromptOrAgent": {
         "type": "object",
         "properties": {
           "id": {
@@ -2110,19 +2110,25 @@
           "models": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ModelOrDatasourceOrPrompt"
+              "$ref": "#/components/schemas/ModelOrDatasourceOrPromptOrAgent"
             }
           },
           "datasources": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ModelOrDatasourceOrPrompt"
+              "$ref": "#/components/schemas/ModelOrDatasourceOrPromptOrAgent"
             }
           },
           "prompts": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ModelOrDatasourceOrPrompt"
+              "$ref": "#/components/schemas/ModelOrDatasourceOrPromptOrAgent"
+            }
+          },
+          "agents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelOrDatasourceOrPromptOrAgent"
             }
           }
         },
@@ -2131,7 +2137,8 @@
           "originalText",
           "models",
           "datasources",
-          "prompts"
+          "prompts",
+          "agents"
         ]
       },
       "Message": {

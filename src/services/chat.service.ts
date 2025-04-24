@@ -141,7 +141,9 @@ export class ChatService {
 
     this.handleSendingAudio(inferenceSSESubject, shouldRespondWithAudio, memberId, textToSpeechSpeed);
 
-    if(shouldUsePlanTool){
+    if(messageContext.agents.length > 0){
+      this.handleUsingAgent(memberId, abortController, inferenceSSESubject, messageContext, model, handleCompletedResponseText, handleError, modelParams);
+    } else if(shouldUsePlanTool){
       this.handleUsingPlanTool(model, memberId, toolService, inferenceSSESubject, abortController, messageText, openAiMessages, handleCompletedResponseText, handleError, modelParams);
     } else if(shouldSearchWeb) {
       this.handleUsingSearchWebTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError, modelParams);
@@ -275,6 +277,34 @@ export class ChatService {
     promise.catch(async e => {
       await handleError(e);
     });
+  }
+
+  private async handleUsingAgent(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, messageContext: MessageContext, model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
+    const combinedTools = new CombinedAiFunctionExecutors();
+    combinedTools.combineAiFunctionExecutor(this.webSearchAgent);
+    combinedTools.combineAiFunctionExecutor(this.newsAgent);
+
+    const agent = messageContext.agents[0];
+    if(agent.id == "1"){
+      const aiFunctionContext: AiFunctionContextV2 = {
+        memberId,
+        // aiFunctionExecutor: this.webSearchAgent, //shouldn't be needed.
+        abortController,
+        inferenceSSESubject,
+        functionResultsStorage: {},
+        model,
+        modelParams,
+      };
+      try{
+        const completeText = await this.webSearchAgent.handlePrompt(messageContext.textWithoutTags, aiFunctionContext);
+        inferenceSSESubject.sendText(completeText);
+        await handleCompletedResponseText(completeText);
+      }catch(e){
+        await handleError(e);
+      }
+    }else{
+      throw Error(`unknown agent id: ${agent.id}`);
+    }
   }
 
   private handleUsingSearchWebTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {

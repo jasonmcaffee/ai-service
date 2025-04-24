@@ -24,7 +24,7 @@ models/Image.ts
 models/Message.ts
 models/MessageContext.ts
 models/Model.ts
-models/ModelOrDatasourceOrPrompt.ts
+models/ModelOrDatasourceOrPromptOrAgent.ts
 models/ModelType.ts
 models/PagedImages.ts
 models/PollImageStatusResponse.ts
