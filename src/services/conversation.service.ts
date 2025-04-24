@@ -131,8 +131,12 @@ export class ConversationService {
   async getAtAutoCompleteSuggestions(memberId: string, atMention: string){
     const text = atMention.replace("@", '');
     const suggestions = await this.conversationsRepository.getAutoCompleteSuggestions(memberId, text);
+
+    const agentSuggestions: Suggestion[] = [
+      {name: 'Web Agent', type: 'agent', id: '1'}
+    ];
     // console.log(`suggestions for text: ${text}`, suggestions);
-    return suggestions;
+    return [...suggestions, ...agentSuggestions];
   }
 
 }
