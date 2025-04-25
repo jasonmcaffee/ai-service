@@ -64,7 +64,7 @@ export class WebPageAgent implements Agent<WebPageAgent>{
       ];
       const aiFunctionContext = { ...context, aiFunctionExecutor: this.webToolsNoMarkdownInSearchResultService};
       const { completeText } = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({ openAiMessages, model: context.model!, aiFunctionContext, totalOpenAiCallsMade: 0, });
-      sendStatus('Web search agent response: ', {agentText: completeText});
+      sendStatus('Web page agent response: ', {agentText: completeText});
       return completeText;
     }, {context, displayText: `Web Page Agent is handling request: "${prompt}"`, topic:'agent'});
   }
@@ -84,12 +84,12 @@ function getWebPageAgentGenericPrompt(){
     `;
 }
 
-function getWebPageAgentSummarizePrompt(){
-  return `
-      You are an AI agent who is an expert at fetching the contents of a single website, and provide a summary of the page, with citations (snippets of text from the page).
-      
-    `;
-}
+// function getWebPageAgentSummarizePrompt(){
+//   return `
+//       You are an AI agent who is an expert at fetching the contents of a single website, and provide a summary of the page, with citations (snippets of text from the page).
+//
+//     `;
+// }
 
 
 //

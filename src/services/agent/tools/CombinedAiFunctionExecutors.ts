@@ -35,4 +35,12 @@ export default class CombinedAiFunctionExecutors implements AiFunctionExecutor<C
   getToolsMetadata(): ChatCompletionTool[] {
     return this.tools.map(t => t.getToolsMetadata()).flat();
   }
+
+  static createFrom(...executors: AiFunctionExecutor<any>[]){
+    const combined = new CombinedAiFunctionExecutors();
+    for(let e of executors){
+      combined.combineAiFunctionExecutor(e);
+    }
+    return combined;
+  }
 }

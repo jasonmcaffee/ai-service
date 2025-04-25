@@ -8,6 +8,8 @@ import {chatCompletionTool, extractChatCompletionToolAnnotationValues} from "../
 import { withStatus } from '../../../utils/utils';
 import { WebToolsNoMarkdownInSearchResultService } from '../tools/webToolsNoMarkdownInSearchResult.service';
 import { Agent } from './Agent';
+import { WebPageAgent } from './webPageAgent.service';
+import CombinedAiFunctionExecutors from '../tools/CombinedAiFunctionExecutors';
 
 /**
  * An agent is an abstraction that allows us to bundle prompts, tools, and behaviors together, and provides a simple
@@ -23,6 +25,7 @@ import { Agent } from './Agent';
 export class WebSearchAgent implements Agent<WebSearchAgent>{
   constructor(
       private readonly webToolsNoMarkdownInSearchResultService: WebToolsNoMarkdownInSearchResultService,
+      private readonly webPageAgent: WebPageAgent,
       private readonly openAiWrapperService: OpenaiWrapperServiceV2,) {}
 
   @chatCompletionTool({
@@ -60,50 +63,26 @@ export class WebSearchAgent implements Agent<WebSearchAgent>{
 
   private getWebSearchAgentPrompt(){
     return `
-      You are an AI agent who is an expert at searching the web and/or fetching the contents of a single website, in order to fulfill the user's request.
-      You analyze the user's request, deeply reason about what the user wants, and create one or more expertly crafted web queries to find information.
-      For every search result, you get the contents of the page/url using aiGetContentsOfWebPageAsMarkdown, then carefully read through the markdown, and extract meaningful snippets of text (referred to as quotes) that pertain to the user's request.
-      Do not only use the blurb from the search result.  You must call aiGetContentsOfWebPageAsMarkdown for each search result.
+      You are an AI agent who is an expert at searching the web in order to fulfill the user's request.
       
-      # Response Instructions
-      Do not use any preamble in your response.
-      Do not provide statements, summarizations, or synthesis.
-      Do not ask followup questions.
+      For each and every search result, call the aiAskWebPageAgentGeneralQuestionAboutUrl passing this prompt (replace urlFromSearchResult with actual url)
+      <promptToSend>
+      Visit this URL: {urlFromSearchResult}
+      Task: Please analyze this web page and provide:
       
-      Your response should contain the following information:
-      - Every search result you receive from the web search tool should be included in your response.
-      - For each search result, get the contents of the page by using the aiGetContentsOfWebPageAsMarkdown tool.
-      - From the markdown response of aiGetContentsOfWebPageAsMarkdown, extract at least 5 snippets of text (quotes) from the markdown, which relate to the user's request.
-      - url links where the direct quotes were obtained from.
+      SUMMARY: Create a comprehensive summary of the article that captures the key facts, events, and context.
       
-      # Response Format
-      Your response should be formatted in markdown.
-      Snippets of text should be in quotation marks.
-      Links should be the shortened name of the website the link points to. e.g. http://wikipedia.org should be wikipedia. 
-      Do not alter links in any way.  Links must exactly match those returned from search tools.  e.g. don't change hyphens into underscores.
+      CITATIONS: After your summary, include a citations section where you list 10 exact quotes from the original article that support the claims made in your summary. For each citation:
       
-      ## Example Response
-      Important: Your response should be in the same format as provided below in the exampleResponse tag:
-      <exampleResponse>
-      "Rome is the capital city and most populated comune (municipality) of Italy. It is also the capital of the Lazio region, the centre of the Metropolitan City." [romefacts](https://romefacts.com)
+      Use quotation marks to indicate direct quotes
+      Include enough context to understand the significance of the quote
+      Organize citations in a logical order that follows your summary's structure
       
-      "Rome is located in the central portion of the Italian peninsula, on the Tiber River about 15 miles (24 km) inland from the Tyrrhenian Sea." [brittanica](https://brittanica.com/rome)
-      
-      "From its beautiful buildings that have withstood time itself to the majestic, graceful, Mediterannean Pines." [wikipedia](https://wikipedia.org/rome)
-      
-      "While Roman mythology dates the founding of Rome at around 753 BC, the site has been inhabited for much longer, making it a major human settlement for over three millennia and one of the oldest continuously occupied cities in Europe." [wikipedia](https://wikipedia.org/rome)
-      </exampleResponse>
-      
-      NOTE: the above exampleResponse is for illustration purposes only!  
-      
-      # IMPORTANT CONSIDERATIONS
-      Never use any knowledge or information that is not directly mentioned in the provided search results.
-      If the user prompt relates to information not found in the search results, simply state that you could not find any related information.
-      Always verify that each and every search result returned by your calls to web tools are included in your response.
-      Always call aiGetContentsOfWebPageAsMarkdown for each search result returned from aiSearchWeb.
-      Always validate that you match the desired response format before responding.
-      Deeply reason about the above instructions, and verify that you have fulfilled all the requirements.
-      
+      Format your response with clear headings for both the SUMMARY and CITATIONS sections.
+      </promptToSend>
+
+      If you have 10 search results, you should call aiAskWebPageAgentGeneralQuestionAboutUrl 10 times, once for each result.
+      Use the summaries from the aiAskWebPageAgentGeneralQuestionAboutUrl to fulfill the user's request.
     `;
   }
 
@@ -120,14 +99,7 @@ export class WebSearchAgent implements Agent<WebSearchAgent>{
         { role: 'user', content: prompt},
       ];
 
-      const aiFunctionContext: AiFunctionContextV2 = {
-        memberId: originalAiFunctionContext.memberId,
-        aiFunctionExecutor: this.webToolsNoMarkdownInSearchResultService,
-        abortController: originalAiFunctionContext.abortController,
-        inferenceSSESubject: originalAiFunctionContext.inferenceSSESubject,
-        functionResultsStorage: originalAiFunctionContext.functionResultsStorage,
-        model: originalAiFunctionContext.model,
-      };
+      const aiFunctionContext = { ...originalAiFunctionContext, aiFunctionExecutor: CombinedAiFunctionExecutors.createFrom(this.webToolsNoMarkdownInSearchResultService, this.webPageAgent),};
       const { completeText } = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({
         openAiMessages,
         model: originalAiFunctionContext.model!,
