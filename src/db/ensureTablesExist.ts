@@ -69,6 +69,7 @@ export async function ensureTablesExist() {
         is_default BOOLEAN,
         member_id TEXT,
         initial_message text,
+        additional_llamacpp_server_params TEXT,
         FOREIGN KEY (model_type_id) REFERENCES model_type(id),
         FOREIGN KEY (member_id) REFERENCES member(member_id)
     )`;
