@@ -8,7 +8,7 @@ import { ConversationsRepository } from '../repositories/conversations.repositor
 import { MessagesService } from './messages.service';
 import config from '../config/config';
 import { InferenceService } from './inference.service';
-import { createOpenAIMessagesFromMessages, formatDeepSeekResponse } from '../utils/utils';
+import { createOpenAIMessagesFromMessages, removeThinkTagFromLLMResponse } from '../utils/utils';
 // import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { DatasourcesService } from './datasource.service';
@@ -119,7 +119,7 @@ export class ConversationService {
     openAiMessages = [...openAiMessages, lastMessage];
     const result = await this.inferenceService.nonStreamingInference(openAiMessages);
     console.log('have ai name the conversation result: ', result)
-    const resultWithoutThinkTag = formatDeepSeekResponse(result);
+    const resultWithoutThinkTag = removeThinkTagFromLLMResponse(result);
     const updatedConversation = await this.updateConversation(memberId, conversationId, {
       conversationId: conversationId,
       createdDate: conversation.createdDate,
