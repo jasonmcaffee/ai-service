@@ -23,6 +23,9 @@ import CombinedAiFunctionExecutors from "./agent/tools/CombinedAiFunctionExecuto
 import {WebSearchAgent} from "./agent/agents/webSearchAgent.service";
 import {NewsAgent} from "./agent/agents/newsAgent.service";
 import { ModelParams } from '../models/agent/aiTypes';
+import { WebPageAgent } from './agent/agents/webPageAgent.service';
+import { Agent } from './agent/agents/Agent';
+
 
 @Injectable()
 export class ChatService {
@@ -37,6 +40,7 @@ export class ChatService {
               private readonly speechAudioService: SpeechAudioService,
               private readonly webSearchAgent: WebSearchAgent,
               private readonly newsAgent: NewsAgent,
+              private readonly webPageAgent: WebPageAgent,
               ) {}
 
 
@@ -279,32 +283,26 @@ export class ChatService {
     });
   }
 
-  private async handleUsingAgent(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, messageContext: MessageContext, model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
-    const combinedTools = new CombinedAiFunctionExecutors();
-    combinedTools.combineAiFunctionExecutor(this.webSearchAgent);
-    combinedTools.combineAiFunctionExecutor(this.newsAgent);
-
+  private async handleUsingAgent(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, messageContext: MessageContext, model: Model,
+                                 handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
+    const aiFunctionContext: AiFunctionContextV2 = { memberId, abortController, inferenceSSESubject, functionResultsStorage: {}, model, modelParams, };
     const agent = messageContext.agents[0];
-    if(agent.id == "1"){
-      const aiFunctionContext: AiFunctionContextV2 = {
-        memberId,
-        // aiFunctionExecutor: this.webSearchAgent, //shouldn't be needed.
-        abortController,
-        inferenceSSESubject,
-        functionResultsStorage: {},
-        model,
-        modelParams,
-      };
-      try{
-        const completeText = await this.webSearchAgent.handlePrompt(messageContext.textWithoutTags, aiFunctionContext);
-        inferenceSSESubject.sendText(completeText);
-        await handleCompletedResponseText(completeText);
-      }catch(e){
-        await handleError(e);
+    const agentMap: Record<string, Agent<any>> = {
+      "1": this.webSearchAgent,
+      "2": this.webPageAgent,
+    };
+    const selectedAgent = agentMap[agent.id];
+    try{
+      if(!selectedAgent){
+        throw new Error(`unknown agent id: ${agent.id}`);
       }
-    }else{
-      throw Error(`unknown agent id: ${agent.id}`);
+      const completeText = await selectedAgent.handlePrompt(messageContext.textWithoutTags, aiFunctionContext);
+      inferenceSSESubject.sendText(completeText);
+      await handleCompletedResponseText(completeText);
+    }catch(e){
+      await handleError(e);
     }
+
   }
 
   private handleUsingSearchWebTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {

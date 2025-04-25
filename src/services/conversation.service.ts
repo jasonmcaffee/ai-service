@@ -133,7 +133,8 @@ export class ConversationService {
     const suggestions = await this.conversationsRepository.getAutoCompleteSuggestions(memberId, text);
 
     const agentSuggestions: Suggestion[] = [
-      {name: 'Web Agent', type: 'agent', id: '1'}
+      {name: 'Web Search Agent', type: 'agent', id: '1'},
+      {name: 'Web Page Agent', type: 'agent', id: '2'},
     ];
     // console.log(`suggestions for text: ${text}`, suggestions);
     return [...suggestions, ...agentSuggestions];

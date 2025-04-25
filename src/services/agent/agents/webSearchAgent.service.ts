@@ -6,6 +6,8 @@ import {AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult} from '../../.
 import { Model } from '../../../models/api/conversationApiModels';
 import {chatCompletionTool, extractChatCompletionToolAnnotationValues} from "../tools/aiToolAnnotations";
 import { withStatus } from '../../../utils/utils';
+import { WebToolsNoMarkdownInSearchResultService } from '../tools/webToolsNoMarkdownInSearchResult.service';
+import { Agent } from './Agent';
 
 /**
  * An agent is an abstraction that allows us to bundle prompts, tools, and behaviors together, and provides a simple
@@ -18,9 +20,9 @@ import { withStatus } from '../../../utils/utils';
  * An agent has tools it can call.
  */
 @Injectable()
-export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
+export class WebSearchAgent implements Agent<WebSearchAgent>{
   constructor(
-      private readonly webToolsService: WebToolsService,
+      private readonly webToolsNoMarkdownInSearchResultService: WebToolsNoMarkdownInSearchResultService,
       private readonly openAiWrapperService: OpenaiWrapperServiceV2,) {}
 
   @chatCompletionTool({
@@ -60,8 +62,8 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
     return `
       You are an AI agent who is an expert at searching the web and/or fetching the contents of a single website, in order to fulfill the user's request.
       You analyze the user's request, deeply reason about what the user wants, and create one or more expertly crafted web queries to find information.
-      You then carefully read through the search results, and extract meaningful quotes that pertain to the user's request.
-      You provide exhaustive results and information, that is in depth and thorough.
+      For every search result, you get the contents of the page/url using aiGetContentsOfWebPageAsMarkdown, then carefully read through the markdown, and extract meaningful snippets of text (referred to as quotes) that pertain to the user's request.
+      Do not only use the blurb from the search result.  You must call aiGetContentsOfWebPageAsMarkdown for each search result.
       
       # Response Instructions
       Do not use any preamble in your response.
@@ -69,13 +71,14 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
       Do not ask followup questions.
       
       Your response should contain the following information:
-      - You must include every search result you receive from the web search tool should be included in your response.
-      - You must provide multiple relevant direct quotes from each search result. e.g. if wikipedia.org/rome has 10 quotes relevant to the user's request, you include each one of them.
+      - Every search result you receive from the web search tool should be included in your response.
+      - For each search result, get the contents of the page by using the aiGetContentsOfWebPageAsMarkdown tool.
+      - From the markdown response of aiGetContentsOfWebPageAsMarkdown, extract at least 5 snippets of text (quotes) from the markdown, which relate to the user's request.
       - url links where the direct quotes were obtained from.
       
       # Response Format
       Your response should be formatted in markdown.
-      Quotes should be in quotation marks.
+      Snippets of text should be in quotation marks.
       Links should be the shortened name of the website the link points to. e.g. http://wikipedia.org should be wikipedia. 
       Do not alter links in any way.  Links must exactly match those returned from search tools.  e.g. don't change hyphens into underscores.
       
@@ -91,12 +94,16 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
       "While Roman mythology dates the founding of Rome at around 753 BC, the site has been inhabited for much longer, making it a major human settlement for over three millennia and one of the oldest continuously occupied cities in Europe." [wikipedia](https://wikipedia.org/rome)
       </exampleResponse>
       
+      NOTE: the above exampleResponse is for illustration purposes only!  
+      
       # IMPORTANT CONSIDERATIONS
       Never use any knowledge or information that is not directly mentioned in the provided search results.
       If the user prompt relates to information not found in the search results, simply state that you could not find any related information.
       Always verify that each and every search result returned by your calls to web tools are included in your response.
+      Always call aiGetContentsOfWebPageAsMarkdown for each search result returned from aiSearchWeb.
       Always validate that you match the desired response format before responding.
       Deeply reason about the above instructions, and verify that you have fulfilled all the requirements.
+      
     `;
   }
 
@@ -115,7 +122,7 @@ export class WebSearchAgent implements AiFunctionExecutor<WebSearchAgent>{
 
       const aiFunctionContext: AiFunctionContextV2 = {
         memberId: originalAiFunctionContext.memberId,
-        aiFunctionExecutor: this.webToolsService,
+        aiFunctionExecutor: this.webToolsNoMarkdownInSearchResultService,
         abortController: originalAiFunctionContext.abortController,
         inferenceSSESubject: originalAiFunctionContext.inferenceSSESubject,
         functionResultsStorage: originalAiFunctionContext.functionResultsStorage,
