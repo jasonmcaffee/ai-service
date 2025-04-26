@@ -133,7 +133,7 @@ export class ChatService {
       // console.log('handle response completed got: ', completeText);
       const formattedResponse = completeText;
       const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
-      await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'system', statusTopicsKeyValues}, false);
+      await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'assistant', statusTopicsKeyValues}, false);
       this.abortControllers.delete(memberId);
       inferenceSSESubject.sendTextCompleteOnNextTick();
     }
