@@ -2562,12 +2562,12 @@
             "type": "number",
             "nullable": true
           },
-          "nPredict": {
-            "type": "number",
-            "nullable": true
-          },
           "jinja": {
             "type": "boolean",
+            "nullable": true
+          },
+          "additionalLlamacppServerParams": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -2576,8 +2576,8 @@
           "ngl",
           "host",
           "contextSize",
-          "nPredict",
-          "jinja"
+          "jinja",
+          "additionalLlamacppServerParams"
         ]
       },
       "LlamaCppModelsDataMeta": {

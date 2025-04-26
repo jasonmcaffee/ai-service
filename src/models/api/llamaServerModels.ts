@@ -31,12 +31,12 @@ export class LoadModelRequest {
     @ApiProperty({nullable: true})
     contextSize?: number = 60000;
 
-    /**
-     * Number of tokens to predict
-     * @example 10000
-     */
-    @ApiProperty({nullable: true})
-    nPredict?: number = 10000;
+    // /**
+    //  * Number of tokens to predict
+    //  * @example 10000
+    //  */
+    // @ApiProperty({nullable: true})
+    // nPredict?: number = 10000;
 
     /**
      * Enable Jinja templates for tool calling
@@ -45,4 +45,7 @@ export class LoadModelRequest {
      */
     @ApiProperty({nullable: true})
     jinja?: boolean = true;
+
+    @ApiProperty({nullable: true})
+    additionalLlamacppServerParams?: string;
 }

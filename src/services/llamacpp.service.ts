@@ -62,13 +62,15 @@ export class LlamaCppService {
                 request.ngl != null ? `-ngl ${request.ngl}` : '-ngl 9999',
                 request.host ? `--host ${request.host}` : `--host 0.0.0.0`,
                 request.contextSize != null ? `--ctx-size ${request.contextSize}` : null,
-                request.nPredict != null ? `--n-predict ${request.nPredict}` : null
+                // request.nPredict != null ? `--n-predict ${request.nPredict}` : null
             ];
 
             let command = commandParts.filter(Boolean).join(" ");
             if (request.jinja) {
                 command += ' --jinja';
             }
+
+            command += ` ${request.additionalLlamacppServerParams ?? ''}`;
 
             // Launch server in new terminal and wait for startup
             await this.startServerInNewTerminal(command, 90000);
