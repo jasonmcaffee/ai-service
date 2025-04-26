@@ -20,8 +20,7 @@ export function uuid(){
 
 export function createOpenAIMessagesFromMessages(messages: Message[]){
   return messages.map((m) => {
-    const role = m.sentByMemberId == "2" ? "system" : "user";
-    return { role, content: m.messageText } as ChatCompletionMessageParam;
+    return { role: m.role, content: m.messageText } as ChatCompletionMessageParam;
   });
 }
 
