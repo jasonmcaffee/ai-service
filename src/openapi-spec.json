@@ -2872,6 +2872,10 @@
           "isCurrentlyRunningOnLlamaCpp": {
             "type": "boolean",
             "nullable": true
+          },
+          "additionalLlamacppServerParams": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -2885,7 +2889,8 @@
           "initialMessage",
           "filePath",
           "contextSize",
-          "isCurrentlyRunningOnLlamaCpp"
+          "isCurrentlyRunningOnLlamaCpp",
+          "additionalLlamacppServerParams"
         ]
       },
       "CreateModel": {
@@ -2920,6 +2925,10 @@
           "contextSize": {
             "type": "number",
             "nullable": true
+          },
+          "additionalLlamacppServerParams": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -2931,7 +2940,8 @@
           "modelTypeId",
           "initialMessage",
           "filePath",
-          "contextSize"
+          "contextSize",
+          "additionalLlamacppServerParams"
         ]
       },
       "UpdateModel": {
@@ -2966,6 +2976,10 @@
           "contextSize": {
             "type": "number",
             "nullable": true
+          },
+          "additionalLlamacppServerParams": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -2977,7 +2991,8 @@
           "modelTypeId",
           "initialMessage",
           "filePath",
-          "contextSize"
+          "contextSize",
+          "additionalLlamacppServerParams"
         ]
       },
       "TextToSpeechRequest": {

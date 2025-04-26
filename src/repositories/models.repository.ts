@@ -50,10 +50,10 @@ export class ModelsRepository {
 
             const [createdModel] = await trx<Model[]>`
                 INSERT INTO model (id, display_name, url, api_key, model_name, model_type_id, is_default, 
-                                   member_id, initial_message, file_path, context_size)
+                                   member_id, initial_message, file_path, context_size, additional_llamacpp_server_params)
                 VALUES (${uuidv4()}, ${model.displayName}, ${model.url}, ${model.apiKey}, ${model.modelName}, ${model.modelTypeId},
                         ${model.isDefault}, ${memberId}, ${model.initialMessage || null}, ${model.filePath || null},
-                       ${model.contextSize || null})
+                       ${model.contextSize || null}, ${model.additionalLlamacppServerParams || null})
                 RETURNING *
             `;
 
@@ -81,7 +81,8 @@ export class ModelsRepository {
                   is_default = COALESCE(${model.isDefault}, is_default),
                   initial_message = COALESCE(${model.initialMessage || null}, initial_message),
                   file_path = COALESCE(${model.filePath || null}, file_path),
-                  context_size = COALESCE(${model.contextSize || null}, context_size)
+                  context_size = COALESCE(${model.contextSize || null}, context_size),
+                  additional_llamacpp_server_params = COALESCE(${model.additionalLlamacppServerParams || null}, additional_llamacpp_server_params)
               WHERE id = ${modelId}
               RETURNING *
             `;

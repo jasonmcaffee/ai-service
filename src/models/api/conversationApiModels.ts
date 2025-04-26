@@ -292,6 +292,8 @@ export class Model {
   contextSize?: number;
   @ApiProperty({nullable: true})
   isCurrentlyRunningOnLlamaCpp?: boolean;
+  @ApiProperty({nullable: true})
+  additionalLlamacppServerParams?: string;
 }
 
 export class CreateModel {
@@ -313,6 +315,8 @@ export class CreateModel {
   filePath?: string;
   @ApiProperty({nullable: true})
   contextSize?: number;
+  @ApiProperty({nullable: true})
+  additionalLlamacppServerParams?: string;
 }
 
 export class UpdateModel {
@@ -334,6 +338,8 @@ export class UpdateModel {
   filePath?: string;
   @ApiProperty({nullable: true})
   contextSize?: number;
+  @ApiProperty({nullable: true})
+  additionalLlamacppServerParams?: string;
 }
 
 export class HFModelSibling {
