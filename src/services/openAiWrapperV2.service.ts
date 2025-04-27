@@ -191,19 +191,10 @@ export const defaultHandleToolCalls: HandleToolCalls = async ({ toolCallsFromOpe
   for (const toolCall of toolCallsFromOpenAi) {
     try {
       const toolResponse = await handleToolCall({toolCall, aiFunctionContext, openAiMessages});
-
       if (toolResponse) {
         //@ts-ignore i forget why we want this...
         toolResponse.name = toolCall.function.name;
         toolResultMessages.push(toolResponse);
-        // Add the tool response to messages - with correct structure
-        // toolResultMessages.push({
-        //   role: 'tool',
-        //   tool_call_id: toolCall.id!,
-        //   //@ts-ignore
-        //   name: toolResponse.tool_response.name,
-        //   content: JSON.stringify(toolResponse.tool_response.content)
-        // });
       }
     } catch (error) {
       console.error(`Error processing tool call: ${error}`);
@@ -221,8 +212,6 @@ export const defaultHandleToolCall: HandleToolCall = async ({toolCall, aiFunctio
   }
   try {
     const { toolName, toolArgs } = parseToolNameAndArgumentsFromToolCall(toolCall);
-    // console.log(`Handling tool call: ${toolName} with args:`, toolArgs);
-
     if (typeof toolService[toolName] == 'function') {
       const result = await toolService[toolName](toolArgs, aiFunctionContext);
       return {
@@ -230,12 +219,6 @@ export const defaultHandleToolCall: HandleToolCall = async ({toolCall, aiFunctio
         content: JSON.stringify(result.result),
         role: 'tool',
       };
-      // return {
-      //   tool_response: {
-      //     name: toolName,
-      //     content: result.result,
-      //   }
-      // }
     } else {
       throw new Error(`No matching tool function found for: ${toolName}`);
     }
