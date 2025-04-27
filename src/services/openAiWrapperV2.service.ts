@@ -5,11 +5,18 @@ import OpenAI from 'openai';
 import { AiFunctionContextV2, AiFunctionExecutor } from '../models/agent/aiTypes';
 import { InvalidToolCallJsonFromLLM } from '../models/errors/errors';
 
+export type ToolResponse = { tool_response: { name: string; content: any } } | null;
+export type HandleToolCall = (p: {toolCall: ChatCompletionMessageToolCall, aiFunctionContext: AiFunctionContextV2, openAiMessages: ChatCompletionMessageParam[]}) => Promise<ToolResponse>;
+export type HandleToolCalls = (p: {toolCallsFromOpenAi: ChatCompletionMessageToolCall[], aiFunctionContext: AiFunctionContextV2, openAiMessages: ChatCompletionMessageParam[], handleToolCall: HandleToolCall}) => Promise<ChatCompletionMessageParam[]>;
+export type HandleToolCallResults = (p: {toolCallResults: ChatCompletionMessageParam[], openAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2}) => Promise<void>;
+
 interface CallOpenAiParams {
   openAiMessages: ChatCompletionMessageParam[];
   model: Model;
   totalOpenAiCallsMade?: number;
   aiFunctionContext: AiFunctionContextV2;
+  handleToolCalls?: HandleToolCalls | undefined;
+  handleToolCallResults?: HandleToolCallResults | undefined;
 }
 
 @Injectable()
@@ -65,7 +72,7 @@ export class OpenaiWrapperServiceV2{
       });
       const toolCallsFromOpenAi = assistantMessage.tool_calls;
       if(toolCallsFromOpenAi){
-        const newOpenAiMessages = await handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi, aiFunctionContext);
+        const newOpenAiMessages = await defaultHandleToolCalls({toolCallsFromOpenAi, aiFunctionContext, openAiMessages, handleToolCall: defaultHandleToolCall});
         openAiMessages.push(...newOpenAiMessages);
         // Make a recursive call to continue the conversation and return its result
         return this.callOpenAiUsingModelAndSubject({ openAiMessages, model, totalOpenAiCallsMade, aiFunctionContext, });
@@ -162,7 +169,7 @@ export class OpenaiWrapperServiceV2{
 
       const toolCallsFromOpenAi = assistantMessage.tool_calls;
       if(toolCallsFromOpenAi && toolCallsFromOpenAi.length > 0){
-        const newOpenAiMessages = await handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi, aiFunctionContext);
+        const newOpenAiMessages = await defaultHandleToolCalls({toolCallsFromOpenAi, aiFunctionContext, openAiMessages, handleToolCall: defaultHandleToolCall});
         openAiMessages.push(...newOpenAiMessages);
         // Make a recursive call to continue the conversation and return its result
         return this.callOpenAiUsingModelAndSubject({ openAiMessages, model, totalOpenAiCallsMade, aiFunctionContext, });
@@ -180,15 +187,15 @@ export class OpenaiWrapperServiceV2{
   }
 }
 
-async function handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(toolCallsFromOpenAi: ChatCompletionMessageToolCall[], aiFunctionContext: AiFunctionContextV2): Promise<ChatCompletionMessageParam[]> {
-  const openAiMessages: ChatCompletionMessageParam[] = [];
+export const defaultHandleToolCalls: HandleToolCalls = async ({ toolCallsFromOpenAi, aiFunctionContext, openAiMessages, handleToolCall }) => {
+  const toolResultMessages: ChatCompletionMessageParam[] = [];
   for (const toolCall of toolCallsFromOpenAi) {
     try {
-      const toolResponse = await handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall, aiFunctionContext);
+      const toolResponse = await handleToolCall({toolCall, aiFunctionContext, openAiMessages});
 
       if (toolResponse) {
         // Add the tool response to messages - with correct structure
-        openAiMessages.push({
+        toolResultMessages.push({
           role: 'tool',
           tool_call_id: toolCall.id!,
           //@ts-ignore
@@ -201,36 +208,11 @@ async function handleAiToolCallMessagesByExecutingTheToolAndReturningTheResults(
       throw error;
     }
   }
-  return openAiMessages;
+  return toolResultMessages;
 }
 
-function parseToolCallsDueToOccasionalIssueOfLlamaCppNotRespondingWithJson(assistantContentResponse: string | null): ChatCompletionMessageToolCall[] | undefined {
-  return undefined;//this breaks sometimes when we get valid tool calls but also content like <tool_call>\n{}\n{}\n{}</tool_call>
-  // if(!assistantContentResponse){ return undefined; }
-  // // const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs; // doesn't match when there are new lines.
-  // const toolCallRegex = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g; // Matches everything inside <tool_call>...</tool_call>, including newlines
-  // const toolCalls: ChatCompletionMessageToolCall[] = [];
-  //
-  // // Find all tool_calls within the response content
-  // const matches = assistantContentResponse.match(toolCallRegex);
-  //
-  // if (matches) {
-  //   // For each match, extract the JSON and parse it
-  //   matches.forEach((match) => {
-  //     const jsonStr = match.replace(/<tool_call>|<\/tool_call>/g, ''); // remove the <tool_call> tags
-  //     try {
-  //       const parsedJson =  JSON.parse(jsonStr); // parse the JSON string
-  //       toolCalls.push(parsedJson); // add to the tool_calls array
-  //     } catch (e) {
-  //       console.error('Error parsing tool_call JSON:', e);
-  //       throw new InvalidToolCallJsonFromLLM(e.message); //TODO: retry.
-  //     }
-  //   });
-  // }
-  // return toolCalls.length > 0 ? toolCalls : undefined;
-}
-
-async function handleAiToolCallMessageByExecutingTheToolAndReturningTheResult(toolCall: ChatCompletionMessageToolCall, aiFunctionContext: AiFunctionContextV2): Promise<{ tool_response: { name: string; content: any } } | null> {
+// async function defaultHandleToolCall(toolCall: ChatCompletionMessageToolCall, aiFunctionContext: AiFunctionContextV2): Promise<{ tool_response: { name: string; content: any } } | null> {
+export const defaultHandleToolCall: HandleToolCall = async ({toolCall, aiFunctionContext}) => {
   const {inferenceSSESubject: subject, aiFunctionExecutor: toolService} = aiFunctionContext;
   if(!toolService){
     throw new Error('no toolsService/aiFunctionExecutor');
@@ -266,3 +248,29 @@ function parseToolNameAndArgumentsFromToolCall(toolCall: ChatCompletionMessageTo
   };
 }
 
+
+function parseToolCallsDueToOccasionalIssueOfLlamaCppNotRespondingWithJson(assistantContentResponse: string | null): ChatCompletionMessageToolCall[] | undefined {
+  return undefined;//this breaks sometimes when we get valid tool calls but also content like <tool_call>\n{}\n{}\n{}</tool_call>
+  // if(!assistantContentResponse){ return undefined; }
+  // // const toolCallRegex = /<tool_call>(.*?)<\/tool_call>/gs; // doesn't match when there are new lines.
+  // const toolCallRegex = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g; // Matches everything inside <tool_call>...</tool_call>, including newlines
+  // const toolCalls: ChatCompletionMessageToolCall[] = [];
+  //
+  // // Find all tool_calls within the response content
+  // const matches = assistantContentResponse.match(toolCallRegex);
+  //
+  // if (matches) {
+  //   // For each match, extract the JSON and parse it
+  //   matches.forEach((match) => {
+  //     const jsonStr = match.replace(/<tool_call>|<\/tool_call>/g, ''); // remove the <tool_call> tags
+  //     try {
+  //       const parsedJson =  JSON.parse(jsonStr); // parse the JSON string
+  //       toolCalls.push(parsedJson); // add to the tool_calls array
+  //     } catch (e) {
+  //       console.error('Error parsing tool_call JSON:', e);
+  //       throw new InvalidToolCallJsonFromLLM(e.message); //TODO: retry.
+  //     }
+  //   });
+  // }
+  // return toolCalls.length > 0 ? toolCalls : undefined;
+}
