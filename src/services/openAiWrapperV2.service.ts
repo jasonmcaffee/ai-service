@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { ChatCompletionMessageParam, ChatCompletionMessageToolCall, } from 'openai/resources/chat/completions';
+import { ChatCompletionMessageParam, ChatCompletionMessageToolCall, ChatCompletionToolMessageParam } from 'openai/resources/chat/completions';
 import { Model } from '../models/api/conversationApiModels';
 import OpenAI from 'openai';
 import { AiFunctionContextV2, AiFunctionExecutor } from '../models/agent/aiTypes';
 import { InvalidToolCallJsonFromLLM } from '../models/errors/errors';
 
-export type ToolResponse = { tool_response: { name: string; content: any } } | null;
-export type HandleToolCall = (p: {toolCall: ChatCompletionMessageToolCall, aiFunctionContext: AiFunctionContextV2, openAiMessages: ChatCompletionMessageParam[]}) => Promise<ToolResponse>;
+export type HandleToolCall = (p: {toolCall: ChatCompletionMessageToolCall, aiFunctionContext: AiFunctionContextV2, openAiMessages: ChatCompletionMessageParam[]}) => Promise<ChatCompletionToolMessageParam | null>;
 export type HandleToolCalls = (p: {toolCallsFromOpenAi: ChatCompletionMessageToolCall[], aiFunctionContext: AiFunctionContextV2, openAiMessages: ChatCompletionMessageParam[], handleToolCall: HandleToolCall}) => Promise<ChatCompletionMessageParam[]>;
 export type HandleToolCallResults = (p: {toolCallResults: ChatCompletionMessageParam[], openAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2}) => Promise<void>;
 
@@ -194,14 +193,17 @@ export const defaultHandleToolCalls: HandleToolCalls = async ({ toolCallsFromOpe
       const toolResponse = await handleToolCall({toolCall, aiFunctionContext, openAiMessages});
 
       if (toolResponse) {
+        //@ts-ignore i forget why we want this...
+        toolResponse.name = toolCall.function.name;
+        toolResultMessages.push(toolResponse);
         // Add the tool response to messages - with correct structure
-        toolResultMessages.push({
-          role: 'tool',
-          tool_call_id: toolCall.id!,
-          //@ts-ignore
-          name: toolResponse.tool_response.name,
-          content: JSON.stringify(toolResponse.tool_response.content)
-        });
+        // toolResultMessages.push({
+        //   role: 'tool',
+        //   tool_call_id: toolCall.id!,
+        //   //@ts-ignore
+        //   name: toolResponse.tool_response.name,
+        //   content: JSON.stringify(toolResponse.tool_response.content)
+        // });
       }
     } catch (error) {
       console.error(`Error processing tool call: ${error}`);
@@ -224,11 +226,16 @@ export const defaultHandleToolCall: HandleToolCall = async ({toolCall, aiFunctio
     if (typeof toolService[toolName] == 'function') {
       const result = await toolService[toolName](toolArgs, aiFunctionContext);
       return {
-        tool_response: {
-          name: toolName,
-          content: result.result,
-        }
-      }
+        tool_call_id: toolCall.id,
+        content: JSON.stringify(result.result),
+        role: 'tool',
+      };
+      // return {
+      //   tool_response: {
+      //     name: toolName,
+      //     content: result.result,
+      //   }
+      // }
     } else {
       throw new Error(`No matching tool function found for: ${toolName}`);
     }
