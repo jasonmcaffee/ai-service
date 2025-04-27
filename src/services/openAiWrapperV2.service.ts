@@ -12,14 +12,16 @@ interface CallOpenAiParams {
   handleToolCall?: HandleToolCall | undefined;
   handleToolCalls?: HandleToolCalls | undefined;
   handleMakingToolCallsAndSendingResultsToLLM?: HandleMakingToolCallsAndSendingResultsToLLM | undefined;
+  onOpenAiMessagesAdded?: OnOpenAiMessagesAdded | undefined;
 }
 
 export type CallOpenAiResponse = Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }>;
 
 export type HandleToolCall = (p: {toolCall: ChatCompletionMessageToolCall, aiFunctionContext: AiFunctionContextV2, openAiMessages: ChatCompletionMessageParam[]}) => Promise<ChatCompletionToolMessageParam | null>;
 export type HandleToolCalls = (p: {toolCallsFromOpenAi: ChatCompletionMessageToolCall[], aiFunctionContext: AiFunctionContextV2, openAiMessages: ChatCompletionMessageParam[], handleToolCall: HandleToolCall}) => Promise<ChatCompletionMessageParam[]>;
-export type HandleMakingToolCallsAndSendingResultsToLLM = (p: {toolCallsFromOpenAi: ChatCompletionMessageToolCall[], openAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2, handleToolCalls: HandleToolCalls, handleToolCall: HandleToolCall}) => CallOpenAiResponse;
-
+export type HandleMakingToolCallsAndSendingResultsToLLM = (p: {toolCallsFromOpenAi: ChatCompletionMessageToolCall[], openAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2, onOpenAiMessagesAdded: OnOpenAiMessagesAdded | undefined, handleToolCalls: HandleToolCalls, handleToolCall: HandleToolCall}) => CallOpenAiResponse;
+//so we can add every message to the db.
+export type OnOpenAiMessagesAdded = (p : {openAiMessages: ChatCompletionMessageParam[] }) => Promise<void>;
 
 @Injectable()
 export class OpenaiWrapperServiceV2{
@@ -38,7 +40,8 @@ export class OpenaiWrapperServiceV2{
          aiFunctionContext,
          handleToolCalls = defaultHandleToolCalls,
          handleToolCall = defaultHandleToolCall,
-         handleMakingToolCallsAndSendingResultsToLLM
+         handleMakingToolCallsAndSendingResultsToLLM,
+         onOpenAiMessagesAdded,
        }: CallOpenAiParams): CallOpenAiResponse {
     const apiKey = model.apiKey;
     const baseURL = model.url;
@@ -70,25 +73,27 @@ export class OpenaiWrapperServiceV2{
       }
 
       // Add the assistant's message to our conversation
-      openAiMessages.push({
+      const newOpenAiMessage: ChatCompletionMessageParam = {
         role: 'assistant' as const,
         content: assistantMessage.content,
         tool_calls: assistantMessage.tool_calls
-      });
+      };
+      openAiMessages.push(newOpenAiMessage);
+      onOpenAiMessagesAdded?.({openAiMessages}); //for letting the db know.
+
       const toolCallsFromOpenAi = assistantMessage.tool_calls;
 
       if(toolCallsFromOpenAi){
-        const defaultHandleMakingToolCallsAndSendingResultsToLLM: HandleMakingToolCallsAndSendingResultsToLLM = async ({toolCallsFromOpenAi, aiFunctionContext, handleToolCalls, openAiMessages, handleToolCall}) => {
-          const newOpenAiMessages = await handleToolCalls({toolCallsFromOpenAi, aiFunctionContext, openAiMessages, handleToolCall});
-          openAiMessages.push(...newOpenAiMessages);
+        const defaultHandleMakingToolCallsAndSendingResultsToLLM: HandleMakingToolCallsAndSendingResultsToLLM = async ({toolCallsFromOpenAi, aiFunctionContext, handleToolCalls, openAiMessages, handleToolCall, onOpenAiMessagesAdded}) => {
+          const toolCallResultsOpenAiMessages = await handleToolCalls({toolCallsFromOpenAi, aiFunctionContext, openAiMessages, handleToolCall});
+          openAiMessages.push(...toolCallResultsOpenAiMessages);
+          onOpenAiMessagesAdded?.({openAiMessages: toolCallResultsOpenAiMessages});
           // Make a recursive call to continue the conversation and return its result
           return this.callOpenAiUsingModelAndSubject({ openAiMessages, model, totalOpenAiCallsMade, aiFunctionContext, });
         };
-        return defaultHandleMakingToolCallsAndSendingResultsToLLM({toolCallsFromOpenAi, aiFunctionContext, handleToolCalls, openAiMessages, handleToolCall});
+        return defaultHandleMakingToolCallsAndSendingResultsToLLM({toolCallsFromOpenAi, aiFunctionContext, handleToolCalls, openAiMessages, handleToolCall, onOpenAiMessagesAdded});
       }else {
-        // aiFunctionContext.inferenceSSESubject?.sendComplete();  <-- don' tdo this. it's too early and other things might need it.
         const completeText = response.choices[0].message.content ?? '';
-        // Return the final state
         return { openAiMessages, completeText, totalOpenAiCallsMade };
       }
     } catch (error) {
