@@ -75,7 +75,7 @@ export class OpenaiWrapperServiceV2{
         tool_calls: assistantMessage.tool_calls
       };
       openAiMessages.push(newOpenAiMessage);
-      await aiFunctionContext.onOpenAiMessagesAdded?.({openAiMessages}); //for letting the db know.
+      await aiFunctionContext.onOpenAiMessagesAdded?.({openAiMessages: [newOpenAiMessage]}); //for letting the db know.
 
       const toolCallsFromOpenAi = assistantMessage.tool_calls;
 

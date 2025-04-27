@@ -42,7 +42,7 @@ export class MessagesRepository {
   async createMessageForConversation(conversationId: string, memberId: string, message: CreateMessage): Promise<Message> {
     return await this.sql.begin(async (trx) => {
       const [createdMessage] = await trx<Message[]>`
-          insert into message (message_id, sent_by_member_id, message_text, role, status_topics_key_values, tool_call_json)
+          insert into message (message_id, sent_by_member_id, message_text, role, status_topics_key_values, tool_calls_json)
           values (${uuidv4()}, ${memberId}, ${message.messageText}, ${message.role}, ${message.statusTopicsKeyValues ? JSON.stringify(message.statusTopicsKeyValues) : null}, ${message.toolCallsJson ?? null})
           returning *
       `;

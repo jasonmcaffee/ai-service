@@ -150,7 +150,7 @@ export class ChatService {
       for(let m of openAiMessages){
         if(m.role === 'assistant'){
           const assistantMessage = m as ChatCompletionAssistantMessageParam;
-          const toolCallsJson = assistantMessage.tool_calls ? JSON.stringify(assistantMessage.tool_calls) : undefined;
+          const toolCallsJson = assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0 ? JSON.stringify(assistantMessage.tool_calls) : undefined;
           const messageText = assistantMessage.content as string;
           await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText, role: m.role, statusTopicsKeyValues: toolCallsJson ? undefined: statusTopicsKeyValues, toolCallsJson}, false);
         }else if(m.role === 'tool'){
