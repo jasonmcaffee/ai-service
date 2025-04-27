@@ -13,10 +13,10 @@ import { getChatPageSystemPromptForAudioResponse, getChatPageSystemPromptForMark
 import { ModelsService } from './models.service';
 import InferenceSSESubject from "../models/InferenceSSESubject";
 import {WebToolsService} from "./agent/tools/webTools.service";
-import { OpenaiWrapperServiceV2 } from './openAiWrapperV2.service';
+import {OpenaiWrapperServiceV2 } from './openAiWrapperV2.service';
 import { CalculatorToolsService } from './agent/tools/calculatorTools.service';
 import { PlanAndExecuteAgent } from '../models/agent/PlanAndExecuteAgent';
-import { AiFunctionContextV2 } from '../models/agent/aiTypes';
+import { AiFunctionContextV2, OnOpenAiMessagesAdded } from '../models/agent/aiTypes';
 import { MemberPromptService } from './memberPrompt.service';
 import { SpeechAudioService } from './speechAudio.service';
 import CombinedAiFunctionExecutors from "./agent/tools/CombinedAiFunctionExecutors";
@@ -26,7 +26,19 @@ import { ModelParams } from '../models/agent/aiTypes';
 import { WebPageAgent } from './agent/agents/webPageAgent.service';
 import { Agent } from './agent/agents/Agent';
 import { ChatAudioService } from './chatAudio.service';
+import { ChatCompletionAssistantMessageParam } from 'openai/src/resources/chat/completions';
 
+type AiStrategyParams = {
+  memberId: string,
+  abortController: AbortController,
+  inferenceSSESubject: InferenceSSESubject,
+  messageContext: MessageContext,
+  model: Model,
+  handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>,
+  handleError: (e: any) => Promise<void>, modelParams: ModelParams,
+  openAiMessages: ChatCompletionMessageParam[],
+  onOpenAiMessagesAdded: OnOpenAiMessagesAdded,
+}
 
 @Injectable()
 export class ChatService {
@@ -100,7 +112,7 @@ export class ChatService {
 
     const messageText = messageContext.originalText; //store the original text, unaltered.  alter before sending out.  // messageContext.textWithoutTags;
     //add the prompt to the messages table
-    await this.conversationService.addMessageToConversation(memberId, conversationId, {messageText, role: 'user'});
+    await this.conversationService.addMessageToConversation(memberId, conversationId, {messageText, role: 'user', toolCallsJson: undefined});
     //get all the messages in the conversation
     const conversation = await this.conversationService.getConversation(memberId, conversationId, true);
     if(!conversation){ throw new Error('Conversation not found'); }
@@ -109,42 +121,47 @@ export class ChatService {
     const conversationMessagesFromMember = conversation.messages?.filter(m => m.sentByMemberId === memberId) ?? [];
     await this.convertAtMentionTagsToMessageText(conversationMessagesFromMember, memberId);
 
-    const toolService = shouldSearchWeb ? this.webToolsService : this.webToolsService;
-
     let openAiMessages: ChatCompletionMessageParam[] = [
       { role: 'system', content: shouldRespondWithAudio ? getChatPageSystemPromptForAudioResponse() :  getChatPageSystemPromptForMarkdownResponse()},
       ...createOpenAIMessagesFromMessages(conversation.messages!)
     ];
 
     if(model.initialMessage){
-      const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system'};
+      const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system', toolCallsJson: undefined};
       openAiMessages = [
         ...createOpenAIMessagesFromMessages([modelInitialMessage]), //we say that the model message is before that chat message...
         ...openAiMessages
       ]
     }
 
-    const modelParams = {
-      temperature,
-      top_p,
-      frequency_penalty,
-      presence_penalty
-    };
+    const modelParams = { temperature, top_p, frequency_penalty, presence_penalty };
 
-    const initialOpenAiMessages = [...openAiMessages];
     const handleCompletedResponseText = async (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => {
       // console.log('handle response completed got: ', completeText);
       const formattedResponse = completeText;
       const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
-      const newOpenAiMessages = allOpenAiMessages.slice(initialOpenAiMessages.length);
-      console.log(`newOpenAiMessages after end:`, newOpenAiMessages);
-      // for(let m of newOpenAiMessages){
-        // m.role
-        // await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: m.content, role: m.role, statusTopicsKeyValues}, false);
-      // }
-      await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'assistant', statusTopicsKeyValues}, false);
+      // await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'assistant', statusTopicsKeyValues, toolCallsJson: undefined}, false);
       this.abortControllers.delete(memberId);
       inferenceSSESubject.sendTextCompleteOnNextTick();
+    }
+
+    const onOpenAiMessagesAdded: OnOpenAiMessagesAdded = async ({openAiMessages}) => {
+      const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
+      for(let m of openAiMessages){
+        if(m.role === 'assistant'){
+          const assistantMessage = m as ChatCompletionAssistantMessageParam;
+          const toolCallsJson = assistantMessage.tool_calls ? JSON.stringify(assistantMessage.tool_calls) : undefined;
+          const messageText = assistantMessage.content as string;
+          await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText, role: m.role, statusTopicsKeyValues: toolCallsJson ? undefined: statusTopicsKeyValues, toolCallsJson}, false);
+        }else if(m.role === 'tool'){
+          const messageText = JSON.stringify({tool_call_id: m.tool_call_id, content: m.content});
+          await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText, role: m.role, statusTopicsKeyValues: undefined, toolCallsJson: undefined}, false);
+        }
+        // const toolCallsAsString = m.
+        // const formattedResponse = m.role === 'assistant' &&
+        // await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'assistant', statusTopicsKeyValues}, false);
+      }
+
     }
 
     const handleError = async (e: any) => {
@@ -154,20 +171,23 @@ export class ChatService {
 
     this.chatAudioService.handleSendingAudio(inferenceSSESubject, shouldRespondWithAudio, memberId, textToSpeechSpeed);
 
+    const aiStrategyParams: AiStrategyParams = {
+      memberId, openAiMessages, model, modelParams, messageContext, inferenceSSESubject, abortController, handleCompletedResponseText, handleError, onOpenAiMessagesAdded,
+    }
     if(messageContext.agents.length > 0){
-      this.handleUsingAgent(memberId, abortController, inferenceSSESubject, messageContext, model, handleCompletedResponseText, handleError, modelParams);
+      this.handleUsingAgent(aiStrategyParams);
     } else if(shouldUsePlanTool){
-      this.handleUsingPlanTool(model, memberId, toolService, inferenceSSESubject, abortController, messageText, openAiMessages, handleCompletedResponseText, handleError, modelParams);
+      this.handleUsingPlanTool(aiStrategyParams);
     } else if(shouldSearchWeb) {
-      this.handleUsingSearchWebTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError, modelParams);
+      this.handleUsingSearchWebTool(aiStrategyParams);
     } else if(shouldUseAgentOfAgents){
-      this.handleUsingAgentOfAgents(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError, modelParams);
+      this.handleUsingAgentOfAgents(aiStrategyParams);
     } else {
-      this.handleNoTool(memberId, abortController, inferenceSSESubject, openAiMessages, model, handleCompletedResponseText, handleError, modelParams);
+      this.handleNoTool(aiStrategyParams);
     }
   }
 
-  private handleNoTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
+  private handleNoTool({memberId, abortController, inferenceSSESubject, modelParams, model, handleCompletedResponseText, handleError, openAiMessages, onOpenAiMessagesAdded}: AiStrategyParams) {
     const aiFunctionContext: AiFunctionContextV2 = {
       memberId,
       aiFunctionExecutor: this.webToolsService,
@@ -175,6 +195,7 @@ export class ChatService {
       inferenceSSESubject,
       functionResultsStorage: {},
       modelParams,
+      onOpenAiMessagesAdded,
     };
     const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({
       openAiMessages,
@@ -190,7 +211,7 @@ export class ChatService {
     });
   }
 
-  private handleUsingAgentOfAgents(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
+  private handleUsingAgentOfAgents({memberId, abortController, inferenceSSESubject, model, modelParams, openAiMessages, handleCompletedResponseText, handleError}: AiStrategyParams) {
     const combinedTools = new CombinedAiFunctionExecutors();
     combinedTools.combineAiFunctionExecutor(this.webSearchAgent);
     combinedTools.combineAiFunctionExecutor(this.newsAgent);
@@ -219,9 +240,9 @@ export class ChatService {
     });
   }
 
-  private async handleUsingAgent(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, messageContext: MessageContext, model: Model,
-                                 handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
-    const aiFunctionContext: AiFunctionContextV2 = { memberId, abortController, inferenceSSESubject, functionResultsStorage: {}, model, modelParams, };
+
+  private async handleUsingAgent({memberId, abortController, inferenceSSESubject, messageContext, model, modelParams, handleCompletedResponseText, handleError, onOpenAiMessagesAdded}: AiStrategyParams) {
+    const aiFunctionContext: AiFunctionContextV2 = { memberId, abortController, inferenceSSESubject, functionResultsStorage: {}, model, modelParams, onOpenAiMessagesAdded};
     const agent = messageContext.agents[0];
     const agentMap: Record<string, Agent<any>> = {
       "1": this.webSearchAgent,
@@ -241,7 +262,7 @@ export class ChatService {
 
   }
 
-  private handleUsingSearchWebTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
+  private handleUsingSearchWebTool({memberId, abortController, inferenceSSESubject, modelParams, openAiMessages, model, handleCompletedResponseText, handleError, onOpenAiMessagesAdded}: AiStrategyParams) {
     const aiFunctionContext: AiFunctionContextV2 = {
       memberId,
       aiFunctionExecutor: this.webToolsService,
@@ -249,6 +270,7 @@ export class ChatService {
       inferenceSSESubject,
       functionResultsStorage: {},
       modelParams,
+      onOpenAiMessagesAdded
     };
     const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
       openAiMessages,
@@ -265,9 +287,10 @@ export class ChatService {
     });
   }
 
-  private handleUsingPlanTool(model: Model, memberId: string, toolService: WebToolsService, inferenceSSESubject: InferenceSSESubject, abortController: AbortController, messageText: string, openAiMessages: ChatCompletionMessageParam[], handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
-    const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
-    const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false, modelParams);
+  private handleUsingPlanTool({model, inferenceSSESubject, memberId, abortController, openAiMessages, modelParams, handleCompletedResponseText, handleError, messageContext, onOpenAiMessagesAdded}: AiStrategyParams) {
+    const toolService = this.webToolsService;
+    const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController, onOpenAiMessagesAdded);
+    const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageContext.originalText, openAiMessages, false, modelParams);
     promise.then(async ({ finalResponseFromLLM, openAiMessages }) => {
       await handleCompletedResponseText(finalResponseFromLLM, openAiMessages || []);
     });

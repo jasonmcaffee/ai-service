@@ -1,6 +1,6 @@
 import { Model } from '../api/conversationApiModels';
 import { PlanExecutor } from './PlanExecutor';
-import { AiFunctionContextV2, AiFunctionExecutor, ModelParams } from './aiTypes';
+import { AiFunctionContextV2, AiFunctionExecutor, ModelParams, OnOpenAiMessagesAdded } from './aiTypes';
 import InferenceSSESubject from '../InferenceSSESubject';
 import { ChatCompletionMessageParam, ChatCompletionMessageToolCall, } from 'openai/resources/chat/completions';
 import PlannerAgentV2 from './PlannerAgentV2';
@@ -29,6 +29,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
               private readonly aiFunctionExecutor: AiFunctionExecutor<TAiFunctionExecutor> | undefined,
               private readonly inferenceSSESubject: InferenceSSESubject,  //needed so we can tell the llm about the results of executing the plan.
               private readonly abortController: AbortController,
+              private readonly onOpenAiMessagesAdded: OnOpenAiMessagesAdded,
   ) {}
 
   /**
@@ -60,6 +61,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
         inferenceSSESubject: this.inferenceSSESubject,
         memberId: this.memberId,
         modelParams,
+        onOpenAiMessagesAdded: this.onOpenAiMessagesAdded,
       };
       const planExecutor = new PlanExecutor(agentPlan, aiFunctionContext);
       if(!plannerAgent.agentPlan){
@@ -102,6 +104,7 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
       abortController: this.abortController,
       inferenceSSESubject: this.inferenceSSESubject,
       memberId: this.memberId,
+      onOpenAiMessagesAdded: this.onOpenAiMessagesAdded,
     };
 
     return this.openAiWrapperServiceV2.callOpenAiUsingModelAndSubjectStream({

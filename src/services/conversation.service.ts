@@ -160,6 +160,7 @@ function formatDocumentAsMessage(memberId: string, datasource: Datasource, docum
     sentByMemberId: memberId,
     messageId: '',
     messageContext: undefined,
+    toolCallsJson: undefined,
   };
   return message;
 }

@@ -1,5 +1,5 @@
 import InferenceSSESubject from "../InferenceSSESubject";
-import { ChatCompletionTool } from 'openai/resources/chat/completions';
+import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import { Model } from '../api/conversationApiModels';
 
 //the function context allows us to store values from other tools, so they can be referenced in other tool calls.
@@ -21,6 +21,9 @@ export type ModelParams = {
     presence_penalty: number, //0-1. default 0.
 
 }
+//so we can add every message to the db.
+export type OnOpenAiMessagesAdded = (p : {openAiMessages: ChatCompletionMessageParam[] }) => Promise<void>;
+
 export type AiFunctionContextV2 = {
     inferenceSSESubject?: InferenceSSESubject;
     aiFunctionExecutor?: AiFunctionExecutor<any>; //optional so we can stream
@@ -29,6 +32,7 @@ export type AiFunctionContextV2 = {
     abortController?: AbortController;
     model?: Model; //needed for agent of agents tool calling.
     modelParams?: ModelParams;
+    onOpenAiMessagesAdded?: OnOpenAiMessagesAdded | undefined;
     // continueToAllowRecursiveCallsToOpenAi: boolean; //after aiCompletePlan executed, we don't want to send the result back to openAi
 };
 

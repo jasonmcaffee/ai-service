@@ -38,6 +38,7 @@ export async function ensureTablesExist() {
         message_id TEXT PRIMARY KEY,
         sent_by_member_id TEXT,
         message_text TEXT,
+        tool_call_json TEXT,
         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         role text default 'user',
         status_topics_key_values JSON,

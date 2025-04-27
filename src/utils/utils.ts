@@ -20,7 +20,26 @@ export function uuid(){
 
 export function createOpenAIMessagesFromMessages(messages: Message[]){
   return messages.map((m) => {
-    return { role: m.role, content: m.messageText } as ChatCompletionMessageParam;
+    let content = m.messageText;
+    let tool_calls = undefined;
+    let tool_call_id = undefined;
+    if(m.role === 'assistant' && m.toolCallsJson){
+      try{
+        tool_calls = JSON.parse(m.toolCallsJson);
+      }catch(e){
+        console.error(`couldn't parse tool calls`, e);
+      }
+    }
+    if(m.role == 'tool'){
+      try{
+        const toolContent = JSON.parse(m.messageText);
+        content = toolContent.content;
+        tool_call_id = toolContent.tool_call_id;
+      }catch(e){
+        console.error(`couldn't parse tool content`, e);
+      }
+    }
+    return { role: m.role, content, tool_calls, tool_call_id} as ChatCompletionMessageParam;
   });
 }
 

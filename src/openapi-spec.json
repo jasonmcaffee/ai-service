@@ -2151,7 +2151,12 @@
             "type": "string"
           },
           "messageText": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
+          },
+          "toolCallsJson": {
+            "type": "object",
+            "nullable": true
           },
           "createdDate": {
             "type": "string"
@@ -2179,6 +2184,7 @@
           "messageId",
           "sentByMemberId",
           "messageText",
+          "toolCallsJson",
           "createdDate",
           "role",
           "messageContext",
@@ -2308,6 +2314,10 @@
           "messageText": {
             "type": "string"
           },
+          "toolCallsJson": {
+            "type": "object",
+            "nullable": true
+          },
           "role": {
             "type": "string"
           },
@@ -2321,6 +2331,7 @@
         },
         "required": [
           "messageText",
+          "toolCallsJson",
           "role",
           "statusTopicsKeyValues"
         ]

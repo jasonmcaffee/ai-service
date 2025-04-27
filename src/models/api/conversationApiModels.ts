@@ -124,8 +124,10 @@ export class Message {
   messageId: string;
   @ApiProperty()
   sentByMemberId: string;
-  @ApiProperty()
+  @ApiProperty({nullable: true})
   messageText: string;
+  @ApiProperty({nullable: true})
+  toolCallsJson: string | undefined;
   @ApiProperty()
   createdDate: string; // ISO format date string
   @ApiProperty()
@@ -143,6 +145,8 @@ export class Message {
 export class CreateMessage {
   @ApiProperty()
   messageText: string;
+  @ApiProperty({nullable: true})
+  toolCallsJson: string | undefined;
   @ApiProperty()
   role: string;
   @ApiProperty({
