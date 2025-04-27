@@ -87,7 +87,8 @@ export class OpenaiWrapperServiceV2{
           // Make a recursive call to continue the conversation and return its result
           return this.callOpenAiUsingModelAndSubject({ openAiMessages, model, totalOpenAiCallsMade, aiFunctionContext, });
         };
-        return defaultHandleMakingToolCallsAndSendingResultsToLLM({toolCallsFromOpenAi, aiFunctionContext, handleToolCalls, openAiMessages, handleToolCall});
+        const handleMakingToolCallsFunc = handleMakingToolCallsAndSendingResultsToLLM ?? defaultHandleMakingToolCallsAndSendingResultsToLLM;
+        return handleMakingToolCallsFunc({toolCallsFromOpenAi, aiFunctionContext, handleToolCalls, openAiMessages, handleToolCall});
       }else {
         const completeText = response.choices[0].message.content ?? '';
         return { openAiMessages, completeText, totalOpenAiCallsMade };
