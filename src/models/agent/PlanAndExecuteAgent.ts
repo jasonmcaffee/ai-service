@@ -81,7 +81,8 @@ export class PlanAndExecuteAgent<TAiFunctionExecutor>{
       this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `Sending executed plan results to AI.`, });
       const r2 = await this.convertAiFunctionStepsToToolsAndSendToLLM(prompt, plannerAgent, planFinalResult, originalOpenAiMessages, aiFunctionContext, addUserPromptToMessagesBeforeSending);
       this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `AI completed handling executed plan results.`, topicCompleted: true});
-      return {planFinalResult, finalResponseFromLLM: r2.completeText, plannerAgent, planExecutor};
+
+      return {planFinalResult, finalResponseFromLLM: r2.completeText, plannerAgent, planExecutor, openAiMessages: r2.openAiMessages};
     }catch(e){
       console.error(`PlanAndExecuteAgent error: `, e);
       this.inferenceSSESubject?.sendStatus({topicId, topic: 'planningAndExecuting', displayText: `Error encountered sending results to AI: ${e.message}`, isError: true, topicCompleted: true});

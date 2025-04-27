@@ -129,10 +129,17 @@ export class ChatService {
       presence_penalty
     };
 
-    const handleCompletedResponseText = async (completeText: string) => {
+    const initialOpenAiMessages = [...openAiMessages];
+    const handleCompletedResponseText = async (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => {
       // console.log('handle response completed got: ', completeText);
       const formattedResponse = completeText;
       const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
+      const newOpenAiMessages = allOpenAiMessages.slice(initialOpenAiMessages.length);
+      console.log(`newOpenAiMessages after end:`, newOpenAiMessages);
+      // for(let m of newOpenAiMessages){
+        // m.role
+        // await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: m.content, role: m.role, statusTopicsKeyValues}, false);
+      // }
       await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'assistant', statusTopicsKeyValues}, false);
       this.abortControllers.delete(memberId);
       inferenceSSESubject.sendTextCompleteOnNextTick();
@@ -231,7 +238,7 @@ export class ChatService {
   }
 
 
-  private handleNoTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
+  private handleNoTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
     const aiFunctionContext: AiFunctionContextV2 = {
       memberId,
       aiFunctionExecutor: this.webToolsService,
@@ -246,15 +253,15 @@ export class ChatService {
       aiFunctionContext,
       totalOpenAiCallsMade: 0,
     });
-    promise.then(async ({ completeText }) => {
-      await handleCompletedResponseText(completeText);
+    promise.then(async ({ completeText, openAiMessages }) => {
+      await handleCompletedResponseText(completeText, openAiMessages );
     });
     promise.catch(async e => {
       await handleError(e);
     });
   }
 
-  private handleUsingAgentOfAgents(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
+  private handleUsingAgentOfAgents(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
     const combinedTools = new CombinedAiFunctionExecutors();
     combinedTools.combineAiFunctionExecutor(this.webSearchAgent);
     combinedTools.combineAiFunctionExecutor(this.newsAgent);
@@ -274,9 +281,9 @@ export class ChatService {
       aiFunctionContext,
       totalOpenAiCallsMade: 0,
     });
-    promise.then(async ({ completeText }) => {
+    promise.then(async ({ completeText, openAiMessages }) => {
       inferenceSSESubject.sendText(completeText);
-      await handleCompletedResponseText(completeText);
+      await handleCompletedResponseText(completeText, openAiMessages);
     });
     promise.catch(async e => {
       await handleError(e);
@@ -284,7 +291,7 @@ export class ChatService {
   }
 
   private async handleUsingAgent(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, messageContext: MessageContext, model: Model,
-                                 handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
+                                 handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
     const aiFunctionContext: AiFunctionContextV2 = { memberId, abortController, inferenceSSESubject, functionResultsStorage: {}, model, modelParams, };
     const agent = messageContext.agents[0];
     const agentMap: Record<string, Agent<any>> = {
@@ -298,14 +305,14 @@ export class ChatService {
       }
       const completeText = await selectedAgent.handlePrompt(messageContext.textWithoutTags, aiFunctionContext);
       inferenceSSESubject.sendText(completeText);
-      await handleCompletedResponseText(completeText);
+      await handleCompletedResponseText(completeText, []);
     }catch(e){
       await handleError(e);
     }
 
   }
 
-  private handleUsingSearchWebTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
+  private handleUsingSearchWebTool(memberId: string, abortController: AbortController, inferenceSSESubject: InferenceSSESubject, openAiMessages: ChatCompletionMessageParam[], model: Model, handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
     const aiFunctionContext: AiFunctionContextV2 = {
       memberId,
       aiFunctionExecutor: this.webToolsService,
@@ -320,20 +327,20 @@ export class ChatService {
       aiFunctionContext,
       totalOpenAiCallsMade: 0,
     });
-    promise.then(async ({ completeText }) => {
+    promise.then(async ({ completeText, openAiMessages }) => {
       inferenceSSESubject.sendText(completeText);
-      await handleCompletedResponseText(completeText);
+      await handleCompletedResponseText(completeText, openAiMessages);
     });
     promise.catch(async e => {
       await handleError(e);
     });
   }
 
-  private handleUsingPlanTool(model: Model, memberId: string, toolService: WebToolsService, inferenceSSESubject: InferenceSSESubject, abortController: AbortController, messageText: string, openAiMessages: ChatCompletionMessageParam[], handleCompletedResponseText: (completeText: string) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
+  private handleUsingPlanTool(model: Model, memberId: string, toolService: WebToolsService, inferenceSSESubject: InferenceSSESubject, abortController: AbortController, messageText: string, openAiMessages: ChatCompletionMessageParam[], handleCompletedResponseText: (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => Promise<void>, handleError: (e: any) => Promise<void>, modelParams: ModelParams) {
     const planAndExecuteAgent = new PlanAndExecuteAgent(model, this.openAiWrapperService, memberId, toolService, inferenceSSESubject, abortController);
     const promise = planAndExecuteAgent.planAndExecuteThenStreamResultsBack(messageText, openAiMessages, false, modelParams);
-    promise.then(async ({ finalResponseFromLLM }) => {
-      await handleCompletedResponseText(finalResponseFromLLM);
+    promise.then(async ({ finalResponseFromLLM, openAiMessages }) => {
+      await handleCompletedResponseText(finalResponseFromLLM, openAiMessages || []);
     });
     promise.catch(async e => {
       await handleError(e);
