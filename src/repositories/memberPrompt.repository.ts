@@ -54,6 +54,20 @@ export class MemberPromptRepository {
     return result.length ? result[0] : undefined;
   }
 
+  async getPromptByIds(promptIds: string[]): Promise<MemberPrompt[]> {
+    if (promptIds.length === 0) {
+      return [];
+    }
+
+    const results = await this.sql<MemberPrompt[]>`
+      SELECT id, member_id AS "memberId", prompt_name AS "promptName", prompt_text AS "promptText"
+      FROM member_prompt
+      WHERE id = ANY(${promptIds}::text[])  
+    `;
+
+    return results;
+  }
+
   /**
    * Retrieves a specific prompt by name for a member.
    * @param memberId - The ID of the member.
@@ -102,6 +116,27 @@ export class MemberPromptRepository {
 
     return true;
   }
+
+  async ensureMemberOwnsPrompts(memberId: string, promptIds: string[]): Promise<boolean> {
+    // nothing to check ⇒ trivially true
+    if (promptIds.length === 0) return true;
+
+    // pass the whole array as one parameter to ANY()
+    const result = await this.sql`
+      SELECT id
+      FROM member_prompt
+      WHERE id = ANY(${promptIds}::text[]) 
+        AND member_id = ${memberId}
+    `;
+
+    // if any are missing (or not owned), row-count will be smaller
+    if (result.length !== promptIds.length) {
+      throw new Error('One or more prompts not found or not owned by the member');
+    }
+
+    return true;
+  }
+
 
   /**
    * Deletes a prompt by ID.

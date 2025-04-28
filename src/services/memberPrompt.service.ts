@@ -36,6 +36,11 @@ export class MemberPromptService {
     return this.memberPromptRepository.getPromptById(promptId);
   }
 
+  async getPromptByIds(memberId: string, promptIds: string[]): Promise<MemberPrompt[] | undefined> {
+    await this.memberPromptRepository.ensureMemberOwnsPrompts(memberId, promptIds);
+    return this.memberPromptRepository.getPromptByIds(promptIds);
+  }
+
   /**
    * Retrieves a specific prompt by name for a member.
    * @param memberId - The ID of the member.

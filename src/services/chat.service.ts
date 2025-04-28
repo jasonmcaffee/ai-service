@@ -309,21 +309,51 @@ export class ChatService {
    * @private
    */
   private async convertAtMentionTagsToMessageText(conversationMessagesFromMember: Message[], memberId: string, newMessageContext: MessageContext) {
+    const promptIdsUsedInAllMessagesSet = new Set<string>();
+    const messageContextsAndMessages = [] as ({message: Message, messageContext: MessageContext})[];
     for (let m of conversationMessagesFromMember) {
       const messageContext = extractMessageContextFromMessage(m.messageText);
-      //first strip out datasource and model tags.
-      m.messageText = messageContext.textWithoutTags;
-      //next replace all <prompt> tags with actual prompt text 'you are a friendly assistant'
+      messageContextsAndMessages.push({message: m, messageContext});
       for (let p of messageContext.prompts) {
-        const prompt = await this.memberPromptService.getPromptById(memberId, p.id);
-        m.messageText = replacePromptTagWithPromptTextFromDbById(m.messageText, p.id, prompt?.promptText ?? '');
+        promptIdsUsedInAllMessagesSet.add(p.id);
+      }
+    }
+    const promptIdsUsedInAllMessages = Array.from(promptIdsUsedInAllMessagesSet);
+    const promptsUsedInAllMessages = await this.memberPromptService.getPromptByIds(memberId, promptIdsUsedInAllMessages);
+    if(promptsUsedInAllMessages && promptsUsedInAllMessages.length > 0){
+      for(let {message, messageContext} of messageContextsAndMessages){
+        message.messageText = messageContext.textWithoutTags;
+        for (let p of messageContext.prompts) {
+          const prompt = promptsUsedInAllMessages.find((prompt) => prompt.id == p.id);
+          message.messageText = replacePromptTagWithPromptTextFromDbById(message.messageText, p.id, prompt?.promptText ?? '')
+        }
+      }
+
+      for (let p of newMessageContext.prompts) {
+        const prompt = promptsUsedInAllMessages.find((prompt) => prompt.id == p.id);
+        newMessageContext.textWithoutTags = replacePromptTagWithPromptTextFromDbById(newMessageContext.textWithoutTags, p.id, prompt?.promptText ?? '')
       }
     }
 
-    for (let p of newMessageContext.prompts) {
-      const prompt = await this.memberPromptService.getPromptById(memberId, p.id);
-      newMessageContext.textWithoutTags = replacePromptTagWithPromptTextFromDbById(newMessageContext.textWithoutTags, p.id, prompt?.promptText ?? '');
-    }
+
+
+    //
+    // for (let m of conversationMessagesFromMember) {
+    //   const messageContext = extractMessageContextFromMessage(m.messageText);
+    //   //first strip out datasource and model tags.
+    //   m.messageText = messageContext.textWithoutTags;
+    //   //next replace all <prompt> tags with actual prompt text 'you are a friendly assistant'
+    //   for (let p of messageContext.prompts) {
+    //
+    //     const prompt = await this.memberPromptService.getPromptById(memberId, p.id);
+    //     m.messageText = replacePromptTagWithPromptTextFromDbById(m.messageText, p.id, prompt?.promptText ?? '');
+    //   }
+    // }
+    //
+    // for (let p of newMessageContext.prompts) {
+    //   const prompt = await this.memberPromptService.getPromptById(memberId, p.id);
+    //   newMessageContext.textWithoutTags = replacePromptTagWithPromptTextFromDbById(newMessageContext.textWithoutTags, p.id, prompt?.promptText ?? '');
+    // }
   }
 }
 
