@@ -119,7 +119,8 @@ export class ChatService {
 
     //send user messages without <datasource> and <model> and replace prompt text.
     const conversationMessagesFromMember = conversation.messages?.filter(m => m.sentByMemberId === memberId) ?? [];
-    await this.convertAtMentionTagsToMessageText(conversationMessagesFromMember, memberId);
+    //todo this is wonky and modifies too much state.
+    await this.convertAtMentionTagsToMessageText(conversationMessagesFromMember, memberId, messageContext);
 
     let openAiMessages: ChatCompletionMessageParam[] = [
       { role: 'system', content: shouldRespondWithAudio ? getChatPageSystemPromptForAudioResponse() :  getChatPageSystemPromptForMarkdownResponse()},
@@ -307,7 +308,7 @@ export class ChatService {
    * @param memberId
    * @private
    */
-  private async convertAtMentionTagsToMessageText(conversationMessagesFromMember: Message[], memberId: string) {
+  private async convertAtMentionTagsToMessageText(conversationMessagesFromMember: Message[], memberId: string, newMessageContext: MessageContext) {
     for (let m of conversationMessagesFromMember) {
       const messageContext = extractMessageContextFromMessage(m.messageText);
       //first strip out datasource and model tags.
@@ -317,6 +318,11 @@ export class ChatService {
         const prompt = await this.memberPromptService.getPromptById(memberId, p.id);
         m.messageText = replacePromptTagWithPromptTextFromDbById(m.messageText, p.id, prompt?.promptText ?? '');
       }
+    }
+
+    for (let p of newMessageContext.prompts) {
+      const prompt = await this.memberPromptService.getPromptById(memberId, p.id);
+      newMessageContext.textWithoutTags = replacePromptTagWithPromptTextFromDbById(newMessageContext.textWithoutTags, p.id, prompt?.promptText ?? '');
     }
   }
 }

@@ -80,7 +80,11 @@ export function parseModelAndDatasourceAndPromptTagsFromMessage(text: string): M
 }
 
 function removeModelAndDatasourceAndAgentTagsFromMessage(text: string): string {
-  return text.replace(/<\s*(model|datasource|agent)[^>]*>.*?<\s*\/\s*\1\s*>\s*/gi, ''); //todo: prompt?
+  return text.replace(/<\s*(model|datasource|agent)[^>]*>.*?<\s*\/\s*\1\s*>\s*/gi, ''); //NOTE: do not do prompt here so prompt replacement can occur.
+}
+
+function removePromptTagsFromMessage(text: string): string {
+  return text.replace(/<\s*(prompt)[^>]*>.*?<\s*\/\s*\1\s*>\s*/gi, ''); //NOTE: do not do prompt here so prompt replacement can occur.
 }
 
 export function wait(ms: number){
