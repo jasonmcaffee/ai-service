@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { WebToolsService } from '../tools/webTools.service';
-import { OpenaiWrapperServiceV2 } from '../../openAiWrapperV2.service';
+import {defaultHandleToolCalls, HandleToolCalls, OpenaiWrapperServiceV2} from '../../openAiWrapperV2.service';
 import {ChatCompletionMessageParam, ChatCompletionTool} from 'openai/resources/chat/completions';
 import {AiFunctionContextV2, AiFunctionExecutor, AiFunctionResult} from '../../../models/agent/aiTypes';
 import { Model } from '../../../models/api/conversationApiModels';
@@ -8,6 +8,7 @@ import {chatCompletionTool, extractChatCompletionToolAnnotationValues} from "../
 import { withStatus } from '../../../utils/utils';
 import { WebToolsNoMarkdownInSearchResultService } from '../tools/webToolsNoMarkdownInSearchResult.service';
 import { Agent } from './Agent';
+import {WebToolGetPageContentService} from "../tools/webToolGetPageContents.service";
 
 /**
  * An agent is an abstraction that allows us to bundle prompts, tools, and behaviors together, and provides a simple
@@ -22,7 +23,7 @@ import { Agent } from './Agent';
 @Injectable()
 export class WebPageAgent implements Agent<WebPageAgent>{
   constructor(
-    private readonly webToolsNoMarkdownInSearchResultService: WebToolsNoMarkdownInSearchResultService,
+    private readonly webToolGetPageContentService: WebToolGetPageContentService,
     private readonly openAiWrapperService: OpenaiWrapperServiceV2,) {}
 
   @chatCompletionTool({
@@ -62,8 +63,19 @@ export class WebPageAgent implements Agent<WebPageAgent>{
         { role: 'system', content: getWebPageAgentGenericPrompt()},
         { role: 'user', content: prompt},
       ];
-      const aiFunctionContext = { ...context, aiFunctionExecutor: this.webToolsNoMarkdownInSearchResultService};
-      const { completeText } = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({ openAiMessages, model: context.model!, aiFunctionContext, totalOpenAiCallsMade: 0, });
+      const aiFunctionContext: AiFunctionContextV2 = { ...context, aiFunctionExecutor: this.webToolGetPageContentService};
+
+      //add a follow up message to help ensure the llm follows instructions.
+      const handleToolCalls: HandleToolCalls = async (p) : Promise<ChatCompletionMessageParam[]> => {
+        const toolCallResultMessages = await defaultHandleToolCalls(p);
+        const newMessage: ChatCompletionMessageParam = {role: 'user', content: getFollowUpPromptAfterToolCall(prompt)};
+        toolCallResultMessages.push(newMessage);
+        return toolCallResultMessages;
+      };
+
+      const { completeText } = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({ openAiMessages, model: context.model!, aiFunctionContext, handleToolCalls});
+
+
       sendStatus('Web page agent response: ', {agentText: completeText});
       return completeText;
     }, {context, displayText: `Web Page Agent is handling request: "${prompt}"`, topic:'agent'});
@@ -73,7 +85,6 @@ export class WebPageAgent implements Agent<WebPageAgent>{
     return extractChatCompletionToolAnnotationValues(this);
   }
 
-
 }
 
 
@@ -81,7 +92,19 @@ function getWebPageAgentGenericPrompt(){
   return `
       You are an AI agent who is an expert at fetching the contents of a single website, in order to fulfill the user's request.
       You will always first retrieve the contents of a web page first, then fulfill the user's request.
+      Do not use preamble or follow up questions in your response.
+      Follow the user's request exactly.
     `;
+}
+
+function getFollowUpPromptAfterToolCall(originalPrompt: string){
+  return `
+    Now that you have the results from the tool call, deeply reason about the user's request, and ensure that you follow the instructions exactly.
+    The original request was:
+    <originalRequest>
+        ${originalPrompt}
+    </originalRequest>
+  `;
 }
 
 // function getWebPageAgentSummarizePrompt(){
