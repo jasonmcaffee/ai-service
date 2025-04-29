@@ -95,6 +95,7 @@ export class ChatService {
     this.abortControllers.delete(memberId);
   }
 
+  //TODO: This needs to be the running model for llama.cpp.  Else you get a default options, but talking to running model.
   private async getModelToUseForMessage(memberId: string, messageContext: MessageContext, modelId?: string){
     const modelIdForMessage = messageContext.models.length > 0 ? messageContext.models[0].id : modelId;
     return this.modelsService.getModelByIdOrGetDefault(memberId, modelIdForMessage);

@@ -16,11 +16,9 @@ interface CallOpenAiParams {
 }
 
 export type CallOpenAiResponse = Promise<{ openAiMessages: ChatCompletionMessageParam[], completeText: string, totalOpenAiCallsMade: number }>;
-
 export type HandleToolCall = (p: {toolCall: ChatCompletionMessageToolCall, aiFunctionContext: AiFunctionContextV2, openAiMessages: ChatCompletionMessageParam[]}) => Promise<ChatCompletionToolMessageParam | null>;
 export type HandleToolCalls = (p: {toolCallsFromOpenAi: ChatCompletionMessageToolCall[], aiFunctionContext: AiFunctionContextV2, openAiMessages: ChatCompletionMessageParam[], handleToolCall: HandleToolCall}) => Promise<ChatCompletionMessageParam[]>;
 export type HandleMakingToolCallsAndSendingResultsToLLM = (p: {toolCallsFromOpenAi: ChatCompletionMessageToolCall[], openAiMessages: ChatCompletionMessageParam[], aiFunctionContext: AiFunctionContextV2, handleToolCalls: HandleToolCalls, handleToolCall: HandleToolCall}) => CallOpenAiResponse;
-
 
 @Injectable()
 export class OpenaiWrapperServiceV2{
@@ -48,6 +46,10 @@ export class OpenaiWrapperServiceV2{
     const modelParams = aiFunctionContext.modelParams;
 
     try {
+      if(model.prependNoThinkTagToBeginningOfEachMessage){
+        prependNoThinkTagToBeginningOfEachMessage(openAiMessages);
+      }
+
       totalOpenAiCallsMade += 1;
       const response = await openai.chat.completions.create({
         model: model.modelName,
@@ -119,6 +121,10 @@ export class OpenaiWrapperServiceV2{
 
     try {
       totalOpenAiCallsMade += 1;
+
+      if(model.prependNoThinkTagToBeginningOfEachMessage){
+        prependNoThinkTagToBeginningOfEachMessage(openAiMessages);
+      }
       const stream = await openai.chat.completions.create({
         model: model.modelName,
         messages: openAiMessages,
@@ -277,4 +283,13 @@ function parseToolCallsDueToOccasionalIssueOfLlamaCppNotRespondingWithJson(assis
   //   });
   // }
   // return toolCalls.length > 0 ? toolCalls : undefined;
+}
+
+
+function prependNoThinkTagToBeginningOfEachMessage(openAiMessages: ChatCompletionMessageParam[]){
+  for(let m of openAiMessages){
+    if(m.role === 'user' && m.content){
+      m.content = `/no_think ${m.content}`;
+    }
+  }
 }
