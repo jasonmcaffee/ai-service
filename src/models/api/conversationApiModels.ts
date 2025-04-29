@@ -298,6 +298,8 @@ export class Model {
   isCurrentlyRunningOnLlamaCpp?: boolean;
   @ApiProperty({nullable: true})
   additionalLlamacppServerParams?: string;
+  @ApiProperty({nullable: true})
+  prependNoThinkTagToBeginningOfEachMessage?: boolean;
 }
 
 export class CreateModel {
@@ -321,6 +323,8 @@ export class CreateModel {
   contextSize?: number;
   @ApiProperty({nullable: true})
   additionalLlamacppServerParams?: string;
+  @ApiProperty({nullable: true})
+  prependNoThinkTagToBeginningOfEachMessage?: boolean;
 }
 
 export class UpdateModel {
@@ -344,6 +348,8 @@ export class UpdateModel {
   contextSize?: number;
   @ApiProperty({nullable: true})
   additionalLlamacppServerParams?: string;
+  @ApiProperty({nullable: true})
+  prependNoThinkTagToBeginningOfEachMessage?: boolean;
 }
 
 export class HFModelSibling {

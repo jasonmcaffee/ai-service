@@ -50,10 +50,10 @@ export class ModelsRepository {
 
             const [createdModel] = await trx<Model[]>`
                 INSERT INTO model (id, display_name, url, api_key, model_name, model_type_id, is_default, 
-                                   member_id, initial_message, file_path, context_size, additional_llamacpp_server_params)
+                                   member_id, initial_message, file_path, context_size, additional_llamacpp_server_params, prepend_no_think_tag_to_beginning_of_each_message)
                 VALUES (${uuidv4()}, ${model.displayName}, ${model.url}, ${model.apiKey}, ${model.modelName}, ${model.modelTypeId},
                         ${model.isDefault}, ${memberId}, ${model.initialMessage || null}, ${model.filePath || null},
-                       ${model.contextSize || null}, ${model.additionalLlamacppServerParams || null})
+                       ${model.contextSize || null}, ${model.additionalLlamacppServerParams || null}, ${model.prependNoThinkTagToBeginningOfEachMessage || null} )
                 RETURNING *
             `;
 
@@ -82,7 +82,8 @@ export class ModelsRepository {
                   initial_message = COALESCE(${model.initialMessage || null}, initial_message),
                   file_path = COALESCE(${model.filePath || null}, file_path),
                   context_size = COALESCE(${model.contextSize || null}, context_size),
-                  additional_llamacpp_server_params = COALESCE(${model.additionalLlamacppServerParams || null}, additional_llamacpp_server_params)
+                  additional_llamacpp_server_params = COALESCE(${model.additionalLlamacppServerParams || null}, additional_llamacpp_server_params),
+                  prepend_no_think_tag_to_beginning_of_each_message = COALESCE(${model.prependNoThinkTagToBeginningOfEachMessage || null}, prepend_no_think_tag_to_beginning_of_each_message)
               WHERE id = ${modelId}
               RETURNING *
             `;

@@ -2887,6 +2887,10 @@
           "additionalLlamacppServerParams": {
             "type": "string",
             "nullable": true
+          },
+          "prependNoThinkTagToBeginningOfEachMessage": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "required": [
@@ -2901,7 +2905,8 @@
           "filePath",
           "contextSize",
           "isCurrentlyRunningOnLlamaCpp",
-          "additionalLlamacppServerParams"
+          "additionalLlamacppServerParams",
+          "prependNoThinkTagToBeginningOfEachMessage"
         ]
       },
       "CreateModel": {
@@ -2940,6 +2945,10 @@
           "additionalLlamacppServerParams": {
             "type": "string",
             "nullable": true
+          },
+          "prependNoThinkTagToBeginningOfEachMessage": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "required": [
@@ -2952,7 +2961,8 @@
           "initialMessage",
           "filePath",
           "contextSize",
-          "additionalLlamacppServerParams"
+          "additionalLlamacppServerParams",
+          "prependNoThinkTagToBeginningOfEachMessage"
         ]
       },
       "UpdateModel": {
@@ -2991,6 +3001,10 @@
           "additionalLlamacppServerParams": {
             "type": "string",
             "nullable": true
+          },
+          "prependNoThinkTagToBeginningOfEachMessage": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "required": [
@@ -3003,7 +3017,8 @@
           "initialMessage",
           "filePath",
           "contextSize",
-          "additionalLlamacppServerParams"
+          "additionalLlamacppServerParams",
+          "prependNoThinkTagToBeginningOfEachMessage"
         ]
       },
       "TextToSpeechRequest": {

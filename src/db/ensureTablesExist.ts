@@ -71,6 +71,7 @@ export async function ensureTablesExist() {
         member_id TEXT,
         initial_message text,
         additional_llamacpp_server_params TEXT,
+        prepend_no_think_tag_to_beginning_of_each_message BOOLEAN,
         FOREIGN KEY (model_type_id) REFERENCES model_type(id),
         FOREIGN KEY (member_id) REFERENCES member(member_id)
     )`;
