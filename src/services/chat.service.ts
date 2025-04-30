@@ -138,25 +138,36 @@ export class ChatService {
 
     const modelParams = { temperature, top_p, frequency_penalty, presence_penalty };
 
+    // we need to update the status topics once we get the last message from the assistant.  due to agents, this can be at different times.
+    let lastAssisstantMessage: Message | undefined = undefined;
     const handleCompletedResponseText = async (completeText: string, allOpenAiMessages: ChatCompletionMessageParam[]) => {
       // console.log('handle response completed got: ', completeText);
       const formattedResponse = completeText;
       const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
       // await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText: formattedResponse, role: 'assistant', statusTopicsKeyValues, toolCallsJson: undefined}, false);
+      if(statusTopicsKeyValues && lastAssisstantMessage){
+        lastAssisstantMessage.statusTopicsKeyValues = statusTopicsKeyValues;
+        await this.conversationService.updateMessageStatusTopics(lastAssisstantMessage.messageId, statusTopicsKeyValues);
+      }
+
       this.abortControllers.delete(memberId);
       inferenceSSESubject.sendTextCompleteOnNextTick();
     }
 
+
     const onOpenAiMessagesAdded: OnOpenAiMessagesAdded = async ({openAiMessages}) => {
-      const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
+      // const statusTopicsKeyValues = inferenceSSESubject.getStatusTopicsKeyValues();
       for(let m of openAiMessages){
         if(m.role === 'assistant'){
           const assistantMessage = m as ChatCompletionAssistantMessageParam;
           const toolCallsJson = assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0 ? JSON.stringify(assistantMessage.tool_calls) : undefined;
           const messageText = assistantMessage.content as string;
-          await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText, role: m.role, statusTopicsKeyValues: toolCallsJson ? undefined: statusTopicsKeyValues, toolCallsJson}, false);
+          lastAssisstantMessage = await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText, role: m.role, statusTopicsKeyValues: undefined, toolCallsJson}, false);
         }else if(m.role === 'tool'){
           const messageText = JSON.stringify({tool_call_id: m.tool_call_id, content: m.content});
+          await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText, role: m.role, statusTopicsKeyValues: undefined, toolCallsJson: undefined}, false);
+        }else{
+          const messageText = m.content as string;
           await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText, role: m.role, statusTopicsKeyValues: undefined, toolCallsJson: undefined}, false);
         }
         // const toolCallsAsString = m.

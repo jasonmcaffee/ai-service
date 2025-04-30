@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MessagesRepository } from '../repositories/messages.repository';
-import { CreateMessage, Message } from '../models/api/conversationApiModels';
+import { CreateMessage, Message, StatusTopicKeyValues } from '../models/api/conversationApiModels';
 
 @Injectable()
 export class MessagesService {
@@ -39,6 +39,10 @@ export class MessagesService {
    */
   async updateMessage(messageId: string, updatedMessage: Message): Promise<Message> {
     return this.messagesRepository.updateMessage(messageId, updatedMessage);
+  }
+
+  async updateMessageStatusTopics(messageId: string, statusTopicsKeyValues?: StatusTopicKeyValues): Promise<Message> {
+    return this.messagesRepository.updateMessageStatusTopics(messageId, statusTopicsKeyValues);
   }
 
   /**

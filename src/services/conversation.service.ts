@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   Conversation,
   CreateConversation,
-  CreateMessage, Datasource, Document, Message, Suggestion,
+  CreateMessage, Datasource, Document, Message, StatusTopicKeyValues, Suggestion,
 } from '../models/api/conversationApiModels';
 import { ConversationsRepository } from '../repositories/conversations.repository';
 import { MessagesService } from './messages.service';
@@ -13,6 +13,7 @@ import { createOpenAIMessagesFromMessages, removeThinkTagFromLLMResponse } from 
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { DatasourcesService } from './datasource.service';
 import { documentPrompt, nameConversationPrompt } from '../utils/prompts';
+import { StatusTopics } from '../models/api/StatusTopics';
 @Injectable()
 export class ConversationService {
   constructor(
@@ -74,6 +75,14 @@ export class ConversationService {
       await this.ensureMemberOwnsConversation(memberId, conversationId);
     }
     return await this.messagesService.createMessageForConversation(conversationId, memberId, message);
+  }
+
+  // async updateMessage(message: Message){
+  //   return this.messagesService.updateMessage(message.messageId, message);
+  // }
+
+  async updateMessageStatusTopics(messageId: string, statusTopicKeyValues?: StatusTopicKeyValues){
+    return this.messagesService.updateMessageStatusTopics(messageId, statusTopicKeyValues);
   }
 
   async getConversationsForMember(memberId: string){

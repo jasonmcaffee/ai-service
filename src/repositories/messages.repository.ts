@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as postgres from 'postgres';
 import config from '../config/config';
-import { Conversation, CreateMessage, Message } from '../models/api/conversationApiModels';
+import { Conversation, CreateMessage, Message, StatusTopicKeyValues } from '../models/api/conversationApiModels';
 const { v4: uuidv4 } = require('uuid');
 
 @Injectable()
@@ -71,7 +71,18 @@ export class MessagesRepository {
       set sent_by_member_id = ${message.sentByMemberId},
           message_text = ${message.messageText},
           created_date = ${message.createdDate},
-          role = ${message.role}
+          role = ${message.role},
+          status_topics_key_values = ${message.statusTopicsKeyValues ? JSON.stringify(message.statusTopicsKeyValues) : null}
+      where message_id = ${messageId}
+      returning *
+    `;
+    return updatedMessage;
+  }
+
+  async updateMessageStatusTopics(messageId: string, statusTopicsKeyValues?: StatusTopicKeyValues): Promise<Message> {
+    const [updatedMessage] = await this.sql<Message[]>`
+      update message
+      set status_topics_key_values = ${statusTopicsKeyValues ? JSON.stringify(statusTopicsKeyValues) : null}
       where message_id = ${messageId}
       returning *
     `;

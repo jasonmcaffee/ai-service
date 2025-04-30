@@ -76,7 +76,7 @@ export class WebPageAgent implements Agent<WebPageAgent>{
       const { completeText } = await this.openAiWrapperService.callOpenAiUsingModelAndSubject({ openAiMessages, model: context.model!, aiFunctionContext, handleToolCalls});
 
 
-      sendStatus('Web page agent response: ', {agentText: completeText});
+      // sendStatus('Web page agent response: ', {agentText: completeText});
       return completeText;
     }, {context, displayText: `Web Page Agent is handling request: "${prompt}"`, topic:'agent'});
   }
