@@ -73,21 +73,37 @@ export class ModelsRepository {
 
             const [updatedModel] = await trx<Model[]>`
               UPDATE model
-              SET display_name = COALESCE(${model.displayName}, display_name),
-                  url = COALESCE(${model.url}, url),
-                  api_key = COALESCE(${model.apiKey}, api_key),
-                  model_name = COALESCE(${model.modelName}, model_name),
-                  model_type_id = COALESCE(${model.modelTypeId}, model_type_id),
-                  is_default = COALESCE(${model.isDefault}, is_default),
-                  initial_message = COALESCE(${model.initialMessage || null}, initial_message),
-                  file_path = COALESCE(${model.filePath || null}, file_path),
-                  context_size = COALESCE(${model.contextSize || null}, context_size),
-                  additional_llamacpp_server_params = COALESCE(${model.additionalLlamacppServerParams || null}, additional_llamacpp_server_params),
-                  prepend_no_think_tag_to_beginning_of_each_message = COALESCE(${model.prependNoThinkTagToBeginningOfEachMessage || null}, prepend_no_think_tag_to_beginning_of_each_message)
+              SET display_name = ${model.displayName    },
+                  url = ${model.url                  },
+                  api_key = ${model.apiKey         },
+                  model_name = ${model.modelName       },
+                  model_type_id = ${model.modelTypeId  },
+                  is_default = ${model.isDefault },
+                  initial_message = ${model.initialMessage  ?? null},
+                  file_path = ${model.filePath ?? null},
+                  context_size = ${model.contextSize ?? null},
+                  additional_llamacpp_server_params = ${model.additionalLlamacppServerParams ?? null},
+                  prepend_no_think_tag_to_beginning_of_each_message = ${model.prependNoThinkTagToBeginningOfEachMessage ?? null}
               WHERE id = ${modelId}
               RETURNING *
             `;
 
+            // const [updatedModel] = await trx<Model[]>`
+            //     UPDATE model
+            //         SET display_name = ${model.displayName},
+            //         url = ${model.url},
+            //         api_key = ${model.apiKey},
+            //         model_name = ${model.modelName},
+            //         model_type_id = ${model.modelTypeId},
+            //         is_default = ${model.isDefault},
+            //         initial_message = ${model.initialMessage},
+            //         file_path = ${model.filePath},
+            //         context_size = ${model.contextSize},
+            //         additional_llamacpp_server_params = ${model.additionalLlamacppServerParams},
+            //         prepend_no_think_tag_to_beginning_of_each_message = ${model.prependNoThinkTagToBeginningOfEachMessage}
+            //     WHERE id = ${modelId}
+            //     RETURNING *
+            //     `;
             return updatedModel;
         });
     }

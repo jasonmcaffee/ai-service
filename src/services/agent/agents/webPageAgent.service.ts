@@ -68,8 +68,8 @@ export class WebPageAgent implements Agent<WebPageAgent>{
       //add a follow up message to help ensure the llm follows instructions.
       const handleToolCalls: HandleToolCalls = async (p) : Promise<ChatCompletionMessageParam[]> => {
         const toolCallResultMessages = await defaultHandleToolCalls(p);
-        const newMessage: ChatCompletionMessageParam = {role: 'user', content: getFollowUpPromptAfterToolCall(prompt)};
-        toolCallResultMessages.push(newMessage);
+        // const newMessage: ChatCompletionMessageParam = {role: 'user', content: getFollowUpPromptAfterToolCall(prompt)};
+        // toolCallResultMessages.push(newMessage);
         return toolCallResultMessages;
       };
 
