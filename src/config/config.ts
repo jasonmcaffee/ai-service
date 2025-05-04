@@ -17,7 +17,7 @@ const config = {
 
   getDbConnectionString() {
     const dbPassword = process.env.DB_PASSWORD;
-    const dbConnectionString = `postgres://postgres:${dbPassword}@192.168.0.209:5432/ai`;
+    const dbConnectionString = `postgres://postgres:${dbPassword}@192.168.0.157:5432/ai`;
     return dbConnectionString;
   },
   //the member table has this hardcoded and we need it when adding messages.
@@ -41,7 +41,8 @@ const config = {
   },
 
   getSharedDriveBasePath(){
-    return this.isProduction()? `C:/shared-drive` : `/Volumes/shared-drive`;
+    // return this.isProduction()? `C:/` : `/Volumes/shared-drive`;
+    return  `C:/shared-drive`;
   },
 
   getLlmModelsFolder(){

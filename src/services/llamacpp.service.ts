@@ -14,11 +14,11 @@ export class LlamaCppService {
     private logFilePath = path.join(process.cwd(), 'llama_server_output.log');
     private pidFilePath = path.join(process.cwd(), 'llama_server_pid.txt');
     private isWindows = os.platform() === 'win32';
-    private readonly llamaServerExePath = `C:\\shared-drive\\dev\\llama.cpp-v3\\build\\bin\\Release\\llama-server.exe`
+    private readonly llamaServerExePath = `C:\\dev\\llama.cpp-v3\\build\\bin\\Release\\llama-server.exe`
     constructor() {}
 
 
-    async getCurrentlyRunningModel(llamaCppBaseUrl="http://192.168.0.209:8080"): Promise<LlamaCppModelsResponse>{
+    async getCurrentlyRunningModel(llamaCppBaseUrl="http://192.168.0.157:8080"): Promise<LlamaCppModelsResponse>{
         const url = `${llamaCppBaseUrl}/v1/models`;
 
         try{
