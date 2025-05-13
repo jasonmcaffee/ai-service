@@ -124,6 +124,7 @@ export class ConversationService {
     const prompt = nameConversationPrompt(conversation);
 
     let openAiMessages = createOpenAIMessagesFromMessages(conversation.messages || []);
+    openAiMessages = openAiMessages.filter(m => m.role !== "tool"); //filter out tool calls
     const lastMessage = {role: 'user', content: prompt} as ChatCompletionMessageParam;
     openAiMessages = [...openAiMessages, lastMessage];
     const result = await this.inferenceService.nonStreamingInference(openAiMessages);
