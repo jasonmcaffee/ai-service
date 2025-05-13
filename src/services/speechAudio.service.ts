@@ -21,7 +21,7 @@ export class SpeechAudioService {
   private openAi: OpenAI;
 
   constructor() {
-    this.openAi = new OpenAI({ baseURL: 'http://192.168.0.209:8000/v1', apiKey: 'na', });
+    this.openAi = new OpenAI({ baseURL: 'http://192.168.0.157:8000/v1', apiKey: 'na', });
   }
 
   // transcribeAudioStreaming(file: any, language: string = 'en'): Observable<any> {
