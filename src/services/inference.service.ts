@@ -15,7 +15,7 @@ export class InferenceService{
    * @param conversationId
    */
   async nonStreamingInference(openAiMessages: ChatCompletionMessageParam[]){
-    const openai = new OpenAI({ apiKey: '', baseURL: 'http://192.168.0.209:8080' });
+    const openai = new OpenAI({ apiKey: '', baseURL: 'http://192.168.0.157:8080' });
 
     try {
       const completion = await openai.chat.completions.create({
