@@ -137,7 +137,7 @@ export async function ensureTablesExist() {
   )`;
 
   await sql`CREATE TABLE IF NOT EXISTS url_mapping (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY,
         original_url TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`;

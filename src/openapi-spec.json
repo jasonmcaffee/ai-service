@@ -1799,6 +1799,106 @@
         ]
       }
     },
+    "/proxy/urls": {
+      "post": {
+        "operationId": "createShortUrl",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUrl"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The URL has been successfully shortened",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Url"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid URL format"
+          }
+        },
+        "summary": "Create a shortened URL",
+        "tags": [
+          "URL Shortening"
+        ]
+      }
+    },
+    "/proxy/urls/{id}": {
+      "get": {
+        "operationId": "getUrlInfo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The UUID of the shortened URL",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The URL information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Url"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "URL not found"
+          }
+        },
+        "summary": "Get URL information",
+        "tags": [
+          "URL Shortening"
+        ]
+      }
+    },
+    "/proxy/{id}": {
+      "get": {
+        "operationId": "redirectToOriginalUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The UUID of the shortened URL",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the original URL"
+          },
+          "404": {
+            "description": "URL not found"
+          }
+        },
+        "summary": "Redirect to original URL",
+        "tags": [
+          "URL Shortening"
+        ]
+      }
+    },
     "/webSearch/search": {
       "get": {
         "operationId": "webSearch",
@@ -3046,6 +3146,50 @@
           "voice",
           "responseFormat",
           "speed"
+        ]
+      },
+      "CreateUrl": {
+        "type": "object",
+        "properties": {
+          "originalUrl": {
+            "type": "string",
+            "description": "The URL to be shortened",
+            "example": "https://example.com/very/long/url/that/needs/shortening"
+          }
+        },
+        "required": [
+          "originalUrl"
+        ]
+      },
+      "Url": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier for the shortened URL",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "originalUrl": {
+            "type": "string",
+            "description": "The original URL that was shortened",
+            "example": "https://example.com/very/long/url/that/needs/shortening"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "The timestamp when the URL was created",
+            "example": "2024-03-20T15:30:00Z"
+          },
+          "shortUrl": {
+            "type": "string",
+            "description": "The full shortened URL",
+            "example": "http://localhost:3000/proxy/123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "id",
+          "originalUrl",
+          "createdAt",
+          "shortUrl"
         ]
       },
       "SearchResult": {

@@ -181,7 +181,7 @@ export class CreateUrl {
   - Add CREATE TABLE statement to ensureTablesExist function
   - Include UUID, original_url, and created_at fields
 
-- [ ] Set up URL module structure
+- [x] Set up URL module structure
   - Create `src/models/api/urlApiModels.ts` with Url and CreateUrl types
   - Create `src/controllers/url.controller.ts` with OpenAPI annotations
   - Create `src/services/url.service.ts` with URL validation logic
@@ -191,8 +191,8 @@ export class CreateUrl {
   - Add OpenAPI annotations to controller endpoints
 
 ### Core Features
-- [ ] Implement URL creation endpoint
-  - Create POST /api/v1/urls endpoint
+- [x] Implement URL creation endpoint
+  - Create POST /proxy/urls endpoint if it
   - Accept originalUrl
   - Use existing UUID function from project
   - Store in database
@@ -200,8 +200,8 @@ export class CreateUrl {
   - Add OpenAPI annotations with example request/response
   - Add integration test that verifies URL creation and retrieval
 
-- [ ] Implement URL info retrieval endpoint
-  - Create GET /api/v1/urls/{uuid} endpoint
+- [x] Implement URL info retrieval endpoint
+  - Create GET /proxy/urls/{uuid} endpoint
   - Return original URL and creation details
   - Return 404 if URL not found
   - Add OpenAPI annotations with example request/response
