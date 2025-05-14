@@ -207,7 +207,7 @@ export class CreateUrl {
   - Add OpenAPI annotations with example request/response
   - Add integration test that verifies URL info retrieval
 
-- [ ] Add optional UUID support to URL creation
+- [x] Add optional UUID support to URL creation
   - Update CreateUrl type to include optional id field
   - Modify POST /proxy/urls endpoint to accept optional UUID
   - Add validation to ensure provided UUID is valid

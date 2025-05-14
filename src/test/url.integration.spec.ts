@@ -69,6 +69,66 @@ describe('URL Shortening (e2e)', () => {
     });
   });
 
+  describe('POST /proxy/urls/batch', () => {
+    it('should create multiple shortened URLs', async () => {
+      const urls = [
+        { originalUrl: 'https://example.com/url1' },
+        { originalUrl: 'https://example.com/url2', id: uuidv4() }
+      ];
+
+      const response = await request(app.getHttpServer())
+        .post('/proxy/urls/batch')
+        .send({ urls })
+        .expect(201);
+
+      expect(response.body).toHaveProperty('urls');
+      expect(response.body.urls).toHaveLength(2);
+      expect(response.body.urls[0]).toHaveProperty('id');
+      expect(response.body.urls[0]).toHaveProperty('originalUrl', 'https://example.com/url1');
+      expect(response.body.urls[0]).toHaveProperty('shortUrl');
+      expect(response.body.urls[1]).toHaveProperty('id', urls[1].id);
+      expect(response.body.urls[1]).toHaveProperty('originalUrl', 'https://example.com/url2');
+      expect(response.body.urls[1]).toHaveProperty('shortUrl');
+    });
+
+    it('should handle invalid URLs in batch', async () => {
+      const urls = [
+        { originalUrl: 'https://example.com/valid' },
+        { originalUrl: 'not-a-valid-url' },
+        { originalUrl: 'https://example.com/valid2' }
+      ];
+
+      const response = await request(app.getHttpServer())
+        .post('/proxy/urls/batch')
+        .send({ urls })
+        .expect(201);
+
+      expect(response.body).toHaveProperty('urls');
+      expect(response.body).toHaveProperty('errors');
+      expect(response.body.urls).toHaveLength(2);
+      expect(response.body.errors).toHaveLength(1);
+      expect(response.body.errors[0]).toContain('Invalid URL format');
+    });
+
+    it('should handle invalid UUIDs in batch', async () => {
+      const urls = [
+        { originalUrl: 'https://example.com/valid', id: uuidv4() },
+        { originalUrl: 'https://example.com/invalid', id: 'invalid-uuid' }
+      ];
+
+      const response = await request(app.getHttpServer())
+        .post('/proxy/urls/batch')
+        .send({ urls })
+        .expect(201);
+
+      expect(response.body).toHaveProperty('urls');
+      expect(response.body).toHaveProperty('errors');
+      expect(response.body.urls).toHaveLength(1);
+      expect(response.body.errors).toHaveLength(1);
+      expect(response.body.errors[0]).toContain('Invalid URL format');
+    });
+  });
+
   describe('GET /proxy/urls/:id', () => {
     let createdUrlId: string;
 

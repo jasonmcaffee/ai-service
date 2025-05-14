@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { UrlRepository } from '../repositories/url.repository';
-import { Url, CreateUrl } from '../models/api/urlApiModels';
+import { Url, CreateUrl, BatchCreateUrlRequest, BatchCreateUrlResponse } from '../models/api/urlApiModels';
 
 @Injectable()
 export class UrlService {
@@ -49,6 +49,59 @@ export class UrlService {
       ...url,
       shortUrl: `http://localhost:3000/proxy/${url.id}`
     };
+  }
+
+  /**
+   * Creates multiple shortened URLs in a batch
+   * @param request The batch URL creation request
+   * @returns The created URLs and any errors that occurred
+   */
+  async createShortUrls(request: BatchCreateUrlRequest): Promise<BatchCreateUrlResponse> {
+    const validUrls: CreateUrl[] = [];
+    const errors: string[] = [];
+
+    // Validate each URL and UUID
+    for (const url of request.urls) {
+      try {
+        this.validateUrl(url.originalUrl);
+        if (url.id) {
+          this.validateUuid(url.id);
+        }
+        validUrls.push(url);
+      } catch (error) {
+        errors.push(`Invalid URL format for ${url.originalUrl}`);
+      }
+    }
+
+    // If no valid URLs, return early
+    if (validUrls.length === 0) {
+      return { urls: [], errors };
+    }
+
+    try {
+      // Create valid URLs in batch
+      const createdUrls = await this.urlRepository.createUrls(validUrls);
+      
+      // Add shortUrl to each created URL
+      const urlsWithShortUrl = createdUrls.map(url => ({
+        ...url,
+        shortUrl: `http://localhost:3000/proxy/${url.id}`
+      }));
+
+      return { urls: urlsWithShortUrl, errors };
+    } catch (error) {
+      // If batch creation fails, try creating URLs one by one
+      const urls: Url[] = [];
+      for (const url of validUrls) {
+        try {
+          const createdUrl = await this.createShortUrl(url);
+          urls.push(createdUrl);
+        } catch (error) {
+          errors.push(`Failed to create URL for ${url.originalUrl}`);
+        }
+      }
+      return { urls, errors };
+    }
   }
 
   /**

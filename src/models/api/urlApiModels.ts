@@ -39,4 +39,40 @@ export class CreateUrl {
     example: 'https://example.com/very/long/url/that/needs/shortening'
   })
   originalUrl: string;
+}
+
+export class BatchCreateUrlRequest {
+  @ApiProperty({
+    description: 'Array of URLs to be shortened, each with an optional custom UUID',
+    type: [CreateUrl],
+    example: [
+      { originalUrl: 'https://example.com/url1', id: '123e4567-e89b-12d3-a456-426614174000' },
+      { originalUrl: 'https://example.com/url2' }
+    ]
+  })
+  urls: CreateUrl[];
+}
+
+export class BatchCreateUrlResponse {
+  @ApiProperty({
+    description: 'Array of created URLs with their status',
+    type: [Url],
+    example: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        originalUrl: 'https://example.com/url1',
+        createdAt: '2024-03-20T15:30:00Z',
+        shortUrl: 'http://localhost:3000/proxy/123e4567-e89b-12d3-a456-426614174000'
+      }
+    ]
+  })
+  urls: Url[];
+
+  @ApiProperty({
+    description: 'Array of errors that occurred during batch creation',
+    type: [String],
+    example: ['Invalid URL format for https://invalid-url'],
+    required: false
+  })
+  errors?: string[];
 } 

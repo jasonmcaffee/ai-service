@@ -1834,6 +1834,41 @@
         ]
       }
     },
+    "/proxy/urls/batch": {
+      "post": {
+        "operationId": "createShortUrls",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchCreateUrlRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The URLs have been successfully shortened",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchCreateUrlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request format"
+          }
+        },
+        "summary": "Create multiple shortened URLs in a batch",
+        "tags": [
+          "URL Shortening"
+        ]
+      }
+    },
     "/proxy/urls/{id}": {
       "get": {
         "operationId": "getUrlInfo",
@@ -3195,6 +3230,63 @@
           "originalUrl",
           "createdAt",
           "shortUrl"
+        ]
+      },
+      "BatchCreateUrlRequest": {
+        "type": "object",
+        "properties": {
+          "urls": {
+            "description": "Array of URLs to be shortened, each with an optional custom UUID",
+            "example": [
+              {
+                "originalUrl": "https://example.com/url1",
+                "id": "123e4567-e89b-12d3-a456-426614174000"
+              },
+              {
+                "originalUrl": "https://example.com/url2"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateUrl"
+            }
+          }
+        },
+        "required": [
+          "urls"
+        ]
+      },
+      "BatchCreateUrlResponse": {
+        "type": "object",
+        "properties": {
+          "urls": {
+            "description": "Array of created URLs with their status",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "originalUrl": "https://example.com/url1",
+                "createdAt": "2024-03-20T15:30:00Z",
+                "shortUrl": "http://localhost:3000/proxy/123e4567-e89b-12d3-a456-426614174000"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Url"
+            }
+          },
+          "errors": {
+            "description": "Array of errors that occurred during batch creation",
+            "example": [
+              "Invalid URL format for https://invalid-url"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "urls"
         ]
       },
       "SearchResult": {

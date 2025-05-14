@@ -28,6 +28,26 @@ export class UrlRepository {
   }
 
   /**
+   * Creates multiple URL mappings in the database
+   * @param urls Array of objects containing originalUrl and optional id
+   * @returns Array of created URL mappings
+   */
+  async createUrls(urls: Array<{ originalUrl: string; id?: string }>): Promise<Url[]> {
+    const values = urls.map(url => ({
+      id: url.id || uuidv4(),
+      originalUrl: url.originalUrl
+    }));
+
+    const result = await this.sql<Url[]>`
+      INSERT INTO url_mapping (id, original_url)
+      SELECT * FROM ${this.sql(values)}
+      RETURNING id, original_url as "originalUrl", created_at as "createdAt"
+    `;
+
+    return result;
+  }
+
+  /**
    * Retrieves a URL mapping by its ID
    * @param id The UUID of the URL mapping
    * @returns The URL mapping if found, null otherwise

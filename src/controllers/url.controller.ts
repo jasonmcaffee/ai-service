@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus, Res } from '@
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Response } from 'express';
 import { UrlService } from '../services/url.service';
-import { Url, CreateUrl } from '../models/api/urlApiModels';
+import { Url, CreateUrl, BatchCreateUrlRequest, BatchCreateUrlResponse } from '../models/api/urlApiModels';
 
 @ApiTags('URL Shortening')
 @Controller('proxy')
@@ -22,6 +22,21 @@ export class UrlController {
   })
   async createShortUrl(@Body() createUrl: CreateUrl): Promise<Url> {
     return this.urlService.createShortUrl(createUrl);
+  }
+
+  @Post('urls/batch')
+  @ApiOperation({ summary: 'Create multiple shortened URLs in a batch' })
+  @ApiResponse({
+    status: 201,
+    description: 'The URLs have been successfully shortened',
+    type: BatchCreateUrlResponse
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request format'
+  })
+  async createShortUrls(@Body() request: BatchCreateUrlRequest): Promise<BatchCreateUrlResponse> {
+    return this.urlService.createShortUrls(request);
   }
 
   @Get('urls/:id')
