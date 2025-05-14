@@ -4,10 +4,12 @@ import * as request from 'supertest';
 import { UrlController } from '../controllers/url.controller';
 import { UrlService } from '../services/url.service';
 import { UrlRepository } from '../repositories/url.repository';
+import { default as fetch } from 'node-fetch';
 
 describe('URL Shortening (e2e)', () => {
   let app: INestApplication;
   const testUrl = 'https://example.com/test-url';
+  const realUrl = 'https://news.ycombinator.com/item?id=43979063';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -73,10 +75,30 @@ describe('URL Shortening (e2e)', () => {
         .expect(400);
     });
 
-    it('should return 404 for non-existent UUID', async () => {
+    it('should return 404 for non-existent valid UUID', async () => {
       await request(app.getHttpServer())
         .get('/proxy/urls/123e4567-e89b-12d3-a456-426614174000')
         .expect(404);
+    });
+  });
+
+  describe('GET /proxy/:id (redirect)', () => {
+    let shortUrlId: string;
+    let shortUrl: string;
+
+    beforeAll(async () => {
+      const response = await request(app.getHttpServer())
+        .post('/proxy/urls')
+        .send({ originalUrl: realUrl });
+      shortUrlId = response.body.id;
+      shortUrl = response.body.shortUrl;
+    });
+
+    it('should redirect to the original URL', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/proxy/${shortUrlId}`)
+        .expect(302)
+        .expect('Location', realUrl);
     });
   });
 }); 
