@@ -17,7 +17,7 @@ const imagesPath = `${config.getSharedDriveBasePath()}/llm_models/ComfyUI_window
 
 let generateImageWorkflow: any;
 let upscaleWorkflow: any;
-const baseUrl = 'http://192.168.0.209:8082';
+const baseUrl = 'http://192.168.0.157:8082';
 const generateImageUrl = `${baseUrl}/prompt`;
 const getImageStatusUrl = `${baseUrl}/history`;
 const uploadImageUrl = `${baseUrl}/upload/image`;
