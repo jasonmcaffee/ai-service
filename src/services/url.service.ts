@@ -90,17 +90,7 @@ export class UrlService {
 
       return { urls: urlsWithShortUrl, errors };
     } catch (error) {
-      // If batch creation fails, try creating URLs one by one
-      const urls: Url[] = [];
-      for (const url of validUrls) {
-        try {
-          const createdUrl = await this.createShortUrl(url);
-          urls.push(createdUrl);
-        } catch (error) {
-          errors.push(`Failed to create URL for ${url.originalUrl}`);
-        }
-      }
-      return { urls, errors };
+      throw error;
     }
   }
 

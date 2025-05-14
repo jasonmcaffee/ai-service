@@ -33,18 +33,15 @@ export class UrlRepository {
    * @returns Array of created URL mappings
    */
   async createUrls(urls: Array<{ originalUrl: string; id?: string }>): Promise<Url[]> {
-    const values = urls.map(url => ({
-      id: url.id || uuidv4(),
-      originalUrl: url.originalUrl
-    }));
+    const rows = urls.map(url => [url.id || uuidv4(), url.originalUrl]);
 
     const result = await this.sql<Url[]>`
       INSERT INTO url_mapping (id, original_url)
-      SELECT * FROM ${this.sql(values)}
+      VALUES ${this.sql(rows)}
       RETURNING id, original_url as "originalUrl", created_at as "createdAt"
     `;
-
     return result;
+
   }
 
   /**
