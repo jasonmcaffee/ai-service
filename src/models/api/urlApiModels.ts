@@ -28,6 +28,13 @@ export class Url {
 
 export class CreateUrl {
   @ApiProperty({
+    description: 'Optional custom UUID for the shortened URL. If not provided, a new UUID will be generated.',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false
+  })
+  id?: string;
+
+  @ApiProperty({
     description: 'The URL to be shortened',
     example: 'https://example.com/very/long/url/that/needs/shortening'
   })

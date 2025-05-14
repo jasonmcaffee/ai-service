@@ -38,7 +38,13 @@ export class UrlService {
    */
   async createShortUrl(createUrl: CreateUrl): Promise<Url> {
     this.validateUrl(createUrl.originalUrl);
-    const url = await this.urlRepository.createUrl(createUrl.originalUrl);
+    
+    // Validate UUID if provided
+    if (createUrl.id) {
+      this.validateUuid(createUrl.id);
+    }
+
+    const url = await this.urlRepository.createUrl(createUrl.originalUrl, createUrl.id);
     return {
       ...url,
       shortUrl: `http://localhost:3000/proxy/${url.id}`

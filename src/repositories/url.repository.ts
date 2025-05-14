@@ -15,12 +15,13 @@ export class UrlRepository {
   /**
    * Creates a new URL mapping in the database
    * @param originalUrl The original URL to be shortened
+   * @param id Optional custom UUID for the URL mapping
    * @returns The created URL mapping
    */
-  async createUrl(originalUrl: string): Promise<Url> {
+  async createUrl(originalUrl: string, id?: string): Promise<Url> {
     const [url] = await this.sql<Url[]>`
       INSERT INTO url_mapping (id, original_url)
-      VALUES (${uuidv4()}, ${originalUrl})
+      VALUES (${id || uuidv4()}, ${originalUrl})
       RETURNING id, original_url as "originalUrl", created_at as "createdAt"
     `;
     return url;

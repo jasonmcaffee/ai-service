@@ -3151,6 +3151,11 @@
       "CreateUrl": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "description": "Optional custom UUID for the shortened URL. If not provided, a new UUID will be generated.",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
           "originalUrl": {
             "type": "string",
             "description": "The URL to be shortened",

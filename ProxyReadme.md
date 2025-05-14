@@ -207,21 +207,21 @@ export class CreateUrl {
   - Add OpenAPI annotations with example request/response
   - Add integration test that verifies URL info retrieval
 
-- [ ] Implement proxy redirect endpoint
-  - Create GET /proxy/{uuid} endpoint
-  - Look up original URL
-  - Return 302 redirect to original URL
-  - Return 404 if URL not found
+- [ ] Add optional UUID support to URL creation
+  - Update CreateUrl type to include optional id field
+  - Modify POST /proxy/urls endpoint to accept optional UUID
+  - Add validation to ensure provided UUID is valid
+  - Update service to use provided UUID when available
   - Add OpenAPI annotations with example request/response
-  - Add integration test that:
-    - Verifies redirect works
-    - Compares content of original URL vs proxied URL to ensure they are identical
-    - Tests with different types of URLs (HTML, JSON, images, etc.)
+  - Add integration test for custom UUID creation
 
-### Testing
-- [ ] Write integration tests
-  - Test successful URL creation and retrieval
-  - Test successful redirect
-  - Test error cases (invalid URLs, not found)
-  - Test content comparison between original and proxied URLs
-  - Add test documentation explaining test cases and expected results 
+- [ ] Implement batch URL creation
+  - Create POST /proxy/urls/batch endpoint
+  - Accept array of URLs with optional UUIDs
+  - Add new service method for batch processing
+  - Add new repository method for batch insertion
+  - Add OpenAPI annotations with example request/response
+  - Add integration test for batch creation
+  - Handle partial failures gracefully
+  - Return array of created URLs with status
+

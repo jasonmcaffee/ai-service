@@ -5,6 +5,7 @@ import { UrlController } from '../controllers/url.controller';
 import { UrlService } from '../services/url.service';
 import { UrlRepository } from '../repositories/url.repository';
 import { default as fetch } from 'node-fetch';
+const { v4: uuidv4 } = require('uuid');
 
 describe('URL Shortening (e2e)', () => {
   let app: INestApplication;
@@ -39,10 +40,31 @@ describe('URL Shortening (e2e)', () => {
       expect(response.body.shortUrl).toMatch(/^http:\/\/localhost:3000\/proxy\/[0-9a-f-]+$/);
     });
 
+    it('should create a shortened URL with custom UUID', async () => {
+      const customUuid = uuidv4();
+      const response = await request(app.getHttpServer())
+        .post('/proxy/urls')
+        .send({ originalUrl: testUrl, id: customUuid })
+        .expect(201);
+
+      expect(response.body).toHaveProperty('id', customUuid);
+      expect(response.body).toHaveProperty('originalUrl', testUrl);
+      expect(response.body).toHaveProperty('createdAt');
+      expect(response.body).toHaveProperty('shortUrl');
+      expect(response.body.shortUrl).toBe(`http://localhost:3000/proxy/${customUuid}`);
+    });
+
     it('should return 400 for invalid URL', async () => {
       await request(app.getHttpServer())
         .post('/proxy/urls')
         .send({ originalUrl: 'not-a-valid-url' })
+        .expect(400);
+    });
+
+    it('should return 400 for invalid UUID format', async () => {
+      await request(app.getHttpServer())
+        .post('/proxy/urls')
+        .send({ originalUrl: testUrl, id: 'invalid-uuid' })
         .expect(400);
     });
   });
@@ -76,8 +98,9 @@ describe('URL Shortening (e2e)', () => {
     });
 
     it('should return 404 for non-existent valid UUID', async () => {
+      const nonExistentUuid = uuidv4();
       await request(app.getHttpServer())
-        .get('/proxy/urls/123e4567-e89b-12d3-a456-426614174000')
+        .get(`/proxy/urls/${nonExistentUuid}`)
         .expect(404);
     });
   });
