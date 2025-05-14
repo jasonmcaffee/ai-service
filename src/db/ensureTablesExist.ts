@@ -136,6 +136,12 @@ export async function ensureTablesExist() {
         FOREIGN KEY (datasource_id) REFERENCES datasource(id)
   )`;
 
+  await sql`CREATE TABLE IF NOT EXISTS url_mapping (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        original_url TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`;
+
   // await sql`create table if not exists message_status_update (
   //
   // )`;

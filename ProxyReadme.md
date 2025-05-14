@@ -177,7 +177,7 @@ export class CreateUrl {
 ## Todo List
 
 ### Setup
-- [ ] Add url_mapping table to ensureTablesExist.ts
+- [x] Add url_mapping table to ensureTablesExist.ts
   - Add CREATE TABLE statement to ensureTablesExist function
   - Include UUID, original_url, and created_at fields
 
