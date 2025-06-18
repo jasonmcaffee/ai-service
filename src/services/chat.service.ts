@@ -277,7 +277,7 @@ export class ChatService {
       modelParams,
       onOpenAiMessagesAdded
     };
-    const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubject({
+    const promise = this.openAiWrapperService.callOpenAiUsingModelAndSubjectStream({
       openAiMessages,
       model,
       aiFunctionContext,
