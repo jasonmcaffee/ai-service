@@ -171,6 +171,7 @@ function formatDocumentAsMessage(memberId: string, datasource: Datasource, docum
     messageId: '',
     messageContext: undefined,
     toolCallsJson: undefined,
+    imageUrl: undefined,
   };
   return message;
 }

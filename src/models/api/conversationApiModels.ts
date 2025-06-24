@@ -127,6 +127,8 @@ export class Message {
   @ApiProperty({nullable: true})
   messageText: string;
   @ApiProperty({nullable: true})
+  imageUrl: string | undefined;
+  @ApiProperty({nullable: true})
   toolCallsJson: string | undefined;
   @ApiProperty()
   createdDate: string; // ISO format date string
@@ -145,6 +147,8 @@ export class Message {
 export class CreateMessage {
   @ApiProperty()
   messageText: string;
+  @ApiProperty({nullable: true})
+  imageUrl: string | undefined;
   @ApiProperty({nullable: true})
   toolCallsJson: string | undefined;
   @ApiProperty()

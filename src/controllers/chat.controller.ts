@@ -15,6 +15,7 @@ export class ChatController {
 
   @ApiOperation({ summary: 'Stream a message based on a prompt' })
   @ApiQuery({ name: 'prompt', type: String, description: 'The prompt to initiate the message stream' })
+  @ApiQuery({ name: 'imageUrl', type: String, description: 'Image url to be used for vision.  Should be data base64 string' })
   @ApiQuery({ name: 'conversationId', type: String, required: false, description: 'Optional. The conversation to add the passed in prompt and llm response to.' })
   @ApiQuery({name: 'modelId', type: String, required: false, description: 'The id of the model to use.  If not passed, the default model will be used.'})
   @ApiQuery({name: 'shouldSearchWeb', type: Boolean, required: true, description: 'Indicator on whether to search the web.'})
@@ -51,6 +52,7 @@ export class ChatController {
                         @Query('top_p') top_p: number,
                         @Query('frequency_penalty') frequency_penalty: number,
                         @Query('presence_penalty') presence_penalty: number,
+                        @Query('imageUrl') imageUrl: string | undefined,
   ) {
     console.log('got stream inference request: ', prompt, conversationId, modelId);
     const memberId = this.authenticationService.getMemberId();
@@ -81,7 +83,7 @@ export class ChatController {
     if(typeof presence_penalty === "string"){
       presence_penalty = parseFloat(presence_penalty);
     }
-    return this.chatService.streamInference(prompt, memberId, conversationId, modelId, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio, textToSpeechSpeed, shouldUseAgentOfAgents, temperature, top_p, frequency_penalty, presence_penalty);
+    return this.chatService.streamInference(prompt, memberId, conversationId, modelId, shouldSearchWeb, shouldUsePlanTool, shouldRespondWithAudio, textToSpeechSpeed, shouldUseAgentOfAgents, temperature, top_p, frequency_penalty, presence_penalty, imageUrl);
   }
 
   @ApiOperation({summary: 'stop the current stream for a member'})
