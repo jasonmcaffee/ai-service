@@ -40,6 +40,7 @@ describe('Client Tests', () => {
       const onResponseCompleteCallback = (text: string) => {
         expect(text.length > 0).toBe(true);
         console.log('received complete text: ', text);
+        resolve();
       };
       const onStatusUpdatesReceivedCallback = (s: StatusTopicKeyValuesResponse) => {
 
