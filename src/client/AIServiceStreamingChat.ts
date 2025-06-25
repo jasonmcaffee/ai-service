@@ -1,4 +1,7 @@
 import { ChatApi, StatusTopicKeyValuesResponse, StreamInferenceRequest, Configuration} from './api-client';
+import {EventSource} from 'eventsource';
+(global as any).EventSource = EventSource;
+// import fetch from 'node-fetch';
 
 export function base64ToAudioBlob(base64: string, mimeType: string) {
   const byteCharacters = atob(base64);
@@ -63,7 +66,8 @@ export class AIServiceStreamingChat extends ChatApi {
 
     const url = `${this.configuration.basePath}/chat/streamInference?${params}`;
 
-    const eventSource = new EventSource(url, {});
+    // const eventSource = new EventSource(url, {});
+    const eventSource = new EventSource(url);
     let completeResponse = '';
     let hasReceivedTextEnd = false;
     let hasReceivedAudioEnd = false;
@@ -111,7 +115,14 @@ export class AIServiceStreamingChat extends ChatApi {
 
     eventSource.addEventListener('error', (event: any) => {
       console.error('SSE error:', event);
+      console.error('SSE error details:', {
+        type: event.type,
+        readyState: eventSource.readyState,
+        url: url,
+        error: event
+      });
       disconnect();
+      throw event;
     });
 
     function disconnect() {

@@ -10,12 +10,25 @@ import {
 } from '../client/api-client';
 import { AIServiceStreamingChat } from '../client/AIServiceStreamingChat';
 
+// import EventSource from 'eventsource'; // or:
+// const EventSource = require('eventsource').EventSource;
+//
+// //eventsource isn't part of node by default, so we need a polyfill.
+// // (global as any).EventSource = require('eventsource');
+// (global as any).EventSource = EventSource;
+// console.log(`EventSource is `, EventSource);
+
 describe('Client Tests', () => {
-  const apiConfig = new Configuration({basePath: 'http://localhost:3000'});
+  const apiConfig = new Configuration({basePath: 'http://192.168.0.157:3000'});
 
   describe('Chat with SSE', () => {
+    const conversationApi = new ConversationApi(apiConfig);
+
     const aiServiceStreamingChat = new AIServiceStreamingChat(apiConfig);
     it('should chat', async ()=> {
+      const createdConversation = await conversationApi.createConversation({conversationName: 'test'});
+      const conversationId = createdConversation.conversationId;
+
       let resolve, reject;
       const promise = new Promise((resolveP, rejectP) => {
         resolve = resolveP;
@@ -40,14 +53,14 @@ describe('Client Tests', () => {
       };
 
       const request: StreamInferenceRequest = {
-        prompt: 'hello',
+        prompt: 'hello', conversationId,
         shouldSearchWeb: false, shouldRespondWithAudio: false, shouldUseAgentOfAgents: false, shouldUsePlanTool: false,
-        textToSpeechSpeed: 1, temperature: 1, topP: 0.9, frequencyPenalty: 1, presencePenalty: 0,
+        textToSpeechSpeed: 1, temperature: 1, topP: 0.9, frequencyPenalty: 1, presencePenalty: 0, imageUrl: undefined,
       };
       await aiServiceStreamingChat.streamInferenceSSE(request, onTextReceivedCallback, onResponseCompleteCallback, onStatusUpdatesReceivedCallback, onAudioReceived, onAudioCompleteCallback);
 
       await promise;
-    });
+    }, 15000);
 
 
   });
