@@ -16,16 +16,17 @@ describe('Client Tests', () => {
   describe('Chat with SSE', () => {
     const aiServiceStreamingChat = new AIServiceStreamingChat(apiConfig);
     it('should chat', async ()=> {
-      const request: StreamInferenceRequest = {
-        prompt: 'hello',
-        shouldSearchWeb: false, shouldRespondWithAudio: false, shouldUseAgentOfAgents: false, shouldUsePlanTool: false,
-        textToSpeechSpeed: 1, temperature: 1, topP: 0.9, frequencyPenalty: 1, presencePenalty: 0,
-      };
-      const onTextReceivedCallback = (text: string) => {
+      let resolve, reject;
+      const promise = new Promise((resolveP, rejectP) => {
+        resolve = resolveP;
+        reject = rejectP;
+      });
 
+      const onTextReceivedCallback = (text: string) => {
       };
       const onResponseCompleteCallback = (text: string) => {
-
+        expect(text.length > 0).toBe(true);
+        console.log('received complete text: ', text);
       };
       const onStatusUpdatesReceivedCallback = (s: StatusTopicKeyValuesResponse) => {
 
@@ -37,7 +38,15 @@ describe('Client Tests', () => {
       const onAudioCompleteCallback = () => {
 
       };
-      aiServiceStreamingChat.streamInferenceSSE(request, onTextReceivedCallback, onResponseCompleteCallback, onStatusUpdatesReceivedCallback, onAudioReceived, onAudioCompleteCallback);
+
+      const request: StreamInferenceRequest = {
+        prompt: 'hello',
+        shouldSearchWeb: false, shouldRespondWithAudio: false, shouldUseAgentOfAgents: false, shouldUsePlanTool: false,
+        textToSpeechSpeed: 1, temperature: 1, topP: 0.9, frequencyPenalty: 1, presencePenalty: 0,
+      };
+      await aiServiceStreamingChat.streamInferenceSSE(request, onTextReceivedCallback, onResponseCompleteCallback, onStatusUpdatesReceivedCallback, onAudioReceived, onAudioCompleteCallback);
+
+      await promise;
     });
 
 

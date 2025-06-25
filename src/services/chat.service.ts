@@ -196,7 +196,8 @@ export class ChatService {
   private handleNoTool({memberId, abortController, inferenceSSESubject, modelParams, model, handleCompletedResponseText, handleError, openAiMessages, onOpenAiMessagesAdded}: AiStrategyParams) {
     const aiFunctionContext: AiFunctionContextV2 = {
       memberId,
-      aiFunctionExecutor: this.webToolsService,
+      // aiFunctionExecutor: this.webToolsService,
+      aiFunctionExecutor: undefined,
       abortController,
       inferenceSSESubject,
       functionResultsStorage: {},
