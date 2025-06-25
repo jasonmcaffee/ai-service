@@ -60,7 +60,31 @@ export interface CreateModel {
      * @type {string}
      * @memberof CreateModel
      */
-    initialMessage: string;
+    initialMessage: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateModel
+     */
+    filePath: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateModel
+     */
+    contextSize: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateModel
+     */
+    additionalLlamacppServerParams: string | null;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof CreateModel
+     */
+    prependNoThinkTagToBeginningOfEachMessage: boolean | null;
 }
 
 /**
@@ -74,6 +98,10 @@ export function instanceOfCreateModel(value: object): value is CreateModel {
     if (!('isDefault' in value) || value['isDefault'] === undefined) return false;
     if (!('modelTypeId' in value) || value['modelTypeId'] === undefined) return false;
     if (!('initialMessage' in value) || value['initialMessage'] === undefined) return false;
+    if (!('filePath' in value) || value['filePath'] === undefined) return false;
+    if (!('contextSize' in value) || value['contextSize'] === undefined) return false;
+    if (!('additionalLlamacppServerParams' in value) || value['additionalLlamacppServerParams'] === undefined) return false;
+    if (!('prependNoThinkTagToBeginningOfEachMessage' in value) || value['prependNoThinkTagToBeginningOfEachMessage'] === undefined) return false;
     return true;
 }
 
@@ -94,6 +122,10 @@ export function CreateModelFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'isDefault': json['isDefault'],
         'modelTypeId': json['modelTypeId'],
         'initialMessage': json['initialMessage'],
+        'filePath': json['filePath'],
+        'contextSize': json['contextSize'],
+        'additionalLlamacppServerParams': json['additionalLlamacppServerParams'],
+        'prependNoThinkTagToBeginningOfEachMessage': json['prependNoThinkTagToBeginningOfEachMessage'],
     };
 }
 
@@ -115,6 +147,10 @@ export function CreateModelToJSONTyped(value?: CreateModel | null, ignoreDiscrim
         'isDefault': value['isDefault'],
         'modelTypeId': value['modelTypeId'],
         'initialMessage': value['initialMessage'],
+        'filePath': value['filePath'],
+        'contextSize': value['contextSize'],
+        'additionalLlamacppServerParams': value['additionalLlamacppServerParams'],
+        'prependNoThinkTagToBeginningOfEachMessage': value['prependNoThinkTagToBeginningOfEachMessage'],
     };
 }
 

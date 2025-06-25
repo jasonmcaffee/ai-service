@@ -67,6 +67,36 @@ export interface Model {
      * @memberof Model
      */
     initialMessage: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Model
+     */
+    filePath: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof Model
+     */
+    contextSize: number | null;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Model
+     */
+    isCurrentlyRunningOnLlamaCpp: boolean | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Model
+     */
+    additionalLlamacppServerParams: string | null;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Model
+     */
+    prependNoThinkTagToBeginningOfEachMessage: boolean | null;
 }
 
 /**
@@ -81,6 +111,11 @@ export function instanceOfModel(value: object): value is Model {
     if (!('isDefault' in value) || value['isDefault'] === undefined) return false;
     if (!('modelTypeId' in value) || value['modelTypeId'] === undefined) return false;
     if (!('initialMessage' in value) || value['initialMessage'] === undefined) return false;
+    if (!('filePath' in value) || value['filePath'] === undefined) return false;
+    if (!('contextSize' in value) || value['contextSize'] === undefined) return false;
+    if (!('isCurrentlyRunningOnLlamaCpp' in value) || value['isCurrentlyRunningOnLlamaCpp'] === undefined) return false;
+    if (!('additionalLlamacppServerParams' in value) || value['additionalLlamacppServerParams'] === undefined) return false;
+    if (!('prependNoThinkTagToBeginningOfEachMessage' in value) || value['prependNoThinkTagToBeginningOfEachMessage'] === undefined) return false;
     return true;
 }
 
@@ -102,6 +137,11 @@ export function ModelFromJSONTyped(json: any, ignoreDiscriminator: boolean): Mod
         'isDefault': json['isDefault'],
         'modelTypeId': json['modelTypeId'],
         'initialMessage': json['initialMessage'],
+        'filePath': json['filePath'],
+        'contextSize': json['contextSize'],
+        'isCurrentlyRunningOnLlamaCpp': json['isCurrentlyRunningOnLlamaCpp'],
+        'additionalLlamacppServerParams': json['additionalLlamacppServerParams'],
+        'prependNoThinkTagToBeginningOfEachMessage': json['prependNoThinkTagToBeginningOfEachMessage'],
     };
 }
 
@@ -124,6 +164,11 @@ export function ModelToJSONTyped(value?: Model | null, ignoreDiscriminator: bool
         'isDefault': value['isDefault'],
         'modelTypeId': value['modelTypeId'],
         'initialMessage': value['initialMessage'],
+        'filePath': value['filePath'],
+        'contextSize': value['contextSize'],
+        'isCurrentlyRunningOnLlamaCpp': value['isCurrentlyRunningOnLlamaCpp'],
+        'additionalLlamacppServerParams': value['additionalLlamacppServerParams'],
+        'prependNoThinkTagToBeginningOfEachMessage': value['prependNoThinkTagToBeginningOfEachMessage'],
     };
 }
 

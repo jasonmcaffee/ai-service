@@ -15,9 +15,12 @@
 
 import * as runtime from '../runtime';
 import type {
+  GetPageContentsResponse,
   SearchResultResponse,
 } from '../models/index';
 import {
+    GetPageContentsResponseFromJSON,
+    GetPageContentsResponseToJSON,
     SearchResultResponseFromJSON,
     SearchResultResponseToJSON,
 } from '../models/index';
@@ -51,7 +54,7 @@ export class WebSearchApi extends runtime.BaseAPI {
     /**
      * fetch the contents of the page.
      */
-    async getPageContentsRaw(requestParameters: GetPageContentsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+    async getPageContentsRaw(requestParameters: GetPageContentsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GetPageContentsResponse>> {
         if (requestParameters['url'] == null) {
             throw new runtime.RequiredError(
                 'url',
@@ -74,17 +77,13 @@ export class WebSearchApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<string>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
+        return new runtime.JSONApiResponse(response, (jsonValue) => GetPageContentsResponseFromJSON(jsonValue));
     }
 
     /**
      * fetch the contents of the page.
      */
-    async getPageContents(url: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+    async getPageContents(url: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GetPageContentsResponse> {
         const response = await this.getPageContentsRaw({ url: url }, initOverrides);
         return await response.value();
     }

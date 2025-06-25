@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { StatusTopic } from './StatusTopic';
+import {
+    StatusTopicFromJSON,
+    StatusTopicFromJSONTyped,
+    StatusTopicToJSON,
+    StatusTopicToJSONTyped,
+} from './StatusTopic';
+
 /**
  * 
  * @export
@@ -27,10 +35,28 @@ export interface CreateMessage {
     messageText: string;
     /**
      * 
+     * @type {object}
+     * @memberof CreateMessage
+     */
+    imageUrl: object | null;
+    /**
+     * 
+     * @type {object}
+     * @memberof CreateMessage
+     */
+    toolCallsJson: object | null;
+    /**
+     * 
      * @type {string}
      * @memberof CreateMessage
      */
     role: string;
+    /**
+     * 
+     * @type {{ [key: string]: StatusTopic; }}
+     * @memberof CreateMessage
+     */
+    statusTopicsKeyValues: { [key: string]: StatusTopic; } | null;
 }
 
 /**
@@ -38,7 +64,10 @@ export interface CreateMessage {
  */
 export function instanceOfCreateMessage(value: object): value is CreateMessage {
     if (!('messageText' in value) || value['messageText'] === undefined) return false;
+    if (!('imageUrl' in value) || value['imageUrl'] === undefined) return false;
+    if (!('toolCallsJson' in value) || value['toolCallsJson'] === undefined) return false;
     if (!('role' in value) || value['role'] === undefined) return false;
+    if (!('statusTopicsKeyValues' in value) || value['statusTopicsKeyValues'] === undefined) return false;
     return true;
 }
 
@@ -53,7 +82,10 @@ export function CreateMessageFromJSONTyped(json: any, ignoreDiscriminator: boole
     return {
         
         'messageText': json['messageText'],
+        'imageUrl': json['imageUrl'],
+        'toolCallsJson': json['toolCallsJson'],
         'role': json['role'],
+        'statusTopicsKeyValues': (json['statusTopicsKeyValues'] == null ? null : mapValues(json['statusTopicsKeyValues'], StatusTopicFromJSON)),
     };
 }
 
@@ -69,7 +101,10 @@ export function CreateMessageToJSONTyped(value?: CreateMessage | null, ignoreDis
     return {
         
         'messageText': value['messageText'],
+        'imageUrl': value['imageUrl'],
+        'toolCallsJson': value['toolCallsJson'],
         'role': value['role'],
+        'statusTopicsKeyValues': (value['statusTopicsKeyValues'] == null ? null : mapValues(value['statusTopicsKeyValues'], StatusTopicToJSON)),
     };
 }
 

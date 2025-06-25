@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { StatusTopic } from './StatusTopic';
+import {
+    StatusTopicFromJSON,
+    StatusTopicFromJSONTyped,
+    StatusTopicToJSON,
+    StatusTopicToJSONTyped,
+} from './StatusTopic';
 import type { MessageContext } from './MessageContext';
 import {
     MessageContextFromJSON,
@@ -44,7 +51,19 @@ export interface Message {
      * @type {string}
      * @memberof Message
      */
-    messageText: string;
+    messageText: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Message
+     */
+    imageUrl: string | null;
+    /**
+     * 
+     * @type {object}
+     * @memberof Message
+     */
+    toolCallsJson: object | null;
     /**
      * 
      * @type {string}
@@ -63,6 +82,12 @@ export interface Message {
      * @memberof Message
      */
     messageContext: MessageContext | null;
+    /**
+     * 
+     * @type {{ [key: string]: StatusTopic; }}
+     * @memberof Message
+     */
+    statusTopicsKeyValues: { [key: string]: StatusTopic; } | null;
 }
 
 /**
@@ -72,9 +97,12 @@ export function instanceOfMessage(value: object): value is Message {
     if (!('messageId' in value) || value['messageId'] === undefined) return false;
     if (!('sentByMemberId' in value) || value['sentByMemberId'] === undefined) return false;
     if (!('messageText' in value) || value['messageText'] === undefined) return false;
+    if (!('imageUrl' in value) || value['imageUrl'] === undefined) return false;
+    if (!('toolCallsJson' in value) || value['toolCallsJson'] === undefined) return false;
     if (!('createdDate' in value) || value['createdDate'] === undefined) return false;
     if (!('role' in value) || value['role'] === undefined) return false;
     if (!('messageContext' in value) || value['messageContext'] === undefined) return false;
+    if (!('statusTopicsKeyValues' in value) || value['statusTopicsKeyValues'] === undefined) return false;
     return true;
 }
 
@@ -91,9 +119,12 @@ export function MessageFromJSONTyped(json: any, ignoreDiscriminator: boolean): M
         'messageId': json['messageId'],
         'sentByMemberId': json['sentByMemberId'],
         'messageText': json['messageText'],
+        'imageUrl': json['imageUrl'],
+        'toolCallsJson': json['toolCallsJson'],
         'createdDate': json['createdDate'],
         'role': json['role'],
         'messageContext': MessageContextFromJSON(json['messageContext']),
+        'statusTopicsKeyValues': (json['statusTopicsKeyValues'] == null ? null : mapValues(json['statusTopicsKeyValues'], StatusTopicFromJSON)),
     };
 }
 
@@ -111,9 +142,12 @@ export function MessageToJSONTyped(value?: Message | null, ignoreDiscriminator: 
         'messageId': value['messageId'],
         'sentByMemberId': value['sentByMemberId'],
         'messageText': value['messageText'],
+        'imageUrl': value['imageUrl'],
+        'toolCallsJson': value['toolCallsJson'],
         'createdDate': value['createdDate'],
         'role': value['role'],
         'messageContext': MessageContextToJSON(value['messageContext']),
+        'statusTopicsKeyValues': (value['statusTopicsKeyValues'] == null ? null : mapValues(value['statusTopicsKeyValues'], StatusTopicToJSON)),
     };
 }
 

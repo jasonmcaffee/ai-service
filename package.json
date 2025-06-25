@@ -19,7 +19,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "generate-client": "npx openapi-generator-cli generate -i src/openapi-spec.json -g typescript-fetch -o ./src/client/api-client --additional-properties=useSingleRequestParameter=false"
+    "generate-client": "npx openapi-generator-cli generate -i src/openapi-spec.json -g typescript-fetch -o ./src/client/api-client --additional-properties=useSingleRequestParameter=false",
+    "generate-ai-client-win": "npx openapi-generator-cli generate -i src/openapi-spec.json -g typescript-fetch -o ./src/client/api-client --additional-properties=useSingleRequestParameter=false"
   },
   "dependencies": {
     "@huggingface/hub": "^1.1.0",

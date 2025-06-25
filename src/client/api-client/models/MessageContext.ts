@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { ModelOrDatasource } from './ModelOrDatasource';
+import type { ModelOrDatasourceOrPromptOrAgent } from './ModelOrDatasourceOrPromptOrAgent';
 import {
-    ModelOrDatasourceFromJSON,
-    ModelOrDatasourceFromJSONTyped,
-    ModelOrDatasourceToJSON,
-    ModelOrDatasourceToJSONTyped,
-} from './ModelOrDatasource';
+    ModelOrDatasourceOrPromptOrAgentFromJSON,
+    ModelOrDatasourceOrPromptOrAgentFromJSONTyped,
+    ModelOrDatasourceOrPromptOrAgentToJSON,
+    ModelOrDatasourceOrPromptOrAgentToJSONTyped,
+} from './ModelOrDatasourceOrPromptOrAgent';
 
 /**
  * 
@@ -41,16 +41,28 @@ export interface MessageContext {
     originalText: string;
     /**
      * 
-     * @type {Array<ModelOrDatasource>}
+     * @type {Array<ModelOrDatasourceOrPromptOrAgent>}
      * @memberof MessageContext
      */
-    models: Array<ModelOrDatasource>;
+    models: Array<ModelOrDatasourceOrPromptOrAgent>;
     /**
      * 
-     * @type {Array<ModelOrDatasource>}
+     * @type {Array<ModelOrDatasourceOrPromptOrAgent>}
      * @memberof MessageContext
      */
-    datasources: Array<ModelOrDatasource>;
+    datasources: Array<ModelOrDatasourceOrPromptOrAgent>;
+    /**
+     * 
+     * @type {Array<ModelOrDatasourceOrPromptOrAgent>}
+     * @memberof MessageContext
+     */
+    prompts: Array<ModelOrDatasourceOrPromptOrAgent>;
+    /**
+     * 
+     * @type {Array<ModelOrDatasourceOrPromptOrAgent>}
+     * @memberof MessageContext
+     */
+    agents: Array<ModelOrDatasourceOrPromptOrAgent>;
 }
 
 /**
@@ -61,6 +73,8 @@ export function instanceOfMessageContext(value: object): value is MessageContext
     if (!('originalText' in value) || value['originalText'] === undefined) return false;
     if (!('models' in value) || value['models'] === undefined) return false;
     if (!('datasources' in value) || value['datasources'] === undefined) return false;
+    if (!('prompts' in value) || value['prompts'] === undefined) return false;
+    if (!('agents' in value) || value['agents'] === undefined) return false;
     return true;
 }
 
@@ -76,8 +90,10 @@ export function MessageContextFromJSONTyped(json: any, ignoreDiscriminator: bool
         
         'textWithoutTags': json['textWithoutTags'],
         'originalText': json['originalText'],
-        'models': ((json['models'] as Array<any>).map(ModelOrDatasourceFromJSON)),
-        'datasources': ((json['datasources'] as Array<any>).map(ModelOrDatasourceFromJSON)),
+        'models': ((json['models'] as Array<any>).map(ModelOrDatasourceOrPromptOrAgentFromJSON)),
+        'datasources': ((json['datasources'] as Array<any>).map(ModelOrDatasourceOrPromptOrAgentFromJSON)),
+        'prompts': ((json['prompts'] as Array<any>).map(ModelOrDatasourceOrPromptOrAgentFromJSON)),
+        'agents': ((json['agents'] as Array<any>).map(ModelOrDatasourceOrPromptOrAgentFromJSON)),
     };
 }
 
@@ -94,8 +110,10 @@ export function MessageContextToJSONTyped(value?: MessageContext | null, ignoreD
         
         'textWithoutTags': value['textWithoutTags'],
         'originalText': value['originalText'],
-        'models': ((value['models'] as Array<any>).map(ModelOrDatasourceToJSON)),
-        'datasources': ((value['datasources'] as Array<any>).map(ModelOrDatasourceToJSON)),
+        'models': ((value['models'] as Array<any>).map(ModelOrDatasourceOrPromptOrAgentToJSON)),
+        'datasources': ((value['datasources'] as Array<any>).map(ModelOrDatasourceOrPromptOrAgentToJSON)),
+        'prompts': ((value['prompts'] as Array<any>).map(ModelOrDatasourceOrPromptOrAgentToJSON)),
+        'agents': ((value['agents'] as Array<any>).map(ModelOrDatasourceOrPromptOrAgentToJSON)),
     };
 }
 

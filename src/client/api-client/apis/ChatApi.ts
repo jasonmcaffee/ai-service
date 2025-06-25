@@ -14,17 +14,89 @@
 
 
 import * as runtime from '../runtime';
+import type {
+  AiStatusUpdate,
+  StatusTopicKeyValuesResponse,
+} from '../models/index';
+import {
+    AiStatusUpdateFromJSON,
+    AiStatusUpdateToJSON,
+    StatusTopicKeyValuesResponseFromJSON,
+    StatusTopicKeyValuesResponseToJSON,
+} from '../models/index';
 
 export interface StreamInferenceRequest {
     prompt: string;
+    shouldSearchWeb: boolean;
+    shouldUsePlanTool: boolean;
+    shouldRespondWithAudio: boolean;
+    textToSpeechSpeed: number;
+    shouldUseAgentOfAgents: boolean;
+    temperature: number;
+    topP: number;
+    frequencyPenalty: number;
+    presencePenalty: number;
     conversationId?: string;
     modelId?: string;
+    imageUrl?: string;
 }
 
 /**
  * 
  */
 export class ChatApi extends runtime.BaseAPI {
+
+    /**
+     * get status topic map
+     */
+    async getStatusTopicMapRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<StatusTopicKeyValuesResponse>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/chat/statusTopicMap`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => StatusTopicKeyValuesResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * get status topic map
+     */
+    async getStatusTopicMap(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<StatusTopicKeyValuesResponse> {
+        const response = await this.getStatusTopicMapRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * get statuses
+     */
+    async getStatusUpdatesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<AiStatusUpdate>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/chat/aiStatusUpdates`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(AiStatusUpdateFromJSON));
+    }
+
+    /**
+     * get statuses
+     */
+    async getStatusUpdates(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<AiStatusUpdate>> {
+        const response = await this.getStatusUpdatesRaw(initOverrides);
+        return await response.value();
+    }
 
     /**
      * stop the current stream for a member
@@ -62,6 +134,69 @@ export class ChatApi extends runtime.BaseAPI {
             );
         }
 
+        if (requestParameters['shouldSearchWeb'] == null) {
+            throw new runtime.RequiredError(
+                'shouldSearchWeb',
+                'Required parameter "shouldSearchWeb" was null or undefined when calling streamInference().'
+            );
+        }
+
+        if (requestParameters['shouldUsePlanTool'] == null) {
+            throw new runtime.RequiredError(
+                'shouldUsePlanTool',
+                'Required parameter "shouldUsePlanTool" was null or undefined when calling streamInference().'
+            );
+        }
+
+        if (requestParameters['shouldRespondWithAudio'] == null) {
+            throw new runtime.RequiredError(
+                'shouldRespondWithAudio',
+                'Required parameter "shouldRespondWithAudio" was null or undefined when calling streamInference().'
+            );
+        }
+
+        if (requestParameters['textToSpeechSpeed'] == null) {
+            throw new runtime.RequiredError(
+                'textToSpeechSpeed',
+                'Required parameter "textToSpeechSpeed" was null or undefined when calling streamInference().'
+            );
+        }
+
+        if (requestParameters['shouldUseAgentOfAgents'] == null) {
+            throw new runtime.RequiredError(
+                'shouldUseAgentOfAgents',
+                'Required parameter "shouldUseAgentOfAgents" was null or undefined when calling streamInference().'
+            );
+        }
+
+        if (requestParameters['temperature'] == null) {
+            throw new runtime.RequiredError(
+                'temperature',
+                'Required parameter "temperature" was null or undefined when calling streamInference().'
+            );
+        }
+
+        if (requestParameters['topP'] == null) {
+            throw new runtime.RequiredError(
+                'topP',
+                'Required parameter "topP" was null or undefined when calling streamInference().'
+            );
+        }
+
+        if (requestParameters['frequencyPenalty'] == null) {
+            throw new runtime.RequiredError(
+                'frequencyPenalty',
+                'Required parameter "frequencyPenalty" was null or undefined when calling streamInference().'
+            );
+        }
+
+        if (requestParameters['presencePenalty'] == null) {
+            throw new runtime.RequiredError(
+                'presencePenalty',
+                'Required parameter "presencePenalty" was null or undefined when calling streamInference().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['prompt'] != null) {
@@ -74,6 +209,46 @@ export class ChatApi extends runtime.BaseAPI {
 
         if (requestParameters['modelId'] != null) {
             queryParameters['modelId'] = requestParameters['modelId'];
+        }
+
+        if (requestParameters['shouldSearchWeb'] != null) {
+            queryParameters['shouldSearchWeb'] = requestParameters['shouldSearchWeb'];
+        }
+
+        if (requestParameters['shouldUsePlanTool'] != null) {
+            queryParameters['shouldUsePlanTool'] = requestParameters['shouldUsePlanTool'];
+        }
+
+        if (requestParameters['shouldRespondWithAudio'] != null) {
+            queryParameters['shouldRespondWithAudio'] = requestParameters['shouldRespondWithAudio'];
+        }
+
+        if (requestParameters['textToSpeechSpeed'] != null) {
+            queryParameters['textToSpeechSpeed'] = requestParameters['textToSpeechSpeed'];
+        }
+
+        if (requestParameters['shouldUseAgentOfAgents'] != null) {
+            queryParameters['shouldUseAgentOfAgents'] = requestParameters['shouldUseAgentOfAgents'];
+        }
+
+        if (requestParameters['temperature'] != null) {
+            queryParameters['temperature'] = requestParameters['temperature'];
+        }
+
+        if (requestParameters['topP'] != null) {
+            queryParameters['top_p'] = requestParameters['topP'];
+        }
+
+        if (requestParameters['frequencyPenalty'] != null) {
+            queryParameters['frequency_penalty'] = requestParameters['frequencyPenalty'];
+        }
+
+        if (requestParameters['presencePenalty'] != null) {
+            queryParameters['presence_penalty'] = requestParameters['presencePenalty'];
+        }
+
+        if (requestParameters['imageUrl'] != null) {
+            queryParameters['imageUrl'] = requestParameters['imageUrl'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -95,8 +270,8 @@ export class ChatApi extends runtime.BaseAPI {
     /**
      * Stream a message based on a prompt
      */
-    async streamInference(prompt: string, conversationId?: string, modelId?: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
-        const response = await this.streamInferenceRaw({ prompt: prompt, conversationId: conversationId, modelId: modelId }, initOverrides);
+    async streamInference(prompt: string, shouldSearchWeb: boolean, shouldUsePlanTool: boolean, shouldRespondWithAudio: boolean, textToSpeechSpeed: number, shouldUseAgentOfAgents: boolean, temperature: number, topP: number, frequencyPenalty: number, presencePenalty: number, conversationId?: string, modelId?: string, imageUrl?: string, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.streamInferenceRaw({ prompt: prompt, shouldSearchWeb: shouldSearchWeb, shouldUsePlanTool: shouldUsePlanTool, shouldRespondWithAudio: shouldRespondWithAudio, textToSpeechSpeed: textToSpeechSpeed, shouldUseAgentOfAgents: shouldUseAgentOfAgents, temperature: temperature, topP: topP, frequencyPenalty: frequencyPenalty, presencePenalty: presencePenalty, conversationId: conversationId, modelId: modelId, imageUrl: imageUrl }, initOverrides);
         return await response.value();
     }
 
