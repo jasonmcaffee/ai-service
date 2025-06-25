@@ -40,17 +40,6 @@ This plan outlines the implementation of a WebSocket version of the `streamInfer
 - [ ] Call existing `ChatService.streamInference` method
 - [ ] Subscribe to the returned Observable and forward events to WebSocket client
 
-#### 1.3 Create WebSocket Subject Adapter
-**File**: `src/models/InferenceWebSocketSubject.ts`
-
-**Tasks**:
-- [ ] Create new class extending or implementing `IEmitAudioSSESubject`
-- [ ] Implement all required methods: `sendText`, `sendAudio`, `sendTextComplete`, `sendAudioComplete`, etc.
-- [ ] Add WebSocket client reference for sending messages
-- [ ] Implement message formatting to match SSE JSON structure
-- [ ] Add error handling and connection state management
-- [ ] Ensure proper cleanup on completion or error
-
 ### Phase 2: Update Client Implementation
 
 #### 2.1 Add WebSocket Client Method

@@ -113,7 +113,7 @@ export class SpeechAudioService {
         const processingTime = Date.now() - start;
         console.log(`Speech generation finished in ${processingTime} ms`);
 
-        subject.sendAudio(base64Audio);
+        subject.sendAudio(base64Audio, sentence);
         // subject.sendCompleteOnNextTick();
       } catch (error) {
         if (!abortController.signal.aborted) {

@@ -19,7 +19,7 @@ import { AIServiceStreamingChat } from '../client/AIServiceStreamingChat';
 // console.log(`EventSource is `, EventSource);
 
 describe('Client Tests', () => {
-  const apiConfig = new Configuration({basePath: 'http://192.168.0.157:3000'});
+  const apiConfig = new Configuration({basePath: 'http://localhost:3000'});
 
   describe('Chat with SSE', () => {
     const conversationApi = new ConversationApi(apiConfig);
@@ -56,6 +56,72 @@ describe('Client Tests', () => {
       await promise;
     }, 15000);
 
+
+  });
+
+  describe('Chat with WebSocket', () => {
+    const conversationApi = new ConversationApi(apiConfig);
+    const aiServiceStreamingChat = new AIServiceStreamingChat(apiConfig);
+
+    it('should connect to WebSocket', async ()=> {
+      // Simple connection test without requiring chat functionality
+      const socket = require('socket.io-client');
+      const clientSocket = socket('http://localhost:3000/chat', {
+        path: '/socket.io',
+        transports: ['websocket'],
+        timeout: 5000,
+      });
+
+      return new Promise<void>((resolve, reject) => {
+        clientSocket.on('connect', () => {
+          console.log('WebSocket connection test successful');
+          clientSocket.disconnect();
+          resolve();
+        });
+
+        clientSocket.on('connect_error', (error: any) => {
+          console.error('WebSocket connection test failed:', error);
+          reject(error);
+        });
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          clientSocket.disconnect();
+          reject(new Error('WebSocket connection test timeout'));
+        }, 5000);
+      });
+    }, 10000);
+
+    it('should chat', async ()=> {
+      const createdConversation = await conversationApi.createConversation({conversationName: 'test'});
+      const conversationId = createdConversation.conversationId;
+
+      let resolve, reject;
+      const promise = new Promise((resolveP, rejectP) => {
+        resolve = resolveP;
+        reject = rejectP;
+      });
+
+      const onTextReceivedCallback = (text: string) => {
+      };
+      const onResponseCompleteCallback = (text: string) => {
+        expect(text.length > 0).toBe(true);
+        console.log('received complete text: ', text);
+        resolve();
+      };
+      const onStatusUpdatesReceivedCallback = (s: StatusTopicKeyValuesResponse) => {};
+      const onAudioReceived = async (audioBlob: Blob)=> {};
+      const onAudioCompleteCallback = () => {};
+
+      const request: StreamInferenceRequest = {
+        prompt: 'hello', conversationId,
+        shouldSearchWeb: false, shouldRespondWithAudio: false, shouldUseAgentOfAgents: false, shouldUsePlanTool: false,
+        textToSpeechSpeed: 1, temperature: 1, topP: 0.9, frequencyPenalty: 1, presencePenalty: 0, imageUrl: undefined,
+      };
+      await aiServiceStreamingChat.streamInferenceWS(request, onTextReceivedCallback, onResponseCompleteCallback, onStatusUpdatesReceivedCallback, onAudioReceived, onAudioCompleteCallback);
+
+      await promise;
+    }, 15000);
 
   });
 
