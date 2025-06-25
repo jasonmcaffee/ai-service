@@ -39,7 +39,12 @@ export function createOpenAIMessagesFromMessages(messages: Message[]){
         console.error(`couldn't parse tool content`, e);
       }
     }
-    return { role: m.role, content, tool_calls, tool_call_id} as ChatCompletionMessageParam;
+    if(!m.imageUrl){
+      return { role: m.role, content, tool_calls, tool_call_id} as ChatCompletionMessageParam;
+    }else{
+      return { role: m.role, content: [{type: 'text', text: content}, {type:'image_url', image_url: { url: m.imageUrl}}], tool_calls, tool_call_id} as ChatCompletionMessageParam;
+    }
+
   });
 }
 

@@ -21,6 +21,7 @@ import { StreamInferenceRequest } from '../client/api-client';
   },
   namespace: '/chat', // Define the namespace
   path: '/socket.io', // Use the default Socket.io path
+  maxHttpBufferSize: 10e6,
 })
 export class ChatGateway
   implements OnGatewayConnection, OnGatewayDisconnect
