@@ -1,8 +1,47 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {Configuration, ConversationApi, DatasourcesApi, Datasource, Document, ModelsApi} from '../client/api-client';
+import {
+  Configuration,
+  ConversationApi,
+  DatasourcesApi,
+  Datasource,
+  Document,
+  ModelsApi,
+  StreamInferenceRequest, StatusTopicKeyValuesResponse,
+} from '../client/api-client';
+import { AIServiceStreamingChat } from '../client/AIServiceStreamingChat';
 
 describe('Client Tests', () => {
   const apiConfig = new Configuration({basePath: 'http://localhost:3000'});
+
+  describe('Chat with SSE', () => {
+    const aiServiceStreamingChat = new AIServiceStreamingChat(apiConfig);
+    it('should chat', async ()=> {
+      const request: StreamInferenceRequest = {
+        prompt: 'hello',
+        shouldSearchWeb: false, shouldRespondWithAudio: false, shouldUseAgentOfAgents: false, shouldUsePlanTool: false,
+        textToSpeechSpeed: 1, temperature: 1, topP: 0.9, frequencyPenalty: 1, presencePenalty: 0,
+      };
+      const onTextReceivedCallback = (text: string) => {
+
+      };
+      const onResponseCompleteCallback = (text: string) => {
+
+      };
+      const onStatusUpdatesReceivedCallback = (s: StatusTopicKeyValuesResponse) => {
+
+      };
+
+      const onAudioReceived = async (audioBlob: Blob)=> {
+
+      };
+      const onAudioCompleteCallback = () => {
+
+      };
+      aiServiceStreamingChat.streamInferenceSSE(request, onTextReceivedCallback, onResponseCompleteCallback, onStatusUpdatesReceivedCallback, onAudioReceived, onAudioCompleteCallback);
+    });
+
+
+  });
 
   describe('Conversation', ()=>{
     const api = new ConversationApi(apiConfig);

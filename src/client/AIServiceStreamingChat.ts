@@ -19,13 +19,13 @@ export function base64ToAudioBlob(base64: string, mimeType: string) {
   return new Blob(byteArrays, { type: mimeType });
 }
 
-const clientConfig = new Configuration({basePath: 'http://localhost:3000'});
+// const clientConfig = new Configuration({basePath: 'http://localhost:3000'});
 
 /**
  * We have to implement a custom ChatApi that uses SSE EventSource, since openAPI doesn't support generating clients with SSE.
  */
 export class AIServiceStreamingChat extends ChatApi {
-  constructor() {
+  constructor(clientConfig: Configuration) {
     super(clientConfig);
   }
 
