@@ -42,16 +42,9 @@ describe('Client Tests', () => {
         console.log('received complete text: ', text);
         resolve();
       };
-      const onStatusUpdatesReceivedCallback = (s: StatusTopicKeyValuesResponse) => {
-
-      };
-
-      const onAudioReceived = async (audioBlob: Blob)=> {
-
-      };
-      const onAudioCompleteCallback = () => {
-
-      };
+      const onStatusUpdatesReceivedCallback = (s: StatusTopicKeyValuesResponse) => {};
+      const onAudioReceived = async (audioBlob: Blob)=> {};
+      const onAudioCompleteCallback = () => {};
 
       const request: StreamInferenceRequest = {
         prompt: 'hello', conversationId,
