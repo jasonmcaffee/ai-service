@@ -127,7 +127,7 @@ export class Message {
   @ApiProperty({nullable: true})
   messageText: string;
   @ApiProperty({nullable: true})
-  imageUrl: string | undefined;
+  imageUrl?: string;
   @ApiProperty({nullable: true})
   toolCallsJson: string | undefined;
   @ApiProperty()

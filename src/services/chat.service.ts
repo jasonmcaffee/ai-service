@@ -66,7 +66,8 @@ export class ChatService {
    * @param modelId
    * @param shouldSearchWeb
    */
-  async streamInference(prompt: string, memberId: string, conversationId: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false, shouldRespondWithAudio = false, textToSpeechSpeed = 1, shouldUseAgentOfAgents = false, temperature = 0.7, top_p = 1, frequency_penalty = 0, presence_penalty = 0, imageUrl: string | undefined = undefined): Promise<Observable<string>> {
+  async streamInference(prompt: string, memberId: string, conversationId: string, modelId?: string, shouldSearchWeb = false, shouldUsePlanTool = false, shouldRespondWithAudio = false, textToSpeechSpeed = 1,
+                        shouldUseAgentOfAgents = false, temperature = 0.7, top_p = 1, frequency_penalty = 0, presence_penalty = 0, imageUrl: string | undefined = undefined): Promise<Observable<string>> {
     console.log(`streamInference called. shouldSearchWeb: ${shouldSearchWeb}`);
     const messageContext = extractMessageContextFromMessage(prompt);
     const model = await this.getModelToUseForMessage(memberId, messageContext, modelId);

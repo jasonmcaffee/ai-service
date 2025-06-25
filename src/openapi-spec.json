@@ -115,7 +115,7 @@
           },
           {
             "name": "imageUrl",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Image url to be used for vision.  Should be data base64 string",
             "schema": {
@@ -2299,7 +2299,7 @@
             "nullable": true
           },
           "imageUrl": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "toolCallsJson": {
