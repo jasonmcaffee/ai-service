@@ -61,7 +61,7 @@ export class AIServiceStreamingChat extends ChatApi {
       top_p: request.topP.toString(),
       frequency_penalty: request.frequencyPenalty.toString(),
       presence_penalty: request.presencePenalty.toString(),
-      imageUrl: request.imageUrl? encodeURIComponent(request.imageUrl) : '',
+      imageUrl: request.imageUrl? request.imageUrl : '',
     }).toString();
 
     const url = `${this.configuration.basePath}/chat/streamInference?${params}`;
