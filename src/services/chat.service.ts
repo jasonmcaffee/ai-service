@@ -126,13 +126,13 @@ export class ChatService {
 
     let openAiMessages: ChatCompletionMessageParam[] = [
       { role: 'system', content: shouldRespondWithAudio ? getChatPageSystemPromptForAudioResponse() :  getChatPageSystemPromptForMarkdownResponse()},
-      ...createOpenAIMessagesFromMessages(conversation.messages!)
+      ... await createOpenAIMessagesFromMessages(conversation.messages!)
     ];
 
     if(model.initialMessage){
       const modelInitialMessage = {messageText: model.initialMessage, sentByMemberId: model.id.toString(), messageId: '', createdDate: '', role: 'system', toolCallsJson: undefined, imageUrl: undefined};
       openAiMessages = [
-        ...createOpenAIMessagesFromMessages([modelInitialMessage]), //we say that the model message is before that chat message...
+        ... await createOpenAIMessagesFromMessages([modelInitialMessage]), //we say that the model message is before that chat message...
         ...openAiMessages
       ]
     }

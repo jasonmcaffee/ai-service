@@ -4,6 +4,8 @@ import {
   ModelOrDatasourceOrPromptOrAgent,
   StatusUpdateTopicType,
 } from '../models/api/conversationApiModels';
+import * as sharp from 'sharp';
+
 // import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { Observable } from 'rxjs';
@@ -16,36 +18,6 @@ import { AiFunctionContextV2 } from '../models/agent/aiTypes';
 
 export function uuid(){
   return uuidv4();
-}
-
-export function createOpenAIMessagesFromMessages(messages: Message[]){
-  return messages.map((m) => {
-    let content = m.messageText;
-    let tool_calls = undefined;
-    let tool_call_id = undefined;
-    if(m.role === 'assistant' && m.toolCallsJson){
-      try{
-        tool_calls = JSON.parse(m.toolCallsJson);
-      }catch(e){
-        console.error(`couldn't parse tool calls`, e);
-      }
-    }
-    if(m.role == 'tool'){
-      try{
-        const toolContent = JSON.parse(m.messageText);
-        content = toolContent.content;
-        tool_call_id = toolContent.tool_call_id;
-      }catch(e){
-        console.error(`couldn't parse tool content`, e);
-      }
-    }
-    if(!m.imageUrl){
-      return { role: m.role, content, tool_calls, tool_call_id} as ChatCompletionMessageParam;
-    }else{
-      return { role: m.role, content: [{type: 'text', text: content}, {type:'image_url', image_url: { url: m.imageUrl}}], tool_calls, tool_call_id} as ChatCompletionMessageParam;
-    }
-
-  });
 }
 
 export function removeThinkTagFromLLMResponse(llmResponse: string): string {
@@ -287,119 +259,75 @@ export async function withStatus<TResult>(func:  (sendStatus: (text: string, dat
     throw e;
   }
 }
-// export function convertMarkdownToPlainText(markdown: string): string {
-//   // Initialize the marked lexer to tokenize markdown
-//   const tokens = marked.lexer(markdown);
-//   // Process tokens and convert to plain text
-//   let plainText = processTokens(tokens);
-//   plainText = plainText.replace(/\*\*/g, ''); // Remove bold markers
-//   plainText = plainText.replace(/\*/g, '');   // Remove italic markers
-//   plainText = plainText.replace(/\_\_/g, ''); // Remove alternate bold markers
-//   plainText = plainText.replace(/\_/g, '');   // Remove alternate italic markers
-//   plainText = plainText.replace(/\`/g, '');   // Remove code markers
-//   // Handle any remaining HTML entities
-//   plainText = htmlDecode(plainText);
-//   return plainText;
-// }
-//
-// const htmlDecode = (input) => {
-//   return input ? he.decode(input) : "";
-// };
-// /**
-//  * Process an array of tokens and convert to plain text
-//  */
-// function processTokens(tokens: any[]): string {
-//   let result = '';
-//   for (const token of tokens) {
-//     result += processToken(token);
-//   }
-//   return result.trim();
-// }
-//
-// /**
-//  * Process a single token and convert to plain text
-//  */
-// function processToken(token: any): string {
-//   switch (token.type) {
-//     case 'paragraph':
-//       return processTokens(token.tokens) + '\n\n';
-//     case 'heading':
-//       return processTokens(token.tokens) + '.\n\n';
-//     case 'text':
-//       // Replace HTML entities in the text
-//       return htmlDecode(token.text);
-//     case 'strong':
-//       return processTokens(token.tokens);
-//     case 'em':
-//       return processTokens(token.tokens);
-//     case 'codespan':
-//       return token.text + ' ';
-//     case 'code':
-//       return `The following is code: ${token.text}\n\n`;
-//     case 'link':
-//       return processTokens(token.tokens);
-//     case 'image':
-//       return `Image: ${token.text}. `;
-//     case 'list': {
-//       let listText = '\n';
-//       for (let i = 0; i < token.items.length; i++) {
-//         if (token.ordered) {
-//           listText += `${i + 1}. ${processToken(token.items[i])}\n`;
-//         } else {
-//           listText += `• ${processToken(token.items[i])}\n`;
-//         }
-//       }
-//       return listText + '\n';
-//     }
-//     case 'list_item':
-//       return processTokens(token.tokens).trim();
-//     case 'blockquote':
-//       return `Quote: ${processTokens(token.tokens)}\n\n`;
-//     case 'hr':
-//       return '\n\n';
-//     case 'html':
-//       return '';
-//     case 'table': {
-//       let tableText = '\n';
-//       if (token.header && token.header.length > 0) {
-//         for (const cell of token.header) {
-//           tableText += processTokens(cell.tokens) + '. ';
-//         }
-//         tableText += '\n';
-//       }
-//       for (const row of token.rows) {
-//         for (const cell of row) {
-//           tableText += processTokens(cell.tokens) + '. ';
-//         }
-//         tableText += '\n';
-//       }
-//       return tableText + '\n';
-//     }
-//     case 'del':
-//       return processTokens(token.tokens);
-//     case 'space':
-//       return '\n\n';
-//     default:
-//       if (token.tokens) {
-//         return processTokens(token.tokens);
-//       }
-//       if (token.items) {
-//         let result = '';
-//         for (const item of token.items) {
-//           result += processToken(item);
-//         }
-//         return result;
-//       }
-//       return token.raw || '';
-//   }
-// }
 
 
 
-// export async function createObserver(){
-//   return new Promise((resolve) => {
-//     new Observable((observer) => {
-//       resolve(observer);
-//     })
-//   })
-// }
+export async function createOpenAIMessagesFromMessages(messages: Message[]){
+  const newMessages = [] as ChatCompletionMessageParam[];
+  let newMessage: ChatCompletionMessageParam;
+  for(let m of messages){
+    let content = m.messageText;
+    let tool_calls = undefined;
+    let tool_call_id = undefined;
+    if(m.role === 'assistant' && m.toolCallsJson){
+      try{
+        tool_calls = JSON.parse(m.toolCallsJson);
+      }catch(e){
+        console.error(`couldn't parse tool calls`, e);
+      }
+    }
+    if(m.role == 'tool'){
+      try{
+        const toolContent = JSON.parse(m.messageText);
+        content = toolContent.content;
+        tool_call_id = toolContent.tool_call_id;
+      }catch(e){
+        console.error(`couldn't parse tool content`, e);
+      }
+    }
+    if(!m.imageUrl){
+      newMessage = { role: m.role, content, tool_calls, tool_call_id} as ChatCompletionMessageParam;
+    }else{
+      const startTime = Date.now();
+      const compressedImageUrl = await compressBase64Image(m.imageUrl, 50, 'jpeg');
+      console.log(`image compressed in ${Date.now() - startTime} ms.  orig: ${m.imageUrl.length}, new: ${compressedImageUrl.length}`);
+      newMessage = { role: m.role, content: [{type: 'text', text: content}, {type:'image_url', image_url: { url: compressedImageUrl}}], tool_calls, tool_call_id} as ChatCompletionMessageParam;
+    }
+    newMessages.push(newMessage);
+  }
+  return newMessages;
+}
+
+export async function compressBase64Image(base64Image: string, quality: number = 80, format: 'jpeg' | 'webp' | 'png' = 'jpeg'): Promise<string> {
+  try {
+    const base64Data = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+    const inputBuffer = Buffer.from(base64Data, 'base64');
+    let sharpInstance = sharp(inputBuffer);
+    let outputBuffer: Buffer;
+
+    switch (format) {
+      case 'jpeg':
+        outputBuffer = await sharpInstance.jpeg({ quality, progressive: true }).toBuffer();
+        break;
+
+      case 'webp':
+        outputBuffer = await sharpInstance.webp({ quality }).toBuffer();
+        break;
+
+      case 'png':
+        // PNG compression works differently - use compressionLevel instead of quality
+        const compressionLevel = Math.round((100 - quality) / 10); // Convert quality to compression level (0-9)
+        outputBuffer = await sharpInstance.png({ compressionLevel: Math.min(9, Math.max(0, compressionLevel)) }).toBuffer();
+        break;
+      default:
+        throw new Error(`Unsupported format: ${format}`);
+    }
+
+    // Convert back to base64
+    const compressedBase64 = outputBuffer.toString('base64');
+    const result = `data:image/${format};base64,${compressedBase64}`;
+    return result;
+  } catch (error) {
+    throw new Error(`Failed to compress image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
