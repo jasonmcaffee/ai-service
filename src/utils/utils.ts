@@ -291,7 +291,10 @@ export async function createOpenAIMessagesFromMessages(messages: Message[]){
       const startTime = Date.now();
       const compressedImageUrl = await compressBase64Image(m.imageUrl, 50, 'jpeg');
       console.log(`image compressed in ${Date.now() - startTime} ms.  orig: ${m.imageUrl.length}, new: ${compressedImageUrl.length}`);
-      newMessage = { role: m.role, content: [{type: 'text', text: content}, {type:'image_url', image_url: { url: compressedImageUrl}}], tool_calls, tool_call_id} as ChatCompletionMessageParam;
+      newMessage = { role: m.role, content: [
+          {type: 'text', text: content},
+          {type:'image_url', image_url: { url: compressedImageUrl}}
+        ], tool_calls, tool_call_id} as ChatCompletionMessageParam;
     }
     newMessages.push(newMessage);
   }
