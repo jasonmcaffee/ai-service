@@ -6,7 +6,6 @@ import {
 } from '../models/api/conversationApiModels';
 import * as sharp from 'sharp';
 
-// import { ChatCompletionMessageParam } from 'openai/src/resources/chat/completions';
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { Observable } from 'rxjs';
 import { encoding_for_model } from 'tiktoken';

@@ -26,7 +26,7 @@ import { ModelParams } from '../models/agent/aiTypes';
 import { WebPageAgent } from './agent/agents/webPageAgent.service';
 import { Agent } from './agent/agents/Agent';
 import { ChatAudioService } from './chatAudio.service';
-import { ChatCompletionAssistantMessageParam } from 'openai/src/resources/chat/completions';
+import { ChatCompletionAssistantMessageParam } from 'openai/resources/chat/completions';
 
 type AiStrategyParams = {
   memberId: string,
