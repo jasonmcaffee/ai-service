@@ -19,7 +19,7 @@ import { StreamInferenceRequest } from '../client/api-client';
   cors: {
     origin: '*', // Adjust for production!
   },
-  namespace: '/chat', // Define the namespace
+  // namespace: ['/chat', '/'], // Allow both /chat namespace and root namespace
   path: '/socket.io', // Use the default Socket.io path
   maxHttpBufferSize: 10e6,
 })
