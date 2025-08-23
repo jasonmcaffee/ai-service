@@ -10,7 +10,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "buy-rtx": "nest build && node ./dist/crawler/services/BestBuyScraperV2.service.js",
     "start": "set PORT=8081&&nest start",
-    "start:dev": "set PORT=8081&&nest start --watch",
+    "start:dev": "set PORT=8091&&nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "set PORT=8081&&node dist/main",
     "deploy-prod": "powershell -ExecutionPolicy Bypass -File deploy-prod.ps1",
