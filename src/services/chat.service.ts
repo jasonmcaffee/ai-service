@@ -242,7 +242,7 @@ export class ChatService {
       totalOpenAiCallsMade: 0,
     });
     promise.then(async ({ completeText, openAiMessages }) => {
-      inferenceSSESubject.sendText(completeText);
+      // inferenceSSESubject.sendText(completeText);
       await handleCompletedResponseText(completeText, openAiMessages);
     });
     promise.catch(async e => {
@@ -264,7 +264,7 @@ export class ChatService {
         throw new Error(`unknown agent id: ${agent.id}`);
       }
       const completeText = await selectedAgent.handlePrompt(messageContext.textWithoutTags, aiFunctionContext);
-      inferenceSSESubject.sendText(completeText);
+      // inferenceSSESubject.sendText(completeText);
       await handleCompletedResponseText(completeText, []);
     }catch(e){
       await handleError(e);
@@ -289,7 +289,7 @@ export class ChatService {
       totalOpenAiCallsMade: 0,
     });
     promise.then(async ({ completeText, openAiMessages }) => {
-      inferenceSSESubject.sendText(completeText);
+      // inferenceSSESubject.sendText(completeText);
       await handleCompletedResponseText(completeText, openAiMessages);
     });
     promise.catch(async e => {

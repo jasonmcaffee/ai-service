@@ -85,6 +85,7 @@ export class SpeechAudioController {
     @Query('responseFormat') responseFormat = 'mp3', @Query('speed') speed = 1,): Promise<Observable<any>> {
     const memberId = this.authenticationService.getMemberId();
     const subject = new SpeechAudioSSESubject();
+    console.log(`text to speech streaming called with text: ${text}`);
     await this.speechAudioService.textToSpeechStreaming(subject, memberId, text, model, voice, responseFormat, Number(speed));
     return subject.getSubject();
   }
