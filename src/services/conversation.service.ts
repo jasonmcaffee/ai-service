@@ -31,6 +31,7 @@ export class ConversationService {
    * @param includeDocumentsAsMessages - useful for chat interactions, where we want to send docs as messages.  not useful when painting the screen with messages, as we don't want to show these.
    */
   async getConversation(memberId: string, conversationId: string, includeDocumentsAsMessages = false): Promise<Conversation | undefined> {
+    // console.log(`get conversation called for conversation id: ${conversationId}`);
     await this.ensureMemberOwnsConversation(memberId, conversationId);
     const conversation = await this.conversationsRepository.getConversation(conversationId);
     if(!conversation){ return undefined; }

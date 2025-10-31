@@ -149,11 +149,13 @@ export class ChatService {
       }
 
       this.abortControllers.delete(memberId);
+      console.log(`sending complete inference to the client`);
       inferenceSSESubject.sendTextCompleteOnNextTick();
     }
 
 
     const onOpenAiMessagesAdded: OnOpenAiMessagesAdded = async ({openAiMessages}) => {
+      // console.log(`onOpenAiMessageAdded fired, so adding message to the db...`);
       for(let m of openAiMessages){
         if(m.role === 'assistant'){
           const assistantMessage = m as ChatCompletionAssistantMessageParam;
@@ -168,6 +170,7 @@ export class ChatService {
           await this.conversationService.addMessageToConversation(model.id, conversationId, {messageText, role: m.role, statusTopicsKeyValues: undefined, toolCallsJson: undefined, imageUrl: undefined}, false);
         }
       }
+      // console.log(`onOpenAiMessageAdded finished writing message to the db.`, openAiMessages);
     }
 
     const handleError = async (e: any) => {
