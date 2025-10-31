@@ -7,7 +7,7 @@ import { Observable } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 import { SpeechAudioSSESubject } from '../models/SpeechAudioSSESubject';
 import { marked } from "marked";
-import { splitTextIntoSentences } from '../utils/utils';
+import { splitTextIntoSentencesV2 } from '../utils/utils';
 import { IEmitAudioSSESubject } from '../models/IEmitAudioSSESubject';
 
 type ActiveProcessContext = {
@@ -124,7 +124,7 @@ export class SpeechAudioService {
     };
 
     const generate = async (text: string) => {
-      const sentences = splitTextIntoSentences(text);
+      const sentences = splitTextIntoSentencesV2(text);
       for(let s of sentences){
         if(abortController.signal.aborted){
           break;

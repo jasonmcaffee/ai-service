@@ -114,26 +114,203 @@ export function getTodaysDate(){
   return formattedDate;
 }
 
-export function splitTextIntoSentences(text: string, maxWordsPerSentence = 50): string[] {
-  const sentenceRegex = /[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g;
-  const sentences = text.match(sentenceRegex) || [];
+// export function splitTextIntoSentences(text: string, maxWordsPerSentence = 50): string[] {
+//   const sentenceRegex = /[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g;
+//   const sentences = text.match(sentenceRegex) || [];
+//   const result: string[] = [];
+//   for(let sentence of sentences){
+//     let words = sentence.split(" ");
+//     if(words.length >= maxWordsPerSentence){
+//       while(words.length > maxWordsPerSentence){
+//         const nextSentenceWords = words.splice(0, maxWordsPerSentence);
+//         const nextSentence = nextSentenceWords.join(" ");
+//         result.push(nextSentence);
+//   }
+//       const nextSentenceWords = words.splice(0, maxWordsPerSentence);
+//       const nextSentence = nextSentenceWords.join(" ");
+//       result.push(nextSentence);
+//     }else{
+//       result.push(sentence);
+//     }
+//   }
+//   return result;
+// }
+
+export function splitTextIntoSentencesV2(text: string, maxWordsPerSentence = 50): string[] {
+  if (!text || text.trim().length === 0) {
+    return [];
+  }
+
+  // Common abbreviations that shouldn't end sentences (with and without periods)
+  const abbreviations = new Set([
+    'mr', 'mrs', 'ms', 'dr', 'prof', 'sr', 'jr', 'vs', 'etc', 'viz', 'i.e', 'e.g', 'ie', 'eg',
+    'am', 'pm', 'a.m', 'p.m', 'ad', 'bc', 'b.c', 'a.d',
+    'no', 'nos', 'vol', 'pp', 'ed', 'eds', 'rev', 'approx', 'est', 'min', 'max',
+    'inc', 'ltd', 'corp', 'co', 'llc', 'st', 'ave', 'blvd', 'rd',
+    'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+    'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun',
+    'u.s', 'u.k', 'u.n', 'e.u', 'usa', 'nato', 'fbi', 'cia', 'irs', 'fda', 'epa',
+    'ph.d', 'm.d', 'b.a', 'm.a', 'b.s', 'm.s', 'phd', 'md', 'ba', 'ma', 'bs', 'ms'
+  ]);
+
+  const sentences: string[] = [];
+  let currentSentence = '';
+  let i = 0;
+
+  while (i < text.length) {
+    const char = text[i];
+    const nextChar = i + 1 < text.length ? text[i + 1] : '';
+    const prevChar = i > 0 ? text[i - 1] : '';
+
+    currentSentence += char;
+
+    // Check for sentence-ending punctuation
+    if (char === '.' || char === '!' || char === '?') {
+      let isEndOfSentence = false;
+
+      // Handle ellipsis - skip first two dots, but third dot can end sentence
+      if (char === '.' && (prevChar === '.' || nextChar === '.')) {
+        // Check if this is the third dot (prevChar is '.') and should split
+        if (prevChar === '.' && /\s/.test(nextChar)) {
+          const afterWhitespace = text.slice(i + 1).trim();
+          const firstCharAfter = afterWhitespace[0] || '';
+          if (firstCharAfter && /[A-Z]/.test(firstCharAfter)) {
+            // Third dot of ellipsis followed by capital - end of sentence
+            // Continue processing this dot as sentence end
+          } else {
+            // Ellipsis in middle - skip this dot
+            i++;
+            continue;
+          }
+        } else {
+          // Still part of ellipsis, skip
+          i++;
+          continue;
+        }
+      }
+
+      // Check if followed by whitespace (or end of string) and potentially a capital letter
+      if (/\s/.test(nextChar) || nextChar === '') {
+        const beforePeriod = currentSentence.slice(0, -1).trim();
+        const lastFewWords = beforePeriod.split(/\s+/).slice(-3).join(' ');
+        const lastWord = beforePeriod.split(/\s+/).pop() || '';
+        const lastWordClean = lastWord.toLowerCase().replace(/[^\w\.]/g, '');
+
+        // Check for decimal numbers - look for digit.digit pattern near the period
+        const hasDecimal = /\d+\.\d+/.test(lastFewWords);
+        
+        // Check for URLs - look for URL patterns
+        const hasUrl = /(www\.|http:\/\/|https:\/\/|\.com|\.org|\.net|\.edu|\.gov|\.io)/i.test(lastFewWords);
+        
+        // Check for abbreviation (word with period, like "Mr.", "e.g.", "i.e.")
+        // Handle both "e.g." and "e.g" cases, and also check if last word before period is abbreviation
+        const lastWordNoPeriod = lastWord.replace(/\.$/, '');
+        const lastWordLower = lastWordNoPeriod.toLowerCase();
+        // Check with dots preserved (e.g., "e.g", "i.e", "p.m") and without dots
+        const isKnownAbbreviation = abbreviations.has(lastWordLower) || 
+                                   abbreviations.has(lastWordLower.replace(/\./g, ''));
+        
+        // Check for single letter abbreviation (e.g., "J.", "A.")
+        const isSingleLetterAbbr = /^[a-zA-Z]\.$/.test(lastWord);
+        
+        // Check for all caps abbreviation without period (e.g., "FBI", "CIA") when followed by period
+        const allCapsWord = lastWordNoPeriod.replace(/[^\w]/g, '');
+        const isAllCapsAbbr = /^[A-Z]{2,5}$/.test(allCapsWord);
+        
+        // Check for all caps with periods (e.g., "U.S.A.", "C.I.A.")
+        const allCapsWithPeriods = lastWord.replace(/[^\w\.]/g, '');
+        const isAllCapsPeriodAbbr = /^[A-Z](\.[A-Z])+\.?$/.test(allCapsWithPeriods);
+        
+        // Check for academic titles (Ph.D., M.D., etc.)
+        const isAcademicAbbr = /^(ph\.d|m\.d|b\.a|m\.a|b\.s|m\.s|phd|md|ba|ma|bs|ms)\.?$/i.test(lastWordClean);
+
+        // Determine if this period should NOT end a sentence
+        const isAbbreviation = isKnownAbbreviation || isSingleLetterAbbr || hasDecimal || hasUrl || 
+                               isAllCapsAbbr || isAllCapsPeriodAbbr || isAcademicAbbr;
+
+        // Get what comes after this punctuation
+        const afterWhitespace = text.slice(i + 1).trim();
+        const firstCharAfter = afterWhitespace[0] || '';
+
+        // Check if period might be inside quotes followed by sentence start
+        // Pattern: "text." Capital letter - this should split
+        const hasQuoteInSentence = /["']/.test(beforePeriod);
+        
+        // Determine if sentence should end
+        // Be very conservative: don't split on decimals/URLs even if followed by capital
+        // Only split when it's clearly a sentence boundary
+        if (char === '!' || char === '?') {
+          // Always end on ! or ?
+          isEndOfSentence = true;
+        } else if (firstCharAfter === '') {
+          // End of text
+          isEndOfSentence = true;
+        } else if (isSingleLetterAbbr) {
+          // Never split on single-letter abbreviations (middle initials)
+          // These are always part of names
+          isEndOfSentence = false;
+        } else if (hasDecimal || hasUrl) {
+          // Don't split on decimals or URLs - very conservative
+          // (these tests expect them to never split)
+          isEndOfSentence = false;
+        } else if (hasQuoteInSentence && /[A-Z]/.test(firstCharAfter) && !isAbbreviation) {
+          // Period in quotes, followed by capital, not abbreviation - likely sentence end
+          // (handles cases like '"Hello world." That was nice.')
+          isEndOfSentence = true;
+        } else if (!isAbbreviation && /[A-Z]/.test(firstCharAfter)) {
+          // Only split if NOT an abbreviation and capital letter follows
+          // This handles normal sentence endings
+          isEndOfSentence = true;
+        } else if (isAllCapsAbbr && /[A-Z]/.test(firstCharAfter) && !isAllCapsPeriodAbbr) {
+          // All-caps abbreviations (like FBI) at sentence boundaries should split
+          // But U.S.A. style should not split (handled by isAllCapsPeriodAbbr)
+          isEndOfSentence = true;
+        }
+      } else if (nextChar === '') {
+        // End of text with punctuation
+        isEndOfSentence = true;
+      }
+
+      if (isEndOfSentence) {
+        sentences.push(currentSentence.trim());
+        currentSentence = '';
+        // Skip whitespace after sentence ending
+        i++;
+        while (i < text.length && /\s/.test(text[i])) {
+          i++;
+        }
+        continue;
+      }
+    }
+
+    i++;
+  }
+
+  // Add remaining text as last sentence if any
+  if (currentSentence.trim().length > 0) {
+    sentences.push(currentSentence.trim());
+  }
+
+  // Handle maxWordsPerSentence splitting
   const result: string[] = [];
-  for(let sentence of sentences){
-    let words = sentence.split(" ");
-    if(words.length >= maxWordsPerSentence){
-      while(words.length > maxWordsPerSentence){
+  for (let sentence of sentences) {
+    const words = sentence.trim().split(/\s+/);
+    if (words.length >= maxWordsPerSentence) {
+      while (words.length > maxWordsPerSentence) {
         const nextSentenceWords = words.splice(0, maxWordsPerSentence);
-        const nextSentence = nextSentenceWords.join(" ");
+        const nextSentence = nextSentenceWords.join(' ');
         result.push(nextSentence);
       }
-      const nextSentenceWords = words.splice(0, maxWordsPerSentence);
-      const nextSentence = nextSentenceWords.join(" ");
-      result.push(nextSentence);
-    }else{
+      if (words.length > 0) {
+        const nextSentence = words.join(' ');
+        result.push(nextSentence);
+      }
+    } else {
       result.push(sentence);
     }
   }
-  return result;
+
+  return result.filter(s => s.length > 0);
 }
 function getElementText(elem: any): string {
   if (elem.type === 'text') {
