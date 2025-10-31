@@ -43,7 +43,7 @@ export class MessagesRepository {
     return await this.sql.begin(async (trx) => {
       const [createdMessage] = await trx<Message[]>`
           insert into message (message_id, sent_by_member_id, message_text, role, status_topics_key_values, tool_calls_json, image_url)
-          values (${uuidv4()}, ${memberId}, ${message.messageText}, ${message.role}, ${message.statusTopicsKeyValues ? JSON.stringify(message.statusTopicsKeyValues) : null}, ${message.toolCallsJson ?? null}, 
+          values (${uuidv4()}, ${memberId}, ${message.messageText ?? null}, ${message.role}, ${message.statusTopicsKeyValues ? JSON.stringify(message.statusTopicsKeyValues) : null}, ${message.toolCallsJson ?? null}, 
                   ${message.imageUrl ? message.imageUrl : null})
           returning *
       `;

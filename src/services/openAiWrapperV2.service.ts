@@ -233,9 +233,11 @@ export const defaultHandleToolCall: HandleToolCall = async ({toolCall, aiFunctio
     const { toolName, toolArgs } = parseToolNameAndArgumentsFromToolCall(toolCall);
     if (typeof toolService[toolName] == 'function') {
       const result = await toolService[toolName](toolArgs, aiFunctionContext);
+      const stringifiedResult = JSON.stringify(result.result);
+      // const stringifiedResult = "Headline: Jason is cool";
       return {
         tool_call_id: toolCall.id,
-        content: JSON.stringify(result.result),
+        content: stringifiedResult,
         role: 'tool',
       };
     } else {

@@ -1,0 +1,32 @@
+{%- set messages = [] %}
+
+{# System message #}
+{%- set system_message = {
+    "role": "system",
+    "content": """
+You are an AI assistant that follows these rules:
+- All tool calls must be output using <tool_call>{...}</tool_call> syntax.
+- Do not output explanations outside tool calls.
+- Only respond with content or tool calls.
+"""
+} %}
+{%- do messages.append(system_message) %}
+
+{# User messages #}
+{%- for user_msg in user_messages %}
+{%- set user_message = {
+    "role": "user",
+    "content": user_msg
+} %}
+{%- do messages.append(user_message) %}
+{%- endfor %}
+
+{# Assistant placeholder message #}
+{%- set assistant_message = {
+    "role": "assistant",
+    "content": None,
+    "tool_calls": []
+} %}
+{%- do messages.append(assistant_message) %}
+
+{{ messages | tojson }}
