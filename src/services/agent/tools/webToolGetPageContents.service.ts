@@ -17,7 +17,7 @@ export class WebToolGetPageContentService implements AiFunctionExecutor<WebToolG
         function: {
             name: 'aiGetContentsOfWebPageAsMarkdown',
             description: `Retrieves the contents of a web page, as markdown, via url so that an AI agent can do things like summarize, read, etc.
-            Returns the contents of the page as markdown.
+            Returns the contents of the page as markdown.  
             `,
             parameters: {
                 type: "object",

@@ -18,7 +18,7 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
         function: {
             name: 'aiGetContentsOfWebPageAsMarkdown',
             description: `Retrieves the contents of a web page, as markdown, via url so that an AI agent can do things like summarize, read, etc.
-            Returns the contents of the page as markdown.
+            Returns the contents of the page as markdown.  Do not call more than once with the same url.
             `,
             parameters: {
                 type: "object",
@@ -52,7 +52,7 @@ export class WebToolsService implements AiFunctionExecutor<WebToolsService>{
         type: "function",
         function: {
             name: "aiSearchWeb",
-            description: `Search the web using DuckDuckGo and return relevant results.  
+            description: `Search the web using DuckDuckGo and return relevant results.   Do not call more than once with the same query.
             Returns results in the format: 
             {
                 query: "latest news",

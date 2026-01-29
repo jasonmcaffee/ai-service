@@ -72,6 +72,8 @@ Check to see if the tool resulted in an error.  If so, display that error to the
 
 When you are asked to use a tool, you must ensure that you always make the tool call.  Do not say that you are using the tool, and then not use it.
 
+Do not repeatedly call the same tool with the same parameters.  Once you receive a tool call result, utilize it.
+
 # IMPORTANT
 - verify all requirements before responding, and always ensure that 100% of the requirements are met with your response.
 - Verify that you are not responding with lists, or formatted text, such as bold, when responding.
