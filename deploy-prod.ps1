@@ -7,7 +7,7 @@ Set-Location $scriptDir
 
 # Get absolute paths
 $sourceDir = $scriptDir
-$prodDir = Join-Path (Split-Path -Parent $scriptDir) "prod"
+$prodDir = "C:\jason\dev\prod"
 $targetDir = Join-Path $prodDir "ai-service"
 
 Write-Host "Source directory: $sourceDir" -ForegroundColor Cyan
