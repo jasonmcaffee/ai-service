@@ -14,7 +14,8 @@ export class LlamaCppService {
     private logFilePath = path.join(process.cwd(), 'llama_server_output.log');
     private pidFilePath = path.join(process.cwd(), 'llama_server_pid.txt');
     private isWindows = os.platform() === 'win32';
-    private readonly llamaServerExePath = `C:\\jason\\dev\\llama.cpp-v3\\build\\bin\\Release\\llama-server.exe`
+    // private readonly llamaServerExePath = `C:\\jason\\dev\\llama.cpp-v3\\build\\bin\\Release\\llama-server.exe`
+    private readonly llamaServerExePath = `C:\\jason\\dev\\llama.cpp-v3\\prebuilt-download\\llama-server.exe`
     constructor() {}
 
 
